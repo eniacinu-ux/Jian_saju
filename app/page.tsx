@@ -85,24 +85,55 @@ export default function Home() {
           </select>
 
           <input
-            type="date"
-            className="w-full rounded-xl border p-3"
-            value={form.birthDate}
-            onChange={(e) => {
-              setForm({ ...form, birthDate: e.target.value });
-              setSajuResult(null);
-            }}
-          />
+  type="text"
+  inputMode="numeric"
+  placeholder="1993-08-04"
+  className="w-full rounded-xl border p-3"
+  value={form.birthDate}
+  onChange={(e) => {
+    const onlyNumber = e.target.value
+      .replace(/\D/g, "")
+      .slice(0, 8);
 
-          <input
-            type="time"
-            className="w-full rounded-xl border p-3"
-            value={form.birthTime}
-            onChange={(e) => {
-              setForm({ ...form, birthTime: e.target.value });
-              setSajuResult(null);
-            }}
-          />
+    let formatted = onlyNumber;
+
+    if (onlyNumber.length > 4 && onlyNumber.length <= 6) {
+      formatted = `${onlyNumber.slice(0, 4)}-${onlyNumber.slice(4)}`;
+    }
+
+    if (onlyNumber.length > 6) {
+      formatted = `${onlyNumber.slice(0, 4)}-${onlyNumber.slice(
+        4,
+        6
+      )}-${onlyNumber.slice(6)}`;
+    }
+
+    setForm({ ...form, birthDate: formatted });
+    setSajuResult(null);
+  }}
+/>
+
+<input
+  type="text"
+  inputMode="numeric"
+  placeholder="23:00"
+  className="w-full rounded-xl border p-3"
+  value={form.birthTime}
+  onChange={(e) => {
+    const onlyNumber = e.target.value
+      .replace(/\D/g, "")
+      .slice(0, 4);
+
+    let formatted = onlyNumber;
+
+    if (onlyNumber.length >= 3) {
+      formatted = `${onlyNumber.slice(0, 2)}:${onlyNumber.slice(2)}`;
+    }
+
+    setForm({ ...form, birthTime: formatted });
+    setSajuResult(null);
+  }}
+/>
 
           <button
             type="button"
