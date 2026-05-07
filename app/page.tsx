@@ -1,8 +1,19 @@
 "use client";
 
 import { useState, useRef } from "react";
-import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
+import { saveAs } from "file-saver";
+
+import {
+  Document,
+  Packer,
+  Paragraph,
+  TextRun,
+  Table,
+  TableRow,
+  TableCell,
+  WidthType,
+} from "docx";
+
 import { calculateSaju } from "./lib/sajuCalculator";
 
 export default function Home() {
@@ -58,66 +69,175 @@ export default function Home() {
     }
   }
 
-  const downloadPDF = async () => {
-  if (!resultRef.current) {
+const downloadWord = async () => {
+  if (!sajuResult) {
     alert("먼저 만세력을 계산해 주세요.");
     return;
   }
 
   try {
-    const canvas = await html2canvas(resultRef.current, {
-      scale: 2,
-      useCORS: true,
-      backgroundColor: "#ffffff",
+    const doc = new Document({
+      sections: [
+        {
+          children: [
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: "사주 분석 결과",
+                  bold: true,
+                  size: 36,
+                }),
+              ],
+            }),
 
-      onclone: (clonedDoc) => {
-        const target = clonedDoc.querySelector("[data-pdf-target]");
+            new Paragraph({ text: "" }),
 
-        if (!target) return;
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: `이름: ${form.name}`,
+                  size: 24,
+                }),
+              ],
+            }),
 
-        target.querySelectorAll("*").forEach((el) => {
-          const element = el as HTMLElement;
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: `생년월일: ${form.birthDate} ${form.birthTime}`,
+                  size: 24,
+                }),
+              ],
+            }),
 
-          element.style.color = "#000000";
-          element.style.backgroundColor =
-            element.classList.contains("bg-zinc-100")
-              ? "#f4f4f5"
-              : element.style.backgroundColor || "#ffffff";
+            new Paragraph({ text: "" }),
 
-          element.style.borderColor = "#e5e7eb";
-          element.style.boxShadow = "none";
-        });
-      },
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: "만세력",
+                  bold: true,
+                  size: 28,
+                }),
+              ],
+            }),
+
+            new Paragraph({ text: "" }),
+
+            new Table({
+              width: {
+                size: 100,
+                type: WidthType.PERCENTAGE,
+              },
+
+              rows: [
+                new TableRow({
+                  children: [
+                    new TableCell({
+                      children: [new Paragraph("년주")],
+                    }),
+                    new TableCell({
+                      children: [new Paragraph("월주")],
+                    }),
+                    new TableCell({
+                      children: [new Paragraph("일주")],
+                    }),
+                    new TableCell({
+                      children: [new Paragraph("시주")],
+                    }),
+                  ],
+                }),
+
+                new TableRow({
+                  children: [
+                    new TableCell({
+                      children: [
+                        new Paragraph(
+                          `${sajuResult.year.ganji} (${sajuResult.year.ganjiKor})`
+                        ),
+                      ],
+                    }),
+
+                    new TableCell({
+                      children: [
+                        new Paragraph(
+                          `${sajuResult.month.ganji} (${sajuResult.month.ganjiKor})`
+                        ),
+                      ],
+                    }),
+
+                    new TableCell({
+                      children: [
+                        new Paragraph(
+                          `${sajuResult.day.ganji} (${sajuResult.day.ganjiKor})`
+                        ),
+                      ],
+                    }),
+
+                    new TableCell({
+                      children: [
+                        new Paragraph(
+                          `${sajuResult.hour.ganji} (${sajuResult.hour.ganjiKor})`
+                        ),
+                      ],
+                    }),
+                  ],
+                }),
+              ],
+            }),
+
+            new Paragraph({ text: "" }),
+
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: "오행 분포",
+                  bold: true,
+                  size: 28,
+                }),
+              ],
+            }),
+
+            new Paragraph({
+              text:
+                `목 ${sajuResult.elementCount.wood} / ` +
+                `화 ${sajuResult.elementCount.fire} / ` +
+                `토 ${sajuResult.elementCount.earth} / ` +
+                `금 ${sajuResult.elementCount.metal} / ` +
+                `수 ${sajuResult.elementCount.water}`,
+            }),
+
+            new Paragraph({ text: "" }),
+
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: "사주 풀이",
+                  bold: true,
+                  size: 28,
+                }),
+              ],
+            }),
+
+            new Paragraph({
+              text: result || "사주 풀이 결과가 없습니다.",
+            }),
+          ],
+        },
+      ],
     });
 
-    const imgData = canvas.toDataURL("image/png");
+    const blob = await Packer.toBlob(doc);
 
-    const pdf = new jsPDF("p", "mm", "a4");
+    const safeBirth = form.birthDate.replaceAll("-", "");
 
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = pdf.internal.pageSize.getHeight();
-
-    const imgWidth = pdfWidth;
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-    let heightLeft = imgHeight;
-    let position = 0;
-
-    pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-
-    heightLeft -= pdfHeight;
-
-    while (heightLeft > 0) {
-      position -= pdfHeight;
-      pdf.addPage();
-      pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-      heightLeft -= pdfHeight;
-    }
-
-    pdf.save("saju-result.pdf");
+saveAs(
+  blob,
+  `${form.name}_${safeBirth}.docx`
+);
   } catch (error) {
     console.error(error);
-    alert("PDF 변환 중 오류가 발생했습니다.");
+    alert("워드 파일 생성 중 오류가 발생했습니다.");
   }
 };
   
@@ -283,12 +403,12 @@ export default function Home() {
                   data-pdf-target
                   className="mt-6 rounded-2xl bg-[#ffffff] p-4 text-[#000000] shadow-sm"
                 >
-                    {/*<button
-                      onClick={downloadPDF}
+                    <button
+                      onClick={downloadWord}
                       className="mt-4 w-full rounded-xl bg-black px-5 py-3 font-bold text-white shadow-md"
                     >
-                      PDF로 저장하기
-                    </button>*/}
+                      저장하기
+                    </button>
                   <h3 className="text-lg font-bold">
                     사주팔자
                   </h3>
@@ -492,7 +612,7 @@ export default function Home() {
                     </div>
                   </div>
 
-                  <div className="mt-5 rounded-2xl bg-zinc-100 p-4">
+                                    <div className="mt-5 rounded-2xl bg-zinc-100 p-4">
                     <h4 className="font-bold">
                       십이운성
                     </h4>
@@ -547,24 +667,24 @@ export default function Home() {
                       </div>
                     </div>
                   </div>
+
+                  {result && (
+                    <div className="mt-5 rounded-2xl bg-zinc-100 p-4">
+                      <h4 className="font-bold">
+                        사주 해석
+                      </h4>
+
+                      <div className="mt-3 whitespace-pre-wrap leading-7 text-zinc-700">
+                        {result}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </section>
           )}
         </div>
       </div>
-
-      {result && (
-        <section className="mx-auto mt-8 max-w-md rounded-3xl bg-white p-6 shadow-xl">
-          <h2 className="mb-4 text-2xl font-bold">
-            분석 결과
-          </h2>
-
-          <div className="whitespace-pre-wrap leading-7 text-zinc-700">
-            {result}
-          </div>
-        </section>
-      )}
     </main>
   );
 }
