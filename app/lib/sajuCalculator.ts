@@ -55,6 +55,14 @@ export interface GanZhi {
   stemElement: string;
   branchElement: string;
 }
+export interface DaewoonItem {
+  index: number;
+  startAge: number;
+  startAgeText: string;
+  ganji: GanZhi;
+  stemTenGod: string;
+  branchTenGod: string;
+}
 
 export interface SajuResult {
   year: GanZhi;
@@ -65,6 +73,8 @@ export interface SajuResult {
   elementCount: ElementCount;
   tenGods: TenGods;
   twelveStages: TwelveStages;
+
+  daewoon: DaewoonItem[];
 }
 
 const STEMS = ["甲", "乙", "丙", "丁", "戊", "己", "庚", "辛", "壬", "癸"];
@@ -220,9 +230,12 @@ function mod(n: number, m: number): number {
 
 function parseKoreanDateTime(dateStr: string, timeStr: string): Date {
   const [y, m, d] = dateStr.split("-").map(Number);
-  const [hh, mm] = timeStr.split(":").map(Number);
+  const [hhRaw, mmRaw] = timeStr.split(":").map(Number);
 
-  return new Date(y, m - 1, d, hh, mm, 0);
+  const hh = Number.isFinite(hhRaw) ? hhRaw : 0;
+  const mm = Number.isFinite(mmRaw) ? mmRaw : 0;
+
+  return new Date(y, m - 1, d, hh, mm, 0, 0);
 }
 
 function applySolarTimeCorrection(
@@ -612,7 +625,136 @@ function getTenGods(
     ),
   };
 }
+function getSolarTermDates(year: number): Date[] {
+  return [
+    new Date(year, 0, 6),
+    new Date(year, 1, 4),
+    new Date(year, 2, 6),
+    new Date(year, 3, 5),
+    new Date(year, 4, 6),
+    new Date(year, 5, 6),
+    new Date(year, 6, 7),
+    new Date(year, 7, 8),
+    new Date(year, 8, 8),
+    new Date(year, 9, 8),
+    new Date(year, 10, 7),
+    new Date(year, 11, 7),
+  ];
+}
 
+function isForwardDaewoon(
+  gender: Gender | undefined,
+  yearStemIndex: number
+): boolean {
+  const isYangYear = yearStemIndex % 2 === 0;
+
+  if (gender === "male") return isYangYear;
+  if (gender === "female") return !isYangYear;
+
+  return true;
+}
+
+function getDaewoonStartAge(
+  birthDate: Date,
+  forward: boolean
+): {
+  startAge: number;
+  startAgeText: string;
+} {
+  if (Number.isNaN(birthDate.getTime())) {
+    return {
+      startAge: 1,
+      startAgeText: "1대운",
+    };
+  }
+
+  const years = [
+    birthDate.getFullYear() - 1,
+    birthDate.getFullYear(),
+    birthDate.getFullYear() + 1,
+  ];
+
+  const terms = years
+    .flatMap(getSolarTermDates)
+    .sort((a, b) => a.getTime() - b.getTime());
+
+  let targetTerm: Date | undefined;
+
+  if (forward) {
+    targetTerm = terms.find(
+      (term) => term.getTime() > birthDate.getTime()
+    );
+  } else {
+    targetTerm = [...terms]
+      .reverse()
+      .find(
+        (term) => term.getTime() < birthDate.getTime()
+      );
+  }
+
+  if (!targetTerm) {
+    targetTerm = forward
+      ? terms[terms.length - 1]
+      : terms[0];
+  }
+
+ const diffDays =
+  Math.abs(targetTerm.getTime() - birthDate.getTime()) /
+  (1000 * 60 * 60 * 24);
+
+const startAge = Math.max(
+  1,
+  Math.floor(diffDays / 3)
+);
+  return {
+    startAge,
+    startAgeText: `${startAge}대운`,
+  };
+}
+
+function getDaewoon(
+  birthDate: Date,
+  gender: Gender | undefined,
+  year: GanZhi,
+  month: GanZhi,
+  day: GanZhi
+): DaewoonItem[] {
+  const forward = isForwardDaewoon(
+    gender,
+    year.stemIndex
+  );
+
+  const startInfo = getDaewoonStartAge(
+    birthDate,
+    forward
+  );
+
+  const direction = forward ? 1 : -1;
+
+  return Array.from({ length: 10 }, (_, i) => {
+    const step = i + 1;
+
+    const ganji = makeGanZhi(
+      month.stemIndex + direction * step,
+      month.branchIndex + direction * step
+    );
+
+    return {
+      index: step,
+      startAge: startInfo.startAge + i * 10,
+startAgeText: `${startInfo.startAge + i * 10}대운`,
+      ganji,
+      stemTenGod: getTenGod(
+        day.stemIndex,
+        ganji.stemIndex
+      ),
+      branchTenGod: getTenGod(
+        day.stemIndex,
+        BRANCH_MAIN_STEM_INDEX[ganji.branchIndex]
+      ),
+    };
+  });
+}
 export function calculateSaju(
   input: SajuInput
 ): SajuResult {
@@ -667,6 +809,14 @@ export function calculateSaju(
     hour
   );
   const twelveStages = getTwelveStages(year, month, day, hour);
+  const daewoon = getDaewoon(
+  date,
+  input.gender,
+  year,
+  month,
+  day
+);
+
   return {
   year,
   month,
@@ -675,5 +825,6 @@ export function calculateSaju(
   elementCount,
   tenGods,
   twelveStages,
-  };
+  daewoon,
+};
 }
