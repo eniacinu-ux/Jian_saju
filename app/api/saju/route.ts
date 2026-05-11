@@ -222,9 +222,17 @@ ${saju.twelveStages.hour}(시)
 ${Array.isArray(saju.daewoon)
   ? saju.daewoon
       .map(
-        (item) =>
-          `${item.startAgeText} : ${item.ganji.stem}${item.ganji.branch} (${item.stemTenGod}/${item.branchTenGod})`
-      )
+  (item: {
+    startAgeText: string;
+    ganji: {
+      stem: string;
+      branch: string;
+    };
+    stemTenGod?: string;
+    branchTenGod?: string;
+  }) =>
+    `${item.startAgeText} : ${item.ganji.stem}${item.ganji.branch} (${item.stemTenGod ?? ""}/${item.branchTenGod ?? ""})`
+)
       .join("\n")
   : "대운 정보 없음"}
 
