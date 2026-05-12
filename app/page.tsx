@@ -1,5 +1,5 @@
 "use client";
-
+import KoreanLunarCalendar from "korean-lunar-calendar";
 import { useRef, useState } from "react";
 import { saveAs } from "file-saver";
 import {
@@ -16,6 +16,7 @@ import {
 import { calculateSaju } from "./lib/sajuCalculator";
 
 export default function Home() {
+  const [solarToLunarDate, setSolarToLunarDate] = useState("");
   const resultRef = useRef<HTMLDivElement>(null);
 
   const [mode, setMode] = useState<"saju" | "compatibility" | "zodiac">(
@@ -80,6 +81,22 @@ export default function Home() {
 
     return onlyNumber;
   };
+  const convertSolarToLunar = (solarDate: string) => {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(solarDate)) return "";
+
+  const [year, month, day] = solarDate.split("-").map(Number);
+
+  const calendar = new KoreanLunarCalendar();
+  const success = calendar.setSolarDate(year, month, day);
+
+  if (!success) return "변환 불가";
+
+  const lunar = calendar.getLunarCalendar();
+
+  return `${lunar.year}-${String(lunar.month).padStart(2, "0")}-${String(
+    lunar.day
+  ).padStart(2, "0")}${lunar.intercalation ? " 윤달" : ""}`;
+};
 
   const calculateOneSaju = (targetForm: {
     birthDate: string;
@@ -578,8 +595,31 @@ export default function Home() {
             ? "궁합 분석"
             : "점성술 분석"}
         </h1>
+<div className="mt-6 rounded-2xl border border-[#ead8c4] bg-[#fffaf3] p-4 shadow-inner">
+  <h2 className="text-lg font-bold">양력 → 음력 변환</h2>
 
+  <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
+    <input
+      type="text"
+      inputMode="numeric"
+      placeholder="예: 1993-08-04"
+      className="w-full rounded-xl border p-3"
+      value={solarToLunarDate}
+      onChange={(e) =>
+        setSolarToLunarDate(formatDateInput(e.target.value))
+      }
+    />
+
+    <div className="rounded-xl bg-white p-3 text-sm font-bold text-[#6b3f24]">
+      음력:{" "}
+      {solarToLunarDate
+        ? convertSolarToLunar(solarToLunarDate)
+        : "양력을 입력하세요"}
+    </div>
+  </div>
+</div>
         <div className="mt-6 grid grid-cols-3 gap-2 rounded-2xl bg-[#f7efe3] p-1">
+        
           <button
             type="button"
             onClick={() => {
