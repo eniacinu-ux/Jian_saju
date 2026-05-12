@@ -551,13 +551,10 @@ const makeTimeUnknownSaju = (calculated: any) => {
             {item.data.branch}
           </div>
 
-          <div className="mt-3 text-sm text-zinc-600">
-            {item.data.stemKor}
-          </div>
-
-          <div className="text-sm text-zinc-600">
-            {item.data.branchKor}
-          </div>
+         <div className="mt-3 text-sm text-zinc-600 font-semibold">
+  {item.data.stemKor}
+  {item.data.branchKor}
+</div>
         </div>
 
         <div className="mt-3 text-xs text-zinc-500">{item.tenGodStem}</div>
