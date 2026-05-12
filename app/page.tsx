@@ -1,4 +1,5 @@
 "use client";
+
 import KoreanLunarCalendar from "korean-lunar-calendar";
 import { useRef, useState } from "react";
 import { saveAs } from "file-saver";
@@ -28,6 +29,7 @@ export default function Home() {
     gender: "남성",
     birthDate: "",
     birthTime: "23:00",
+    birthTimeUnknown: false,
     birthLocation: "",
   });
 
@@ -37,12 +39,14 @@ export default function Home() {
       gender: "남성",
       birthDate: "",
       birthTime: "23:00",
+      birthTimeUnknown: false,
     },
     right: {
       name: "",
       gender: "여성",
       birthDate: "",
       birthTime: "23:00",
+      birthTimeUnknown: false,
     },
   });
 
@@ -81,38 +85,92 @@ export default function Home() {
 
     return onlyNumber;
   };
+
   const convertSolarToLunar = (solarDate: string) => {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(solarDate)) return "";
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(solarDate)) return "";
 
-  const [year, month, day] = solarDate.split("-").map(Number);
+    const [year, month, day] = solarDate.split("-").map(Number);
 
-  const calendar = new KoreanLunarCalendar();
-  const success = calendar.setSolarDate(year, month, day);
+    const calendar = new KoreanLunarCalendar();
+    const success = calendar.setSolarDate(year, month, day);
 
-  if (!success) return "변환 불가";
+    if (!success) return "변환 불가";
 
-  const lunar = calendar.getLunarCalendar();
+    const lunar = calendar.getLunarCalendar();
 
-  return `${lunar.year}-${String(lunar.month).padStart(2, "0")}-${String(
-    lunar.day
-  ).padStart(2, "0")}${lunar.intercalation ? " 윤달" : ""}`;
+    return `${lunar.year}-${String(lunar.month).padStart(2, "0")}-${String(
+      lunar.day
+    ).padStart(2, "0")}${lunar.intercalation ? " 윤달" : ""}`;
+  };
+
+const countElementsWithoutHour = (calculated: any) => {
+  const count = {
+    wood: 0,
+    fire: 0,
+    earth: 0,
+    metal: 0,
+    water: 0,
+  };
+
+  const addElement = (element: string) => {
+    if (element === "목") count.wood += 1;
+    if (element === "화") count.fire += 1;
+    if (element === "토") count.earth += 1;
+    if (element === "금") count.metal += 1;
+    if (element === "수") count.water += 1;
+  };
+
+  [calculated.year, calculated.month, calculated.day].forEach((pillar) => {
+    addElement(pillar.stemElement);
+    addElement(pillar.branchElement);
+  });
+
+  return count;
 };
 
+const makeTimeUnknownSaju = (calculated: any) => {
+  if (!calculated) return null;
+
+  return {
+    ...calculated,
+    hour: null,
+    elementCount: countElementsWithoutHour(calculated),
+    tenGods: {
+      ...calculated.tenGods,
+      hourStem: "",
+      hourBranch: "",
+    },
+    twelveStages: {
+      ...calculated.twelveStages,
+      hour: "",
+    },
+    birthTimeUnknown: true,
+  };
+};
   const calculateOneSaju = (targetForm: {
     birthDate: string;
     birthTime: string;
+    birthTimeUnknown?: boolean;
     gender: string;
   }) => {
-    if (!targetForm.birthDate || !targetForm.birthTime) return null;
+    if (!targetForm.birthDate) return null;
 
-    return calculateSaju({
+    if (!targetForm.birthTimeUnknown && !targetForm.birthTime) return null;
+
+    const calculated = calculateSaju({
       birthDate: targetForm.birthDate,
-      birthTime: targetForm.birthTime,
+      birthTime: targetForm.birthTimeUnknown ? "12:00" : targetForm.birthTime,
       calendarType: "solar",
       timezone: "Asia/Seoul",
       lateZiMode: false,
       gender: targetForm.gender === "남성" ? "male" : "female",
     });
+
+    if (targetForm.birthTimeUnknown) {
+      return makeTimeUnknownSaju(calculated);
+    }
+
+    return calculated;
   };
 
   const handleCalculateSaju = () => {
@@ -140,6 +198,7 @@ export default function Home() {
       let endpoint = "/api/saju";
       let bodyData: any = {
         ...form,
+        birthTime: form.birthTimeUnknown ? null : form.birthTime,
         mode,
         saju: sajuResult,
       };
@@ -164,8 +223,18 @@ export default function Home() {
 
         bodyData = {
           mode,
-          left: compatibilityForm.left,
-          right: compatibilityForm.right,
+          left: {
+            ...compatibilityForm.left,
+            birthTime: compatibilityForm.left.birthTimeUnknown
+              ? null
+              : compatibilityForm.left.birthTime,
+          },
+          right: {
+            ...compatibilityForm.right,
+            birthTime: compatibilityForm.right.birthTimeUnknown
+              ? null
+              : compatibilityForm.right.birthTime,
+          },
           leftSaju: left,
           rightSaju: right,
         };
@@ -229,7 +298,9 @@ export default function Home() {
               new Paragraph({
                 children: [
                   new TextRun({
-                    text: `생년월일: ${form.birthDate} ${form.birthTime}`,
+                    text: `생년월일: ${form.birthDate} ${
+                      form.birthTimeUnknown ? "시간 미상" : form.birthTime
+                    }`,
                     size: 24,
                   }),
                 ],
@@ -277,7 +348,9 @@ export default function Home() {
                       new TableCell({
                         children: [
                           new Paragraph(
-                            `${sajuResult.hour.ganji} (${sajuResult.hour.ganjiKor})`
+                            sajuResult.hour
+                              ? `${sajuResult.hour.ganji} (${sajuResult.hour.ganjiKor})`
+                              : "시간 미상"
                           ),
                         ],
                       }),
@@ -408,9 +481,9 @@ export default function Home() {
           {
             label: "시주",
             data: targetSaju.hour,
-            tenGodStem: targetSaju.tenGods.hourStem,
-            tenGodBranch: targetSaju.tenGods.hourBranch,
-            twelveStage: targetSaju.twelveStages.hour,
+            tenGodStem: targetSaju.tenGods?.hourStem ?? "",
+            tenGodBranch: targetSaju.tenGods?.hourBranch ?? "",
+            twelveStage: targetSaju.twelveStages?.hour ?? "",
           },
           {
             label: "일주",
@@ -438,6 +511,66 @@ export default function Home() {
 
   const sajuItems = buildSajuItems(sajuResult);
 
+  const renderPillarCard = (item: any) => {
+    if (!item.data) {
+      return (
+        <div key={item.label} className="rounded-xl bg-zinc-100 p-3">
+          <div className="text-xs text-zinc-500">{item.label}</div>
+
+          <div className="mt-8 flex min-h-[150px] items-center justify-center rounded-xl border border-dashed border-zinc-300 bg-white/60 text-sm font-bold text-zinc-400">
+            시간 미상
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div key={item.label} className="rounded-xl bg-zinc-100 p-3">
+        <div className="text-xs text-zinc-500">{item.label}</div>
+
+        <div className="mt-2 flex flex-col items-center">
+          <div
+            className="text-3xl font-bold leading-none"
+            style={{
+              color: getElementColor(item.data.stemElement),
+              WebkitTextStroke: "1.5px black",
+              textShadow: "0 0 2px black, 0 0 4px black",
+            }}
+          >
+            {item.data.stem}
+          </div>
+
+          <div
+            className="mt-2 text-3xl font-bold leading-none"
+            style={{
+              color: getElementColor(item.data.branchElement),
+              WebkitTextStroke: "1.5px black",
+              textShadow: "0 0 2px black, 0 0 4px black",
+            }}
+          >
+            {item.data.branch}
+          </div>
+
+          <div className="mt-3 text-sm text-zinc-600">
+            {item.data.stemKor}
+          </div>
+
+          <div className="text-sm text-zinc-600">
+            {item.data.branchKor}
+          </div>
+        </div>
+
+        <div className="mt-3 text-xs text-zinc-500">{item.tenGodStem}</div>
+
+        <div className="text-xs text-zinc-500">{item.tenGodBranch}</div>
+
+        <div className="mt-2 text-xs font-bold text-[#6b3f24]">
+          {item.twelveStage}
+        </div>
+      </div>
+    );
+  };
+
   const renderSajuCard = (targetSaju: any) => {
     const items = buildSajuItems(targetSaju);
 
@@ -448,59 +581,10 @@ export default function Home() {
         <h3 className="text-lg font-bold">사주팔자</h3>
 
         <div className="mt-4 grid grid-cols-2 gap-3 text-center sm:grid-cols-4">
-          {items.map((item) => (
-            <div key={item.label} className="rounded-xl bg-zinc-100 p-3">
-              <div className="text-xs text-zinc-500">{item.label}</div>
-
-              <div className="mt-2 flex flex-col items-center">
-                <div
-                  className="text-3xl font-bold leading-none"
-                  style={{
-                    color: getElementColor(item.data.stemElement),
-                    WebkitTextStroke: "1.5px black",
-                    textShadow: "0 0 2px black, 0 0 4px black",
-                  }}
-                >
-                  {item.data.stem}
-                </div>
-
-                <div
-                  className="mt-2 text-3xl font-bold leading-none"
-                  style={{
-                    color: getElementColor(item.data.branchElement),
-                    WebkitTextStroke: "1.5px black",
-                    textShadow: "0 0 2px black, 0 0 4px black",
-                  }}
-                >
-                  {item.data.branch}
-                </div>
-
-                <div className="mt-3 text-sm text-zinc-600">
-                  {item.data.stemKor}
-                </div>
-
-                <div className="text-sm text-zinc-600">
-                  {item.data.branchKor}
-                </div>
-              </div>
-
-              <div className="mt-3 text-xs text-zinc-500">
-                {item.tenGodStem}
-              </div>
-
-              <div className="text-xs text-zinc-500">
-                {item.tenGodBranch}
-              </div>
-
-              <div className="mt-2 text-xs font-bold text-[#6b3f24]">
-                {item.twelveStage}
-              </div>
-            </div>
-          ))}
+          {items.map((item) => renderPillarCard(item))}
         </div>
 
         <div className="mt-5 rounded-2xl bg-zinc-100 p-4">
-          
           <h4 className="font-bold">오행 분포</h4>
 
           <div className="mt-3 grid grid-cols-5 gap-2 text-center text-sm">
@@ -528,60 +612,58 @@ export default function Home() {
               <div className="font-bold">水</div>
               <div>{targetSaju?.elementCount?.water ?? 0}</div>
             </div>
-            
           </div>
-        
         </div>
+
         {targetSaju?.daewoon && (
-  <div className="mt-5 rounded-2xl bg-white p-4 shadow-sm">
-    <h4 className="font-bold text-black">대운</h4>
+          <div className="mt-5 rounded-2xl bg-white p-4 shadow-sm">
+            <h4 className="font-bold text-black">대운</h4>
 
-    <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-5">
-      {targetSaju.daewoon.map((item: any) => (
-        <div
-          key={item.index}
-          className="rounded-xl bg-zinc-100 p-3 text-center"
-        >
-          <div className="text-xs text-zinc-500">
-            {item.startAgeText}
-          </div>
+            <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-5">
+              {targetSaju.daewoon.map((item: any) => (
+                <div
+                  key={item.index}
+                  className="rounded-xl bg-zinc-100 p-3 text-center"
+                >
+                  <div className="text-xs text-zinc-500">
+                    {item.startAgeText}
+                  </div>
 
-          <div className="mt-2 flex flex-col items-center">
-            <div
-              className="text-3xl font-bold"
-              style={{
-                color: getElementColor(item.ganji.stemElement),
-                WebkitTextStroke: "1px black",
-              }}
-            >
-              {item.ganji.stem}
+                  <div className="mt-2 flex flex-col items-center">
+                    <div
+                      className="text-3xl font-bold"
+                      style={{
+                        color: getElementColor(item.ganji.stemElement),
+                        WebkitTextStroke: "1px black",
+                      }}
+                    >
+                      {item.ganji.stem}
+                    </div>
+
+                    <div
+                      className="text-3xl font-bold"
+                      style={{
+                        color: getElementColor(item.ganji.branchElement),
+                        WebkitTextStroke: "1px black",
+                      }}
+                    >
+                      {item.ganji.branch}
+                    </div>
+                  </div>
+
+                  <div className="mt-2 text-xs text-zinc-500">
+                    {item.stemTenGod}
+                  </div>
+
+                  <div className="text-xs text-zinc-500">
+                    {item.branchTenGod}
+                  </div>
+                </div>
+              ))}
             </div>
-
-            <div
-              className="text-3xl font-bold"
-              style={{
-                color: getElementColor(item.ganji.branchElement),
-                WebkitTextStroke: "1px black",
-              }}
-            >
-              {item.ganji.branch}
-            </div>
           </div>
-
-          <div className="mt-2 text-xs text-zinc-500">
-            {item.stemTenGod}
-          </div>
-
-          <div className="text-xs text-zinc-500">
-            {item.branchTenGod}
-          </div>
-        </div>
-      ))}
-    </div>
-  </div>
-)}
+        )}
       </div>
-      
     );
   };
 
@@ -595,31 +677,32 @@ export default function Home() {
             ? "궁합 분석"
             : "점성술 분석"}
         </h1>
-<div className="mt-6 rounded-2xl border border-[#ead8c4] bg-[#fffaf3] p-4 shadow-inner">
-  <h2 className="text-lg font-bold">양력 → 음력 변환</h2>
 
-  <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
-    <input
-      type="text"
-      inputMode="numeric"
-      placeholder="예: 1993-08-04"
-      className="w-full rounded-xl border p-3"
-      value={solarToLunarDate}
-      onChange={(e) =>
-        setSolarToLunarDate(formatDateInput(e.target.value))
-      }
-    />
+        <div className="mt-6 rounded-2xl border border-[#ead8c4] bg-[#fffaf3] p-4 shadow-inner">
+          <h2 className="text-lg font-bold">양력 → 음력 변환</h2>
 
-    <div className="rounded-xl bg-white p-3 text-sm font-bold text-[#6b3f24]">
-      음력:{" "}
-      {solarToLunarDate
-        ? convertSolarToLunar(solarToLunarDate)
-        : "양력을 입력하세요"}
-    </div>
-  </div>
-</div>
+          <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
+            <input
+              type="text"
+              inputMode="numeric"
+              placeholder="예: 1993-08-04"
+              className="w-full rounded-xl border p-3"
+              value={solarToLunarDate}
+              onChange={(e) =>
+                setSolarToLunarDate(formatDateInput(e.target.value))
+              }
+            />
+
+            <div className="rounded-xl bg-white p-3 text-sm font-bold text-[#6b3f24]">
+              음력:{" "}
+              {solarToLunarDate
+                ? convertSolarToLunar(solarToLunarDate)
+                : "양력을 입력하세요"}
+            </div>
+          </div>
+        </div>
+
         <div className="mt-6 grid grid-cols-3 gap-2 rounded-2xl bg-[#f7efe3] p-1">
-        
           <button
             type="button"
             onClick={() => {
@@ -719,8 +802,9 @@ export default function Home() {
                 type="text"
                 inputMode="numeric"
                 placeholder="23:00"
-                className="w-full rounded-xl border p-3"
+                className="w-full rounded-xl border p-3 disabled:bg-zinc-100 disabled:text-zinc-400"
                 value={form.birthTime}
+                disabled={form.birthTimeUnknown}
                 onChange={(e) => {
                   setForm({
                     ...form,
@@ -731,6 +815,23 @@ export default function Home() {
                   setResult("");
                 }}
               />
+
+              <label className="flex items-center gap-2 rounded-xl border border-[#ead8c4] bg-[#fffaf3] px-4 py-3 text-sm font-bold text-[#6b3f24]">
+                <input
+                  type="checkbox"
+                  checked={form.birthTimeUnknown}
+                  onChange={(e) => {
+                    setForm({
+                      ...form,
+                      birthTimeUnknown: e.target.checked,
+                    });
+
+                    setSajuResult(null);
+                    setResult("");
+                  }}
+                />
+                출생 시간을 모릅니다
+              </label>
 
               {mode === "zodiac" && (
                 <input
@@ -830,8 +931,9 @@ export default function Home() {
                       type="text"
                       inputMode="numeric"
                       placeholder="23:00"
-                      className="w-full rounded-xl border p-3"
+                      className="w-full rounded-xl border p-3 disabled:bg-zinc-100 disabled:text-zinc-400"
                       value={compatibilityForm[key].birthTime}
+                      disabled={compatibilityForm[key].birthTimeUnknown}
                       onChange={(e) => {
                         setCompatibilityForm({
                           ...compatibilityForm,
@@ -849,6 +951,30 @@ export default function Home() {
                         setResult("");
                       }}
                     />
+
+                    <label className="flex items-center gap-2 rounded-xl border border-[#ead8c4] bg-white px-4 py-3 text-sm font-bold text-[#6b3f24]">
+                      <input
+                        type="checkbox"
+                        checked={compatibilityForm[key].birthTimeUnknown}
+                        onChange={(e) => {
+                          setCompatibilityForm({
+                            ...compatibilityForm,
+                            [key]: {
+                              ...compatibilityForm[key],
+                              birthTimeUnknown: e.target.checked,
+                            },
+                          });
+
+                          setCompatibilityResult({
+                            left: null,
+                            right: null,
+                          });
+
+                          setResult("");
+                        }}
+                      />
+                      출생 시간을 모릅니다
+                    </label>
                   </div>
                 </div>
               ))}
@@ -883,9 +1009,11 @@ export default function Home() {
                 onClick={handleCalculateCompatibility}
                 disabled={
                   !compatibilityForm.left.birthDate ||
-                  !compatibilityForm.left.birthTime ||
+                  (!compatibilityForm.left.birthTime &&
+                    !compatibilityForm.left.birthTimeUnknown) ||
                   !compatibilityForm.right.birthDate ||
-                  !compatibilityForm.right.birthTime
+                  (!compatibilityForm.right.birthTime &&
+                    !compatibilityForm.right.birthTimeUnknown)
                 }
                 className="w-full rounded-xl border border-[#6b3f24]/40 bg-[#fff7ed] py-4 font-bold text-[#6b3f24] shadow-sm transition hover:bg-[#f3e1cf] disabled:opacity-40"
               >
@@ -926,7 +1054,9 @@ export default function Home() {
               <button
                 type="button"
                 onClick={handleCalculateSaju}
-                disabled={!form.birthDate || !form.birthTime}
+                disabled={
+                  !form.birthDate || (!form.birthTime && !form.birthTimeUnknown)
+                }
                 className="mt-5 w-full rounded-xl bg-[#2b1d12] px-5 py-3 font-bold text-white transition hover:bg-[#4a2f1c] disabled:opacity-40"
               >
                 계산하기
@@ -949,60 +1079,7 @@ export default function Home() {
                   <h3 className="mt-4 text-lg font-bold">사주팔자</h3>
 
                   <div className="mt-4 grid grid-cols-2 gap-3 text-center sm:grid-cols-4">
-                    {sajuItems.map((item) => (
-                      <div
-                        key={item.label}
-                        className="rounded-xl bg-zinc-100 p-3"
-                      >
-                        <div className="text-xs text-zinc-500">
-                          {item.label}
-                        </div>
-
-                        <div className="mt-2 flex flex-col items-center">
-                          <div
-                            className="text-3xl font-bold leading-none"
-                            style={{
-                              color: getElementColor(item.data.stemElement),
-                              WebkitTextStroke: "1.5px black",
-                              textShadow: "0 0 2px black, 0 0 4px black",
-                            }}
-                          >
-                            {item.data.stem}
-                          </div>
-
-                          <div
-                            className="mt-2 text-3xl font-bold leading-none"
-                            style={{
-                              color: getElementColor(item.data.branchElement),
-                              WebkitTextStroke: "1.5px black",
-                              textShadow: "0 0 2px black, 0 0 4px black",
-                            }}
-                          >
-                            {item.data.branch}
-                          </div>
-
-                          <div className="mt-3 text-sm text-zinc-600">
-                            {item.data.stemKor}
-                          </div>
-
-                          <div className="text-sm text-zinc-600">
-                            {item.data.branchKor}
-                          </div>
-                        </div>
-
-                        <div className="mt-3 text-xs text-zinc-500">
-                          {item.tenGodStem}
-                        </div>
-
-                        <div className="text-xs text-zinc-500">
-                          {item.tenGodBranch}
-                        </div>
-
-                        <div className="mt-2 text-xs font-bold text-[#6b3f24]">
-                          {item.twelveStage}
-                        </div>
-                      </div>
-                    ))}
+                    {sajuItems.map((item) => renderPillarCard(item))}
                   </div>
 
                   <div className="mt-5 rounded-2xl bg-zinc-100 p-4">

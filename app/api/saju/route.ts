@@ -161,7 +161,9 @@ function buildSajuPrompt(form: any, saju: any) {
 
 -성함 : ${form.name}
 
--생년월일시 : (양력)${form.birthDate} ${form.birthTime}
+-생년월일시 : (양력)${form.birthDate} ${
+  form.birthTime ?? "시간 미상"
+}
 
 
 
@@ -173,7 +175,7 @@ function buildSajuPrompt(form: any, saju: any) {
 
 일주(${saju.day.ganjiKor}),
 
-시주(${saju.hour.ganjiKor})
+시주(${saju.hour?.ganjiKor ?? "시간 미상"})
 
 
 
@@ -185,7 +187,7 @@ ${saju.tenGods.monthStem}(월),
 
 ${saju.tenGods.dayStem}(일),
 
-${saju.tenGods.hourStem}(시)
+${saju.tenGods.hourStem || "시간 미상"}(시)
 
 
 
@@ -197,7 +199,7 @@ ${saju.tenGods.monthBranch}(월),
 
 ${saju.tenGods.dayBranch}(일),
 
-${saju.tenGods.hourBranch}(시)
+${saju.tenGods.hourBranch || "시간 미상"}(시)
 
 
 
@@ -209,7 +211,7 @@ ${saju.twelveStages.month}(월),
 
 ${saju.twelveStages.day}(일),
 
-${saju.twelveStages.hour}(시)
+${saju.twelveStages.hour || "시간 미상"}(시)
 
 -오행 분포 :
 木 ${saju.elementCount.wood},
