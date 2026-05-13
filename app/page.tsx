@@ -53,7 +53,8 @@ export default function Home() {
   const [selectedYearLuckKey, setSelectedYearLuckKey] = useState<string | null>(
     null,
   );
-  const [showCompatibilityRelations, setShowCompatibilityRelations] = useState(false);
+  const [showCompatibilityRelations, setShowCompatibilityRelations] =
+    useState(false);
   const [result, setResult] = useState("");
   const [loading, setLoading] = useState(false);
   const [showSaju, setShowSaju] = useState(false);
@@ -706,9 +707,7 @@ export default function Home() {
 
     if (!hiddenStems.length) return "";
 
-    return hiddenStems
-      .map((stem: string) => STEM_HANJA[stem] ?? "")
-      .join("");
+    return hiddenStems.map((stem: string) => STEM_HANJA[stem] ?? "").join("");
   };
 
   const BRANCH_RELATION_RULES: any = {
@@ -949,6 +948,190 @@ export default function Home() {
     }));
   };
 
+  const SHINSAL_LABELS: any = {
+    geopsal: "겁살",
+    jaesal: "재살",
+    cheonsal: "천살",
+    jisal: "지살",
+    dosal: "도화살",
+    wolsal: "월살",
+    mangsinsal: "망신살",
+    jangseongsal: "장성살",
+    banansal: "반안살",
+    yeokmasal: "역마살",
+    yukhaesal: "육해살",
+    hwagaesal: "화개살",
+  };
+
+  const TWELVE_SHINSAL_RULES: any = {
+    water: {
+      baseBranches: ["신", "자", "진"],
+      byBranch: {
+        사: "geopsal",
+        오: "jaesal",
+        미: "cheonsal",
+        신: "jisal",
+        유: "dosal",
+        술: "wolsal",
+        해: "mangsinsal",
+        자: "jangseongsal",
+        축: "banansal",
+        인: "yeokmasal",
+        묘: "yukhaesal",
+        진: "hwagaesal",
+      },
+    },
+    fire: {
+      baseBranches: ["인", "오", "술"],
+      byBranch: {
+        해: "geopsal",
+        자: "jaesal",
+        축: "cheonsal",
+        인: "jisal",
+        묘: "dosal",
+        진: "wolsal",
+        사: "mangsinsal",
+        오: "jangseongsal",
+        미: "banansal",
+        신: "yeokmasal",
+        유: "yukhaesal",
+        술: "hwagaesal",
+      },
+    },
+    metal: {
+      baseBranches: ["사", "유", "축"],
+      byBranch: {
+        인: "geopsal",
+        묘: "jaesal",
+        진: "cheonsal",
+        사: "jisal",
+        오: "dosal",
+        미: "wolsal",
+        신: "mangsinsal",
+        유: "jangseongsal",
+        술: "banansal",
+        해: "yeokmasal",
+        자: "yukhaesal",
+        축: "hwagaesal",
+      },
+    },
+    wood: {
+      baseBranches: ["해", "묘", "미"],
+      byBranch: {
+        신: "geopsal",
+        유: "jaesal",
+        술: "cheonsal",
+        해: "jisal",
+        자: "dosal",
+        축: "wolsal",
+        인: "mangsinsal",
+        묘: "jangseongsal",
+        진: "banansal",
+        사: "yeokmasal",
+        오: "yukhaesal",
+        미: "hwagaesal",
+      },
+    },
+  };
+
+  const HYUNCHIMSAL_STEMS = ["갑", "신"];
+  const HYUNCHIMSAL_BRANCHES = ["묘", "오"];
+
+  const getTwelveShinsalBaseRule = (baseBranch: string) => {
+    const normalizedBaseBranch = normalizeBranch(baseBranch);
+
+    return Object.values(TWELVE_SHINSAL_RULES).find((rule: any) =>
+      rule.baseBranches.includes(normalizedBaseBranch),
+    ) as any;
+  };
+
+  const getItemStem = (item: any) => {
+    const directStem = normalizeStem(item?.data?.stem);
+    if (directStem) return directStem;
+
+    const ganji = String(item?.data?.ganji || "").trim();
+    return normalizeStem(ganji.slice(0, 1));
+  };
+
+  const getBaseBranchForShinsal = (targetSaju: any) => {
+    const dayBranch = normalizeBranch(
+      targetSaju?.day?.branch ||
+        String(targetSaju?.day?.ganji || "").slice(1, 2),
+    );
+
+    if (dayBranch) return dayBranch;
+
+    return normalizeBranch(
+      targetSaju?.year?.branch ||
+        String(targetSaju?.year?.ganji || "").slice(1, 2),
+    );
+  };
+
+  const addShinsalToItems = (items: any[], targetSaju: any) => {
+    const activeItems = items.filter((item) => getItemBranch(item));
+    const shinsalMap = new Map<string, string[]>();
+    const baseBranch = getBaseBranchForShinsal(targetSaju);
+    const baseRule = getTwelveShinsalBaseRule(baseBranch);
+
+    activeItems.forEach((item) => shinsalMap.set(item.label, []));
+
+    const addShinsal = (label: string, text: string) => {
+      const current = shinsalMap.get(label) || [];
+      if (!current.includes(text)) current.push(text);
+      shinsalMap.set(label, current);
+    };
+
+    activeItems.forEach((item) => {
+      const branch = getItemBranch(item);
+      const stem = getItemStem(item);
+      const twelveShinsalKey = baseRule?.byBranch?.[branch];
+
+      if (twelveShinsalKey) {
+        addShinsal(item.label, SHINSAL_LABELS[twelveShinsalKey]);
+      }
+
+      if (
+        HYUNCHIMSAL_STEMS.includes(stem) ||
+        HYUNCHIMSAL_BRANCHES.includes(branch)
+      ) {
+        addShinsal(item.label, "현침살");
+      }
+    });
+
+    for (let i = 0; i < activeItems.length; i += 1) {
+      for (let j = i + 1; j < activeItems.length; j += 1) {
+        const left = activeItems[i];
+        const right = activeItems[j];
+        const leftBranch = getItemBranch(left);
+        const rightBranch = getItemBranch(right);
+        const pairKey = makeBranchPairKey(leftBranch, rightBranch);
+
+        const hasWonjin = BRANCH_RELATION_RULES.wonjin.some(
+          ([a, b]: string[]) => makeBranchPairKey(a, b) === pairKey,
+        );
+
+        if (hasWonjin) {
+          addShinsal(left.label, `${right.label} 원진살`);
+          addShinsal(right.label, `${left.label} 원진살`);
+        }
+
+        const hasGwimun = BRANCH_RELATION_RULES.gwimun.some(
+          ([a, b]: string[]) => makeBranchPairKey(a, b) === pairKey,
+        );
+
+        if (hasGwimun) {
+          addShinsal(left.label, `${right.label} 귀문관살`);
+          addShinsal(right.label, `${left.label} 귀문관살`);
+        }
+      }
+    }
+
+    return items.map((item) => ({
+      ...item,
+      shinsals: shinsalMap.get(item.label) || [],
+    }));
+  };
+
   const ELEMENT_GENERATES: any = {
     목: "화",
     화: "토",
@@ -1113,36 +1296,39 @@ export default function Home() {
   const buildSajuItems = (targetSaju: any) => {
     if (!targetSaju) return [];
 
-    return addBranchRelationsToItems([
-      {
-        label: "시주",
-        data: targetSaju.hour,
-        tenGodStem: targetSaju.tenGods?.hourStem ?? "",
-        tenGodBranch: targetSaju.tenGods?.hourBranch ?? "",
-        twelveStage: targetSaju.twelveStages?.hour ?? "",
-      },
-      {
-        label: "일주",
-        data: targetSaju.day,
-        tenGodStem: targetSaju.tenGods.dayStem,
-        tenGodBranch: targetSaju.tenGods.dayBranch,
-        twelveStage: targetSaju.twelveStages.day,
-      },
-      {
-        label: "월주",
-        data: targetSaju.month,
-        tenGodStem: targetSaju.tenGods.monthStem,
-        tenGodBranch: targetSaju.tenGods.monthBranch,
-        twelveStage: targetSaju.twelveStages.month,
-      },
-      {
-        label: "년주",
-        data: targetSaju.year,
-        tenGodStem: targetSaju.tenGods.yearStem,
-        tenGodBranch: targetSaju.tenGods.yearBranch,
-        twelveStage: targetSaju.twelveStages.year,
-      },
-    ]);
+    return addShinsalToItems(
+      addBranchRelationsToItems([
+        {
+          label: "시주",
+          data: targetSaju.hour,
+          tenGodStem: targetSaju.tenGods?.hourStem ?? "",
+          tenGodBranch: targetSaju.tenGods?.hourBranch ?? "",
+          twelveStage: targetSaju.twelveStages?.hour ?? "",
+        },
+        {
+          label: "일주",
+          data: targetSaju.day,
+          tenGodStem: targetSaju.tenGods.dayStem,
+          tenGodBranch: targetSaju.tenGods.dayBranch,
+          twelveStage: targetSaju.twelveStages.day,
+        },
+        {
+          label: "월주",
+          data: targetSaju.month,
+          tenGodStem: targetSaju.tenGods.monthStem,
+          tenGodBranch: targetSaju.tenGods.monthBranch,
+          twelveStage: targetSaju.twelveStages.month,
+        },
+        {
+          label: "년주",
+          data: targetSaju.year,
+          tenGodStem: targetSaju.tenGods.yearStem,
+          tenGodBranch: targetSaju.tenGods.yearBranch,
+          twelveStage: targetSaju.twelveStages.year,
+        },
+      ]),
+      targetSaju,
+    );
   };
 
   const sajuItems = buildSajuItems(sajuResult);
@@ -1220,11 +1406,35 @@ export default function Home() {
               ))}
             </div>
           )}
+
+        {item.shinsals?.length > 0 &&
+          (!isCompatibilityMode || showCompatibilityRelations) && (
+            <div className="mt-2 border-t border-[#ead8c4] pt-2">
+              <div className="mb-1 text-center text-[12px] font-bold text-zinc-500">
+                신살
+              </div>
+
+              <div className="flex flex-wrap justify-center gap-1">
+                {item.shinsals.map((shinsal: string) => (
+                  <span
+                    key={shinsal}
+                    className="rounded-full border border-[#d7c4ad] bg-white px-2 py-0.5 text-[12px] font-bold text-[#5f3a20]"
+                  >
+                    {shinsal}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
       </div>
     );
   };
 
-  const renderLuckPanel = (targetSaju: any, cardKey: string, birthDate: string) => {
+  const renderLuckPanel = (
+    targetSaju: any,
+    cardKey: string,
+    birthDate: string,
+  ) => {
     if (!targetSaju?.daewoon || !birthDate) return null;
 
     const selectedDaewoon = targetSaju.daewoon.find(
@@ -1343,7 +1553,9 @@ export default function Home() {
                   >
                     <div
                       className={
-                        selected ? "text-s text-white/80" : "text-s text-zinc-500"
+                        selected
+                          ? "text-s text-white/80"
+                          : "text-s text-zinc-500"
                       }
                     >
                       {yearLuck.year}년 / {yearLuck.age}세
@@ -1425,7 +1637,9 @@ export default function Home() {
                         <div
                           className="mt-1 text-3xl font-bold leading-none"
                           style={{
-                            color: getElementColor(monthLuck.ganji.branchElement),
+                            color: getElementColor(
+                              monthLuck.ganji.branchElement,
+                            ),
                             WebkitTextStroke: "1.5px black",
                           }}
                         >
@@ -1962,7 +2176,11 @@ export default function Home() {
                       );
 
                       const yearLuckList = selectedDaewoon
-                        ? buildYearLuckList(sajuResult, selectedDaewoon, form.birthDate)
+                        ? buildYearLuckList(
+                            sajuResult,
+                            selectedDaewoon,
+                            form.birthDate,
+                          )
                         : [];
 
                       const selectedYearLuck = yearLuckList.find(
@@ -2239,8 +2457,8 @@ export default function Home() {
                     className="rounded-full border border-[#6b3f24]/40 bg-white px-4 py-2 text-sm font-bold text-[#6b3f24] shadow-sm transition hover:bg-[#f3e1cf]"
                   >
                     {showCompatibilityRelations
-                      ? "지지 관계 전체 접기 ▲"
-                      : "지지 관계 전체 열기 ▼"}
+                      ? "지지 관계·신살 전체 접기 ▲"
+                      : "지지 관계·신살 전체 열기 ▼"}
                   </button>
                 </div>
 
