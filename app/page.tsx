@@ -666,23 +666,46 @@ export default function Home() {
     return `${BRANCH_HANJA[firstEmptyBranch]}·${BRANCH_HANJA[secondEmptyBranch]}`;
   };
 
-  const formatGwiyinTargets = (targets: string[]) => {
+  const formatBranchTargets = (targets: string[]) => {
+    if (!targets?.length) return "-";
+
+    return targets
+      .map((target: string) => {
+        const normalizedBranch = normalizeBranch(target);
+
+        return BRANCH_HANJA[normalizedBranch] || target;
+      })
+      .join("·");
+  };
+
+  const formatStemTargets = (targets: string[]) => {
     if (!targets?.length) return "-";
 
     return targets
       .map((target: string) => {
         const normalizedStem = normalizeStem(target);
-        const normalizedBranch = normalizeBranch(target);
 
-        if (STEM_HANJA[normalizedStem]) {
-          return `${STEM_HANJA[normalizedStem]}`;
+        return STEM_HANJA[normalizedStem] || target;
+      })
+      .join("·");
+  };
+
+  const formatTypedGwiyinTargets = (
+    targets: { type: "stem" | "branch"; value: string }[],
+  ) => {
+    if (!targets?.length) return "-";
+
+    return targets
+      .map((target) => {
+        if (target.type === "stem") {
+          const normalizedStem = normalizeStem(target.value);
+
+          return STEM_HANJA[normalizedStem] || target.value;
         }
 
-        if (BRANCH_HANJA[normalizedBranch]) {
-          return `${BRANCH_HANJA[normalizedBranch]}`;
-        }
+        const normalizedBranch = normalizeBranch(target.value);
 
-        return target;
+        return BRANCH_HANJA[normalizedBranch] || target.value;
       })
       .join("·");
   };
@@ -709,7 +732,7 @@ export default function Home() {
       신: ["오", "인"],
     };
 
-    return formatGwiyinTargets(cheoneulMap[stem] || []);
+    return formatBranchTargets(cheoneulMap[stem] || []);
   };
 
   const getHakdangGwiyin = (targetSaju: any) => {
@@ -728,26 +751,26 @@ export default function Home() {
       계: ["묘"],
     };
 
-    return formatGwiyinTargets(hakdangMap[stem] || []);
+    return formatBranchTargets(hakdangMap[stem] || []);
   };
 
-  const getMungokGwiyin = (targetSaju: any) => {
+  const getMunchangGwiyin = (targetSaju: any) => {
     const { stem } = getDayGanjiParts(targetSaju);
 
     const mungokMap: any = {
-      갑: ["사"],
-      을: ["오"],
-      병: ["신"],
-      정: ["유"],
-      무: ["신"],
-      기: ["유"],
-      경: ["해"],
-      신: ["자"],
-      임: ["인"],
-      계: ["묘"],
-    };
+  갑: ["해"],
+  을: ["해"],
+  병: ["인"],
+  정: ["유"],
+  무: ["인"],
+  기: ["유"],
+  경: ["사"],
+  신: ["자"],
+  임: ["신"],
+  계: ["묘"],
+};
 
-    return formatGwiyinTargets(mungokMap[stem] || []);
+    return formatBranchTargets(mungokMap[stem] || []);
   };
 
   const getTaegukGwiyin = (targetSaju: any) => {
@@ -766,28 +789,31 @@ export default function Home() {
       계: ["사", "신"],
     };
 
-    return formatGwiyinTargets(taegukMap[stem] || []);
+    return formatBranchTargets(taegukMap[stem] || []);
   };
 
-  const getCheondeokGwiyin = (targetSaju: any) => {
+const getCheondeokGwiyin = (targetSaju: any) => {
     const monthBranch = getMonthBranch(targetSaju);
 
-    const cheondeokMap: any = {
-      인: ["정"],
-      묘: ["신"],
-      진: ["임"],
-      사: ["신"],
-      오: ["해"],
-      미: ["갑"],
-      신: ["계"],
-      유: ["인"],
-      술: ["병"],
-      해: ["을"],
-      자: ["사"],
-      축: ["경"],
+    const cheondeokMap: Record<
+      string,
+      { type: "stem" | "branch"; value: string }[]
+    > = {
+      인: [{ type: "stem", value: "정" }],
+      묘: [{ type: "stem", value: "신" }],
+      진: [{ type: "stem", value: "계" }],
+      사: [{ type: "stem", value: "임" }],
+      오: [{ type: "stem", value: "신" }],
+      미: [{ type: "stem", value: "갑" }],
+      신: [{ type: "stem", value: "계" }],
+      유: [{ type: "branch", value: "인" }],
+      술: [{ type: "stem", value: "병" }],
+      해: [{ type: "stem", value: "을" }],
+      자: [{ type: "branch", value: "사" }],
+      축: [{ type: "stem", value: "경" }],
     };
 
-    return formatGwiyinTargets(cheondeokMap[monthBranch] || []);
+    return formatTypedGwiyinTargets(cheondeokMap[monthBranch] || []);
   };
 
   const getWoldeokGwiyin = (targetSaju: any) => {
@@ -795,20 +821,20 @@ export default function Home() {
 
     const woldeokMap: any = {
       인: ["병"],
-      오: ["병"],
-      술: ["병"],
-      해: ["갑"],
       묘: ["갑"],
-      미: ["갑"],
-      신: ["임"],
-      자: ["임"],
       진: ["임"],
       사: ["경"],
+      오: ["병"],
+      미: ["갑"],
+      신: ["임"],
       유: ["경"],
+      술: ["병"],
+      해: ["갑"],
+      자: ["임"],
       축: ["경"],
     };
 
-    return formatGwiyinTargets(woldeokMap[monthBranch] || []);
+    return formatStemTargets(woldeokMap[monthBranch] || []);
   };
 
   const getCheonjuGwiyin = (targetSaju: any) => {
@@ -827,7 +853,7 @@ export default function Home() {
       계: ["묘"],
     };
 
-    return formatGwiyinTargets(cheonjuMap[stem] || []);
+    return formatBranchTargets(cheonjuMap[stem] || []);
   };
 
   const getGeumnyeorok = (targetSaju: any) => {
@@ -846,7 +872,7 @@ export default function Home() {
       계: ["인"],
     };
 
-    return formatGwiyinTargets(geumnyeoMap[stem] || []);
+    return formatBranchTargets(geumnyeoMap[stem] || []);
   };
 
   const getBokseongGwiyin = (targetSaju: any) => {
@@ -865,7 +891,7 @@ export default function Home() {
       계: ["축"],
     };
 
-    return formatGwiyinTargets(bokseongMap[stem] || []);
+    return formatBranchTargets(bokseongMap[stem] || []);
   };
 
   const getGukinGwiyin = (targetSaju: any) => {
@@ -884,13 +910,13 @@ export default function Home() {
       계: ["신"],
     };
 
-    return formatGwiyinTargets(gukinMap[stem] || []);
+    return formatBranchTargets(gukinMap[stem] || []);
   };
 
   const getGwiyinList = (targetSaju: any) => [
     { label: "천을", value: getCheoneulGwiyin(targetSaju) },
     { label: "학당", value: getHakdangGwiyin(targetSaju) },
-    { label: "문곡", value: getMungokGwiyin(targetSaju) },
+    { label: "문창", value: getMunchangGwiyin(targetSaju) },
     { label: "태극", value: getTaegukGwiyin(targetSaju) },
     { label: "천덕", value: getCheondeokGwiyin(targetSaju) },
     { label: "월덕", value: getWoldeokGwiyin(targetSaju) },
@@ -2653,266 +2679,7 @@ export default function Home() {
                     </div>
                   </div>
 
-                  {sajuResult?.daewoon &&
-                    (() => {
-                      const selectedDaewoon = sajuResult.daewoon.find(
-                        (item: any) => selectedDaewoonKey["main"] === `main-${item.index}`,
-                      );
-
-                      const yearLuckList = selectedDaewoon
-                        ? buildYearLuckList(
-                          sajuResult,
-                          selectedDaewoon,
-                          form.birthDate,
-                        )
-                        : [];
-
-                      const selectedYearLuck = yearLuckList.find(
-                        (yearLuck: any) => selectedYearLuckKey["main"] === `year-${yearLuck.year}`,
-                      );
-
-                      const monthLuckList = selectedYearLuck
-                        ? buildMonthLuckList(sajuResult, selectedYearLuck)
-                        : [];
-
-                      return (
-                        <div className="mt-6 rounded-2xl bg-white p-4 shadow-sm">
-                          <h3 className="text-lg font-bold text-black">대운</h3>
-
-                          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-5">
-                            {sajuResult.daewoon.map((item: any) => {
-                              const daewoonKey = `main-${item.index}`;
-                              const selected = selectedDaewoonKey["main"] === daewoonKey;
-
-                              return (
-                                <button
-                                  type="button"
-                                  key={item.index}
-                                  onClick={() => {
-                                    setSelectedDaewoonKey((prev) => ({
-                                      ...prev,
-                                      main: selected ? null : daewoonKey,
-                                    }));
-
-                                    setSelectedYearLuckKey((prev) => ({
-                                      ...prev,
-                                      main: null,
-                                    }));
-                                  }}
-                                  className={`rounded-xl p-3 text-center transition ${selected
-                                    ? "bg-[#6b3f24] text-white shadow-md"
-                                    : "bg-zinc-100 text-black hover:bg-zinc-200"
-                                    }`}
-                                >
-                                  <div
-                                    className={
-                                      selected
-                                        ? "text-smm font-bold text-white"
-                                        : "text-smm font-bold text-black"
-                                    }
-                                  >
-                                    {item.startAgeText}
-                                  </div>
-
-                                  <div className="mt-2 flex flex-col items-center">
-                                    <div
-                                      className="text-3xl font-bold"
-                                      style={{
-                                        color: getElementColor(
-                                          item.ganji.stemElement,
-                                        ),
-                                        WebkitTextStroke: "1px black",
-                                      }}
-                                    >
-                                      {item.ganji.stem}
-                                    </div>
-
-                                    <div
-                                      className="text-3xl font-bold"
-                                      style={{
-                                        color: getElementColor(
-                                          item.ganji.branchElement,
-                                        ),
-                                        WebkitTextStroke: "1px black",
-                                      }}
-                                    >
-                                      {item.ganji.branch}
-                                    </div>
-                                  </div>
-
-                                  <div
-                                    className={
-                                      selected
-                                        ? "mt-2 text-sm font-bold text-white"
-                                        : "mt-2 text-sm font-bold text-black"
-                                    }
-                                  >
-                                    {item.stemTenGod}
-                                  </div>
-
-                                  <div
-                                    className={
-                                      selected
-                                        ? "text-sm font-bold text-white"
-                                        : "text-sm font-bold text-black"
-                                    }
-                                  >
-                                    {item.branchTenGod}
-                                  </div>
-                                </button>
-                              );
-                            })}
-                          </div>
-
-                          {selectedDaewoon && (
-                            <div className="mt-5 rounded-2xl bg-zinc-100 p-4">
-                              <h4 className="font-bold text-black">
-                                선택한 대운의 년운
-                              </h4>
-
-                              <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-5">
-                                {yearLuckList.map((yearLuck: any) => {
-                                  const yearLuckKey = `year-${yearLuck.year}`;
-                                  const selected = selectedYearLuckKey["main"] === yearLuckKey;
-
-                                  return (
-                                    <button
-                                      type="button"
-                                      key={yearLuck.year}
-                                      onClick={() =>
-                                        setSelectedYearLuckKey((prev) => ({
-                                          ...prev,
-                                          main: selected ? null : yearLuckKey,
-                                        }))
-                                      }
-                                      className={`rounded-xl p-3 text-center shadow-sm transition ${selected
-                                        ? "bg-[#6b3f24] text-white shadow-md"
-                                        : "bg-white text-black hover:bg-zinc-50"
-                                        }`}
-                                    >
-                                      <div
-                                        className={
-                                          selected
-                                            ? "font-bold text-sm text-black"
-                                            : "font-bold text-sm text-black"
-                                        }
-                                      >
-                                        {yearLuck.year}년 / {yearLuck.age}세
-                                      </div>
-
-                                      <div className="mt-2 flex flex-col items-center leading-tight">
-                                        <div
-                                          className="text-3xl font-bold leading-none"
-                                          style={{
-                                            color: getElementColor(
-                                              yearLuck.ganji.stemElement,
-                                            ),
-                                            WebkitTextStroke: "1.5px black",
-                                          }}
-                                        >
-                                          {STEM_HANJA[yearLuck.ganji.stem]}
-                                        </div>
-
-                                        <div
-                                          className="mt-1 text-3xl font-bold leading-none"
-                                          style={{
-                                            color: getElementColor(
-                                              yearLuck.ganji.branchElement,
-                                            ),
-                                            WebkitTextStroke: "1.5px black",
-                                          }}
-                                        >
-                                          {BRANCH_HANJA[yearLuck.ganji.branch]}
-                                        </div>
-
-                                        <div
-                                          className={
-                                            selected
-                                              ? "text-sm font-semibold text-white font-bold "
-                                              : "text-sm font-semibold text-black font-bold "
-                                          }
-                                        >
-                                          {yearLuck.stemTenGod}
-                                        </div>
-
-                                        <div
-                                          className={
-                                            selected
-                                              ? "text-sm font-semibold text-white font-bold "
-                                              : "text-sm font-semibold text-black font-bold "
-                                          }
-                                        >
-                                          {yearLuck.branchTenGod}
-                                        </div>
-                                      </div>
-                                    </button>
-                                  );
-                                })}
-                              </div>
-
-                              {selectedYearLuck && (
-                                <div className="mt-5 rounded-2xl bg-white p-4">
-                                  <h4 className="font-bold text-black">
-                                    {selectedYearLuck.year}년 월운
-                                  </h4>
-
-                                  <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-6">
-                                    {monthLuckList.map((monthLuck: any) => (
-                                      <div
-                                        key={`${monthLuck.year}-${monthLuck.month}`}
-                                        className="rounded-xl bg-zinc-100 p-3 text-center shadow-sm"
-                                      >
-                                        <div className="text-sm font-bold text-black">
-                                          {monthLuck.month}월
-                                        </div>
-
-                                        <div className="mt-2 flex flex-col items-center leading-tight">
-                                          <div
-                                            className="text-3xl font-bold leading-none"
-                                            style={{
-                                              color: getElementColor(
-                                                monthLuck.ganji.stemElement,
-                                              ),
-                                              WebkitTextStroke: "1.5px black",
-                                            }}
-                                          >
-                                            {STEM_HANJA[monthLuck.ganji.stem]}
-                                          </div>
-
-                                          <div
-                                            className="mt-1 text-3xl font-bold leading-none"
-                                            style={{
-                                              color: getElementColor(
-                                                monthLuck.ganji.branchElement,
-                                              ),
-                                              WebkitTextStroke: "1.5px black",
-                                            }}
-                                          >
-                                            {
-                                              BRANCH_HANJA[
-                                              monthLuck.ganji.branch
-                                              ]
-                                            }
-                                          </div>
-
-                                          <div className="mt-2 text-sm font-semibold text-black font-bold ">
-                                            {monthLuck.stemTenGod}
-                                          </div>
-
-                                          <div className="text-sm font-semibold text-black font-bold ">
-                                            {monthLuck.branchTenGod}
-                                          </div>
-                                        </div>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })()}
+                  {renderLuckPanel(sajuResult, "main", form.birthDate)}
 
                   {result && (
                     <div className="mt-5 rounded-2xl bg-zinc-100 p-4">
