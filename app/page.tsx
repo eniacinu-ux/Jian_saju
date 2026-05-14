@@ -49,7 +49,7 @@ export default function Home() {
   });
   const [selectedDaewoonKey, setSelectedDaewoonKey] = useState<Record<string, string | null>>({});
 
-const [selectedYearLuckKey, setSelectedYearLuckKey] = useState<Record<string, string | null>>({});
+  const [selectedYearLuckKey, setSelectedYearLuckKey] = useState<Record<string, string | null>>({});
   const [showCompatibilityRelations, setShowCompatibilityRelations] =
     useState(false);
   const [result, setResult] = useState("");
@@ -301,9 +301,8 @@ const [selectedYearLuckKey, setSelectedYearLuckKey] = useState<Record<string, st
               new Paragraph({
                 children: [
                   new TextRun({
-                    text: `생년월일: ${form.birthDate} ${
-                      form.birthTimeUnknown ? "시간 미상" : form.birthTime
-                    }`,
+                    text: `생년월일: ${form.birthDate} ${form.birthTimeUnknown ? "시간 미상" : form.birthTime
+                      }`,
                     size: 24,
                   }),
                 ],
@@ -429,24 +428,24 @@ const [selectedYearLuckKey, setSelectedYearLuckKey] = useState<Record<string, st
 
               ...(result
                 ? result.split("\n").map(
-                    (line) =>
-                      new Paragraph({
-                        children: [
-                          new TextRun({
-                            text: line,
-                            size: 24,
-                          }),
-                        ],
-                        spacing: {
-                          after: 120,
-                        },
-                      }),
-                  )
-                : [
+                  (line) =>
                     new Paragraph({
-                      text: "사주 풀이 결과가 없습니다.",
+                      children: [
+                        new TextRun({
+                          text: line,
+                          size: 24,
+                        }),
+                      ],
+                      spacing: {
+                        after: 120,
+                      },
                     }),
-                  ]),
+                )
+                : [
+                  new Paragraph({
+                    text: "사주 풀이 결과가 없습니다.",
+                  }),
+                ]),
             ],
           },
         ],
@@ -1053,14 +1052,14 @@ const [selectedYearLuckKey, setSelectedYearLuckKey] = useState<Record<string, st
   const getBaseBranchForShinsal = (targetSaju: any) => {
     const dayBranch = normalizeBranch(
       targetSaju?.day?.branch ||
-        String(targetSaju?.day?.ganji || "").slice(1, 2),
+      String(targetSaju?.day?.ganji || "").slice(1, 2),
     );
 
     if (dayBranch) return dayBranch;
 
     return normalizeBranch(
       targetSaju?.year?.branch ||
-        String(targetSaju?.year?.ganji || "").slice(1, 2),
+      String(targetSaju?.year?.ganji || "").slice(1, 2),
     );
   };
 
@@ -1383,13 +1382,13 @@ const [selectedYearLuckKey, setSelectedYearLuckKey] = useState<Record<string, st
           </div>
         </div>
 
-<div className="mt-3 text-sm font-bold text-black">
-  {item.tenGodStem}
-</div>
+        <div className="mt-3 text-sm font-bold text-black">
+          {item.tenGodStem}
+        </div>
 
-<div className="text-sm font-bold text-black">
-  {item.tenGodBranch}
-</div>
+        <div className="text-sm font-bold text-black">
+          {item.tenGodBranch}
+        </div>
         <div className="mt-2 text-sm font-bold text-[#6b3f24]">
           {item.twelveStage}
         </div>
@@ -1439,18 +1438,18 @@ const [selectedYearLuckKey, setSelectedYearLuckKey] = useState<Record<string, st
     if (!targetSaju?.daewoon || !birthDate) return null;
 
     const selectedDaewoon = targetSaju.daewoon.find(
-  (item: any) =>
-    selectedDaewoonKey[cardKey] === `${cardKey}-daewoon-${item.index}`,
-);
+      (item: any) =>
+        selectedDaewoonKey[cardKey] === `${cardKey}-daewoon-${item.index}`,
+    );
 
     const yearLuckList = selectedDaewoon
       ? buildYearLuckList(targetSaju, selectedDaewoon, birthDate)
       : [];
 
     const selectedYearLuck = yearLuckList.find(
-  (yearLuck: any) =>
-    selectedYearLuckKey[cardKey] === `${cardKey}-year-${yearLuck.year}`,
-);
+      (yearLuck: any) =>
+        selectedYearLuckKey[cardKey] === `${cardKey}-year-${yearLuck.year}`,
+    );
 
     const monthLuckList = selectedYearLuck
       ? buildMonthLuckList(targetSaju, selectedYearLuck)
@@ -1471,19 +1470,18 @@ const [selectedYearLuckKey, setSelectedYearLuckKey] = useState<Record<string, st
                 key={item.index}
                 onClick={() => {
                   setSelectedDaewoonKey((prev) => ({
-  ...prev,
-  [cardKey]: selected ? null : daewoonKey,
-}));
+                    ...prev,
+                    [cardKey]: selected ? null : daewoonKey,
+                  }));
                   setSelectedYearLuckKey((prev) => ({
-  ...prev,
-  [cardKey]: null,
-}));
+                    ...prev,
+                    [cardKey]: null,
+                  }));
                 }}
-                className={`rounded-xl p-3 text-center transition ${
-                  selected
+                className={`rounded-xl p-3 text-center transition ${selected
                     ? "bg-[#6b3f24] text-white shadow-md"
                     : "bg-zinc-100 text-black hover:bg-zinc-200"
-                }`}
+                  }`}
               >
                 <div
                   className={
@@ -1515,25 +1513,25 @@ const [selectedYearLuckKey, setSelectedYearLuckKey] = useState<Record<string, st
                   </div>
                 </div>
 
-               <div
-  className={
-    selected
-      ? "mt-2 text-sm font-bold text-white"
-      : "mt-2 text-sm font-bold text-black"
-  }
->
-  {item.stemTenGod}
-</div>
+                <div
+                  className={
+                    selected
+                      ? "mt-2 text-sm font-bold text-white"
+                      : "mt-2 text-sm font-bold text-black"
+                  }
+                >
+                  {item.stemTenGod}
+                </div>
 
-<div
-  className={
-    selected
-      ? "text-sm font-bold text-white"
-      : "text-sm font-bold text-black"
-  }
->
-  {item.branchTenGod}
-</div>
+                <div
+                  className={
+                    selected
+                      ? "text-sm font-bold text-white"
+                      : "text-sm font-bold text-black"
+                  }
+                >
+                  {item.branchTenGod}
+                </div>
               </button>
             );
           })}
@@ -1554,15 +1552,14 @@ const [selectedYearLuckKey, setSelectedYearLuckKey] = useState<Record<string, st
                     key={yearLuck.year}
                     onClick={() =>
                       setSelectedYearLuckKey((prev) => ({
-  ...prev,
-  [cardKey]: selected ? null : yearLuckKey,
-}))
+                        ...prev,
+                        [cardKey]: selected ? null : yearLuckKey,
+                      }))
                     }
-                    className={`rounded-xl p-3 text-center shadow-sm transition ${
-                      selected
+                    className={`rounded-xl p-3 text-center shadow-sm transition ${selected
                         ? "bg-[#6b3f24] text-white shadow-md"
                         : "bg-white text-black hover:bg-zinc-50"
-                    }`}
+                      }`}
                   >
                     <div
                       className={
@@ -1776,11 +1773,10 @@ const [selectedYearLuckKey, setSelectedYearLuckKey] = useState<Record<string, st
               setResult("");
               setShowSaju(false);
             }}
-            className={`rounded-xl py-3 text-smm font-bold transition ${
-              mode === "saju"
+            className={`rounded-xl py-3 text-smm font-bold transition ${mode === "saju"
                 ? "bg-[#6b3f24] text-white shadow"
                 : "text-[#6b3f24]"
-            }`}
+              }`}
           >
             사주 모드
           </button>
@@ -1792,11 +1788,10 @@ const [selectedYearLuckKey, setSelectedYearLuckKey] = useState<Record<string, st
               setResult("");
               setShowSaju(false);
             }}
-            className={`rounded-xl py-3 text-smm font-bold transition ${
-              mode === "compatibility"
+            className={`rounded-xl py-3 text-smm font-bold transition ${mode === "compatibility"
                 ? "bg-[#6b3f24] text-white shadow"
                 : "text-[#6b3f24]"
-            }`}
+              }`}
           >
             궁합 모드
           </button>
@@ -1808,11 +1803,10 @@ const [selectedYearLuckKey, setSelectedYearLuckKey] = useState<Record<string, st
               setResult("");
               setShowSaju(false);
             }}
-            className={`rounded-xl py-3 text-smm font-bold transition ${
-              mode === "zodiac"
+            className={`rounded-xl py-3 text-smm font-bold transition ${mode === "zodiac"
                 ? "bg-[#6b3f24] text-white shadow"
                 : "text-[#6b3f24]"
-            }`}
+              }`}
           >
             별자리 모드
           </button>
@@ -2184,21 +2178,19 @@ const [selectedYearLuckKey, setSelectedYearLuckKey] = useState<Record<string, st
                   {sajuResult?.daewoon &&
                     (() => {
                       const selectedDaewoon = sajuResult.daewoon.find(
-                        (item: any) =>
-                          selectedDaewoonKey === `main-${item.index}`,
+                        (item: any) => selectedDaewoonKey["main"] === `main-${item.index}`,
                       );
 
                       const yearLuckList = selectedDaewoon
                         ? buildYearLuckList(
-                            sajuResult,
-                            selectedDaewoon,
-                            form.birthDate,
-                          )
+                          sajuResult,
+                          selectedDaewoon,
+                          form.birthDate,
+                        )
                         : [];
 
                       const selectedYearLuck = yearLuckList.find(
-                        (yearLuck: any) =>
-                          selectedYearLuckKey === `year-${yearLuck.year}`,
+                        (yearLuck: any) => selectedYearLuckKey["main"] === `year-${yearLuck.year}`,
                       );
 
                       const monthLuckList = selectedYearLuck
@@ -2212,34 +2204,37 @@ const [selectedYearLuckKey, setSelectedYearLuckKey] = useState<Record<string, st
                           <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-5">
                             {sajuResult.daewoon.map((item: any) => {
                               const daewoonKey = `main-${item.index}`;
-                              const selected =
-                                selectedDaewoonKey === daewoonKey;
+                              const selected = selectedDaewoonKey["main"] === daewoonKey;
 
                               return (
                                 <button
                                   type="button"
                                   key={item.index}
                                   onClick={() => {
-                                    setSelectedDaewoonKey(
-                                      selected ? null : daewoonKey,
-                                    );
-                                    setSelectedYearLuckKey(null);
+                                    setSelectedDaewoonKey((prev) => ({
+                                      ...prev,
+                                      main: selected ? null : daewoonKey,
+                                    }));
+
+                                    setSelectedYearLuckKey((prev) => ({
+                                      ...prev,
+                                      main: null,
+                                    }));
                                   }}
-                                  className={`rounded-xl p-3 text-center transition ${
-                                    selected
+                                  className={`rounded-xl p-3 text-center transition ${selected
                                       ? "bg-[#6b3f24] text-white shadow-md"
                                       : "bg-zinc-100 text-black hover:bg-zinc-200"
-                                  }`}
+                                    }`}
                                 >
-                                 <div
-                                  className={
-                                    selected
-                                      ? "text-smm font-bold text-white"
-                                      : "text-smm font-bold text-black"
-                                  }
-                                >
-                                  {item.startAgeText}
-                                </div>
+                                  <div
+                                    className={
+                                      selected
+                                        ? "text-smm font-bold text-white"
+                                        : "text-smm font-bold text-black"
+                                    }
+                                  >
+                                    {item.startAgeText}
+                                  </div>
 
                                   <div className="mt-2 flex flex-col items-center">
                                     <div
@@ -2268,24 +2263,24 @@ const [selectedYearLuckKey, setSelectedYearLuckKey] = useState<Record<string, st
                                   </div>
 
                                   <div
-  className={
-    selected
-      ? "mt-2 text-sm font-bold text-white"
-      : "mt-2 text-sm font-bold text-black"
-  }
->
-  {item.stemTenGod}
-</div>
+                                    className={
+                                      selected
+                                        ? "mt-2 text-sm font-bold text-white"
+                                        : "mt-2 text-sm font-bold text-black"
+                                    }
+                                  >
+                                    {item.stemTenGod}
+                                  </div>
 
-<div
-  className={
-    selected
-      ? "text-sm font-bold text-white"
-      : "text-sm font-bold text-black"
-  }
->
-  {item.branchTenGod}
-</div>
+                                  <div
+                                    className={
+                                      selected
+                                        ? "text-sm font-bold text-white"
+                                        : "text-sm font-bold text-black"
+                                    }
+                                  >
+                                    {item.branchTenGod}
+                                  </div>
                                 </button>
                               );
                             })}
@@ -2300,23 +2295,22 @@ const [selectedYearLuckKey, setSelectedYearLuckKey] = useState<Record<string, st
                               <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-5">
                                 {yearLuckList.map((yearLuck: any) => {
                                   const yearLuckKey = `year-${yearLuck.year}`;
-                                  const selected =
-                                    selectedYearLuckKey === yearLuckKey;
+                                  const selected = selectedYearLuckKey["main"] === yearLuckKey;
 
                                   return (
                                     <button
                                       type="button"
                                       key={yearLuck.year}
                                       onClick={() =>
-                                        setSelectedYearLuckKey(
-                                          selected ? null : yearLuckKey,
-                                        )
+                                        setSelectedYearLuckKey((prev) => ({
+                                          ...prev,
+                                          main: selected ? null : yearLuckKey,
+                                        }))
                                       }
-                                      className={`rounded-xl p-3 text-center shadow-sm transition ${
-                                        selected
+                                      className={`rounded-xl p-3 text-center shadow-sm transition ${selected
                                           ? "bg-[#6b3f24] text-white shadow-md"
                                           : "bg-white text-black hover:bg-zinc-50"
-                                      }`}
+                                        }`}
                                     >
                                       <div
                                         className={
@@ -2418,7 +2412,7 @@ const [selectedYearLuckKey, setSelectedYearLuckKey] = useState<Record<string, st
                                           >
                                             {
                                               BRANCH_HANJA[
-                                                monthLuck.ganji.branch
+                                              monthLuck.ganji.branch
                                               ]
                                             }
                                           </div>
