@@ -40,22 +40,22 @@ export default function Home() {
 
   const [compatibilityForm, setCompatibilityForm] = useState({
     left: {
-  name: "",
-  gender: "남성",
-  birthDate: "",
-  birthTime: "23:00",
-  birthTimeUnknown: false,
-  calendarType: "solar",
-  isLeapMonth: false,
-},
+      name: "",
+      gender: "남성",
+      birthDate: "",
+      birthTime: "23:00",
+      birthTimeUnknown: false,
+      calendarType: "solar",
+      isLeapMonth: false,
+    },
     right: {
       name: "",
       gender: "여성",
       birthDate: "",
       birthTime: "23:00",
       birthTimeUnknown: false,
-        calendarType: "solar",
-  isLeapMonth: false,
+      calendarType: "solar",
+      isLeapMonth: false,
     },
   });
   const [selectedDaewoonKey, setSelectedDaewoonKey] = useState<Record<string, string | null>>({});
@@ -130,7 +130,7 @@ export default function Home() {
       month,
       day,
       lunarToSolarIsLeapMonth,
-      
+
     );
 
     if (!success) {
@@ -203,11 +203,11 @@ export default function Home() {
       const [year, month, day] = targetForm.birthDate.split("-").map(Number);
 
       const success = calendar.setLunarDate(
-  year,
-  month,
-  day,
-  targetForm.isLeapMonth || false,
-);
+        year,
+        month,
+        day,
+        targetForm.isLeapMonth || false,
+      );
 
       if (!success) return null;
 
@@ -754,21 +754,21 @@ export default function Home() {
     return formatBranchTargets(hakdangMap[stem] || []);
   };
 
-  const getMunchangGwiyin = (targetSaju: any) => {
+  const getMungoukGwiyin = (targetSaju: any) => {
     const { stem } = getDayGanjiParts(targetSaju);
 
     const mungokMap: any = {
-  갑: ["해"],
-  을: ["해"],
-  병: ["인"],
-  정: ["유"],
-  무: ["인"],
-  기: ["유"],
-  경: ["사"],
-  신: ["자"],
-  임: ["신"],
-  계: ["묘"],
-};
+      갑: ["해"],
+      을: ["해"],
+      병: ["인"],
+      정: ["유"],
+      무: ["인"],
+      기: ["유"],
+      경: ["사"],
+      신: ["자"],
+      임: ["신"],
+      계: ["묘"],
+    };
 
     return formatBranchTargets(mungokMap[stem] || []);
   };
@@ -792,7 +792,7 @@ export default function Home() {
     return formatBranchTargets(taegukMap[stem] || []);
   };
 
-const getCheondeokGwiyin = (targetSaju: any) => {
+  const getCheondeokGwiyin = (targetSaju: any) => {
     const monthBranch = getMonthBranch(targetSaju);
 
     const cheondeokMap: Record<
@@ -916,7 +916,7 @@ const getCheondeokGwiyin = (targetSaju: any) => {
   const getGwiyinList = (targetSaju: any) => [
     { label: "천을", value: getCheoneulGwiyin(targetSaju) },
     { label: "학당", value: getHakdangGwiyin(targetSaju) },
-    { label: "문창", value: getMunchangGwiyin(targetSaju) },
+    { label: "문곡", value: getMungoukGwiyin(targetSaju) },
     { label: "태극", value: getTaegukGwiyin(targetSaju) },
     { label: "천덕", value: getCheondeokGwiyin(targetSaju) },
     { label: "월덕", value: getWoldeokGwiyin(targetSaju) },
@@ -2243,68 +2243,68 @@ const getCheondeokGwiyin = (targetSaju: any) => {
               </select>
 
               <div className="flex items-center gap-3">
-  <input
-    type="text"
-    inputMode="numeric"
-    placeholder="1993-08-04"
-    className="flex-1 rounded-xl border p-3"
-    value={form.birthDate}
-    onChange={(e) => {
-      setForm({
-        ...form,
-        birthDate: formatDateInput(e.target.value),
-      });
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="1993-08-04"
+                  className="flex-1 rounded-xl border p-3"
+                  value={form.birthDate}
+                  onChange={(e) => {
+                    setForm({
+                      ...form,
+                      birthDate: formatDateInput(e.target.value),
+                    });
 
-      setSajuResult(null);
-      setResult("");
-    }}
-  />
+                    setSajuResult(null);
+                    setResult("");
+                  }}
+                />
 
-  <label className="flex items-center gap-1 text-sm font-bold">
-    <input
-      type="checkbox"
-      checked={form.calendarType === "solar"}
-      onChange={() =>
-        setForm({
-          ...form,
-          calendarType: "solar",
-          isLeapMonth: false,
-        })
-      }
-    />
-    양력
-  </label>
+                <label className="flex items-center gap-1 text-sm font-bold">
+                  <input
+                    type="checkbox"
+                    checked={form.calendarType === "solar"}
+                    onChange={() =>
+                      setForm({
+                        ...form,
+                        calendarType: "solar",
+                        isLeapMonth: false,
+                      })
+                    }
+                  />
+                  양력
+                </label>
 
-  <label className="flex items-center gap-1 text-sm font-bold">
-    <input
-      type="checkbox"
-      checked={form.calendarType === "lunar"}
-      onChange={() =>
-        setForm({
-          ...form,
-          calendarType: "lunar",
-        })
-      }
-    />
-    음력
-  </label>
+                <label className="flex items-center gap-1 text-sm font-bold">
+                  <input
+                    type="checkbox"
+                    checked={form.calendarType === "lunar"}
+                    onChange={() =>
+                      setForm({
+                        ...form,
+                        calendarType: "lunar",
+                      })
+                    }
+                  />
+                  음력
+                </label>
 
-  {form.calendarType === "lunar" && (
-    <label className="flex items-center gap-1 text-sm font-bold text-[#6b3f24]">
-      <input
-        type="checkbox"
-        checked={form.isLeapMonth}
-        onChange={(e) =>
-          setForm({
-            ...form,
-            isLeapMonth: e.target.checked,
-          })
-        }
-      />
-      윤달
-    </label>
-  )}
-</div>
+                {form.calendarType === "lunar" && (
+                  <label className="flex items-center gap-1 text-sm font-bold text-[#6b3f24]">
+                    <input
+                      type="checkbox"
+                      checked={form.isLeapMonth}
+                      onChange={(e) =>
+                        setForm({
+                          ...form,
+                          isLeapMonth: e.target.checked,
+                        })
+                      }
+                    />
+                    윤달
+                  </label>
+                )}
+              </div>
 
               <input
                 type="text"
@@ -2412,84 +2412,84 @@ const getCheondeokGwiyin = (targetSaju: any) => {
                     </select>
 
                     <div className="flex items-center gap-3">
-  <input
-    type="text"
-    inputMode="numeric"
-    placeholder="1993-08-04"
-    className="flex-1 rounded-xl border p-3"
-    value={compatibilityForm[key].birthDate}
-    onChange={(e) => {
-      setCompatibilityForm({
-        ...compatibilityForm,
-        [key]: {
-          ...compatibilityForm[key],
-          birthDate: formatDateInput(e.target.value),
-        },
-      });
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        placeholder="1993-08-04"
+                        className="flex-1 rounded-xl border p-3"
+                        value={compatibilityForm[key].birthDate}
+                        onChange={(e) => {
+                          setCompatibilityForm({
+                            ...compatibilityForm,
+                            [key]: {
+                              ...compatibilityForm[key],
+                              birthDate: formatDateInput(e.target.value),
+                            },
+                          });
 
-      setCompatibilityResult({
-        left: null,
-        right: null,
-      });
+                          setCompatibilityResult({
+                            left: null,
+                            right: null,
+                          });
 
-      setResult("");
-    }}
-  />
+                          setResult("");
+                        }}
+                      />
 
-  <label className="flex items-center gap-1 text-sm font-bold">
-    <input
-      type="checkbox"
-      checked={compatibilityForm[key].calendarType === "solar"}
-      onChange={() =>
-        setCompatibilityForm({
-          ...compatibilityForm,
-          [key]: {
-            ...compatibilityForm[key],
-            calendarType: "solar",
-            isLeapMonth: false,
-          },
-        })
-      }
-    />
-    양력
-  </label>
+                      <label className="flex items-center gap-1 text-sm font-bold">
+                        <input
+                          type="checkbox"
+                          checked={compatibilityForm[key].calendarType === "solar"}
+                          onChange={() =>
+                            setCompatibilityForm({
+                              ...compatibilityForm,
+                              [key]: {
+                                ...compatibilityForm[key],
+                                calendarType: "solar",
+                                isLeapMonth: false,
+                              },
+                            })
+                          }
+                        />
+                        양력
+                      </label>
 
-  <label className="flex items-center gap-1 text-sm font-bold">
-    <input
-      type="checkbox"
-      checked={compatibilityForm[key].calendarType === "lunar"}
-      onChange={() =>
-        setCompatibilityForm({
-          ...compatibilityForm,
-          [key]: {
-            ...compatibilityForm[key],
-            calendarType: "lunar",
-          },
-        })
-      }
-    />
-    음력
-  </label>
+                      <label className="flex items-center gap-1 text-sm font-bold">
+                        <input
+                          type="checkbox"
+                          checked={compatibilityForm[key].calendarType === "lunar"}
+                          onChange={() =>
+                            setCompatibilityForm({
+                              ...compatibilityForm,
+                              [key]: {
+                                ...compatibilityForm[key],
+                                calendarType: "lunar",
+                              },
+                            })
+                          }
+                        />
+                        음력
+                      </label>
 
-  {compatibilityForm[key].calendarType === "lunar" && (
-    <label className="flex items-center gap-1 text-sm font-bold text-[#6b3f24]">
-      <input
-        type="checkbox"
-        checked={compatibilityForm[key].isLeapMonth}
-        onChange={(e) =>
-          setCompatibilityForm({
-            ...compatibilityForm,
-            [key]: {
-              ...compatibilityForm[key],
-              isLeapMonth: e.target.checked,
-            },
-          })
-        }
-      />
-      윤달
-    </label>
-  )}
-</div>
+                      {compatibilityForm[key].calendarType === "lunar" && (
+                        <label className="flex items-center gap-1 text-sm font-bold text-[#6b3f24]">
+                          <input
+                            type="checkbox"
+                            checked={compatibilityForm[key].isLeapMonth}
+                            onChange={(e) =>
+                              setCompatibilityForm({
+                                ...compatibilityForm,
+                                [key]: {
+                                  ...compatibilityForm[key],
+                                  isLeapMonth: e.target.checked,
+                                },
+                              })
+                            }
+                          />
+                          윤달
+                        </label>
+                      )}
+                    </div>
 
                     <input
                       type="text"
