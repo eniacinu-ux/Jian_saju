@@ -17,6 +17,11 @@ import {
 import { calculateSaju } from "./lib/sajuCalculator";
 
 export default function Home() {
+  const [lunarToSolarDate, setLunarToSolarDate] = useState("");
+  const [lunarToSolarIsLeapMonth, setLunarToSolarIsLeapMonth] = useState(false);
+  const [lunarToSolarResult, setLunarToSolarResult] = useState("");
+
+
   const [solarToLunarDate, setSolarToLunarDate] = useState("");
   const resultRef = useRef<HTMLDivElement>(null);
 
@@ -29,22 +34,28 @@ export default function Home() {
     birthTime: "23:00",
     birthTimeUnknown: false,
     birthLocation: "",
+    calendarType: "solar",
+    isLeapMonth: false,
   });
 
   const [compatibilityForm, setCompatibilityForm] = useState({
     left: {
-      name: "",
-      gender: "남성",
-      birthDate: "",
-      birthTime: "23:00",
-      birthTimeUnknown: false,
-    },
+  name: "",
+  gender: "남성",
+  birthDate: "",
+  birthTime: "23:00",
+  birthTimeUnknown: false,
+  calendarType: "solar",
+  isLeapMonth: false,
+},
     right: {
       name: "",
       gender: "여성",
       birthDate: "",
       birthTime: "23:00",
       birthTimeUnknown: false,
+        calendarType: "solar",
+  isLeapMonth: false,
     },
   });
   const [selectedDaewoonKey, setSelectedDaewoonKey] = useState<Record<string, string | null>>({});
@@ -104,7 +115,37 @@ export default function Home() {
       lunar.day,
     ).padStart(2, "0")}${lunar.intercalation ? " 윤달" : ""}`;
   };
+  const convertLunarToSolar = () => {
+    const calendar: any = new KoreanLunarCalendar();
 
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(lunarToSolarDate)) {
+      setLunarToSolarResult("");
+      return;
+    }
+
+    const [year, month, day] = lunarToSolarDate.split("-").map(Number);
+
+    const success = calendar.setLunarDate(
+      year,
+      month,
+      day,
+      lunarToSolarIsLeapMonth,
+      
+    );
+
+    if (!success) {
+      setLunarToSolarResult("변환 불가");
+      return;
+    }
+
+    const solar = calendar.getSolarCalendar();
+
+    setLunarToSolarResult(
+      `${solar.year}-${String(solar.month).padStart(2, "0")}-${String(
+        solar.day,
+      ).padStart(2, "0")}`,
+    );
+  };
   const countElementsWithoutHour = (calculated: any) => {
     const count = {
       wood: 0,
@@ -149,18 +190,37 @@ export default function Home() {
       birthTimeUnknown: true,
     };
   };
-  const calculateOneSaju = (targetForm: {
-    birthDate: string;
-    birthTime: string;
-    birthTimeUnknown?: boolean;
-    gender: string;
-  }) => {
+  const calculateOneSaju = (targetForm: any) => {
     if (!targetForm.birthDate) return null;
 
     if (!targetForm.birthTimeUnknown && !targetForm.birthTime) return null;
 
+    let solarBirthDate = targetForm.birthDate;
+
+    if (targetForm.calendarType === "lunar") {
+      const calendar: any = new KoreanLunarCalendar();
+
+      const [year, month, day] = targetForm.birthDate.split("-").map(Number);
+
+      const success = calendar.setLunarDate(
+  year,
+  month,
+  day,
+  targetForm.isLeapMonth || false,
+);
+
+      if (!success) return null;
+
+      const solar = calendar.getSolarCalendar();
+
+      solarBirthDate = `${solar.year}-${String(solar.month).padStart(
+        2,
+        "0",
+      )}-${String(solar.day).padStart(2, "0")}`;
+    }
+
     const calculated = calculateSaju({
-      birthDate: targetForm.birthDate,
+      birthDate: solarBirthDate,
       birthTime: targetForm.birthTimeUnknown ? "12:00" : targetForm.birthTime,
       calendarType: "solar",
       timezone: "Asia/Seoul",
@@ -1479,8 +1539,8 @@ export default function Home() {
                   }));
                 }}
                 className={`rounded-xl p-3 text-center transition ${selected
-                    ? "bg-[#6b3f24] text-white shadow-md"
-                    : "bg-zinc-100 text-black hover:bg-zinc-200"
+                  ? "bg-[#6b3f24] text-white shadow-md"
+                  : "bg-zinc-100 text-black hover:bg-zinc-200"
                   }`}
               >
                 <div
@@ -1557,8 +1617,8 @@ export default function Home() {
                       }))
                     }
                     className={`rounded-xl p-3 text-center shadow-sm transition ${selected
-                        ? "bg-[#6b3f24] text-white shadow-md"
-                        : "bg-white text-black hover:bg-zinc-50"
+                      ? "bg-[#6b3f24] text-white shadow-md"
+                      : "bg-white text-black hover:bg-zinc-50"
                       }`}
                   >
                     <div
@@ -1764,7 +1824,100 @@ export default function Home() {
             </div>
           </div>
         </div>
+        <div className="mt-4 rounded-2xl border border-[#ead8c4] bg-[#fffaf3] p-4 shadow-inner">
+          <h2 className="text-lg font-bold">음력 → 양력 변환</h2>
 
+          <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
+            <input
+              type="text"
+              inputMode="numeric"
+              placeholder="예: 1993-08-04"
+              className="w-full rounded-xl border p-3"
+              value={lunarToSolarDate}
+              onChange={(e) => {
+                const formatted = formatDateInput(e.target.value);
+
+                setLunarToSolarDate(formatted);
+
+                if (/^\d{4}-\d{2}-\d{2}$/.test(formatted)) {
+                  const calendar: any = new KoreanLunarCalendar();
+
+                  const [year, month, day] = formatted.split("-").map(Number);
+
+                  const success = calendar.setLunarDate(
+                    year,
+                    month,
+                    day,
+                    lunarToSolarIsLeapMonth,
+                  );
+
+                  if (!success) {
+                    setLunarToSolarResult("변환 불가");
+                    return;
+                  }
+
+                  const solar = calendar.getSolarCalendar();
+
+                  setLunarToSolarResult(
+                    `${solar.year}-${String(solar.month).padStart(2, "0")}-${String(
+                      solar.day,
+                    ).padStart(2, "0")}`,
+                  );
+                } else {
+                  setLunarToSolarResult("");
+                }
+              }}
+            />
+
+            <div className="rounded-xl bg-white p-3 text-smm font-bold text-[#6b3f24]">
+              양력: {lunarToSolarResult || "음력을 입력하세요"}
+            </div>
+          </div>
+
+          <label className="mt-3 flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold text-[#6b3f24]">
+            <input
+              type="checkbox"
+              checked={lunarToSolarIsLeapMonth}
+              onChange={(e) => {
+                const checked = e.target.checked;
+
+                setLunarToSolarIsLeapMonth(checked);
+
+                if (!/^\d{4}-\d{2}-\d{2}$/.test(lunarToSolarDate)) {
+                  setLunarToSolarResult("");
+                  return;
+                }
+
+                const calendar: any = new KoreanLunarCalendar();
+
+                const [year, month, day] = lunarToSolarDate.split("-").map(Number);
+
+                const success = calendar.setLunarDate(
+                  year,
+                  month,
+                  day,
+                  checked,
+                );
+
+                if (!success) {
+                  setLunarToSolarResult("변환 불가");
+                  return;
+                }
+
+                const solar = calendar.getSolarCalendar();
+
+                setLunarToSolarResult(
+                  `${solar.year}-${String(solar.month).padStart(2, "0")}-${String(
+                    solar.day,
+                  ).padStart(2, "0")}`,
+                );
+              }}
+            />
+            윤달
+          </label>
+
+
+        </div>
         <div className="mt-6 grid grid-cols-3 gap-2 rounded-2xl bg-[#f7efe3] p-1">
           <button
             type="button"
@@ -1774,8 +1927,8 @@ export default function Home() {
               setShowSaju(false);
             }}
             className={`rounded-xl py-3 text-smm font-bold transition ${mode === "saju"
-                ? "bg-[#6b3f24] text-white shadow"
-                : "text-[#6b3f24]"
+              ? "bg-[#6b3f24] text-white shadow"
+              : "text-[#6b3f24]"
               }`}
           >
             사주 모드
@@ -1789,8 +1942,8 @@ export default function Home() {
               setShowSaju(false);
             }}
             className={`rounded-xl py-3 text-smm font-bold transition ${mode === "compatibility"
-                ? "bg-[#6b3f24] text-white shadow"
-                : "text-[#6b3f24]"
+              ? "bg-[#6b3f24] text-white shadow"
+              : "text-[#6b3f24]"
               }`}
           >
             궁합 모드
@@ -1804,8 +1957,8 @@ export default function Home() {
               setShowSaju(false);
             }}
             className={`rounded-xl py-3 text-smm font-bold transition ${mode === "zodiac"
-                ? "bg-[#6b3f24] text-white shadow"
-                : "text-[#6b3f24]"
+              ? "bg-[#6b3f24] text-white shadow"
+              : "text-[#6b3f24]"
               }`}
           >
             별자리 모드
@@ -1841,22 +1994,69 @@ export default function Home() {
                 <option value="여성">여성</option>
               </select>
 
-              <input
-                type="text"
-                inputMode="numeric"
-                placeholder="1993-08-04"
-                className="w-full rounded-xl border p-3"
-                value={form.birthDate}
-                onChange={(e) => {
-                  setForm({
-                    ...form,
-                    birthDate: formatDateInput(e.target.value),
-                  });
+              <div className="flex items-center gap-3">
+  <input
+    type="text"
+    inputMode="numeric"
+    placeholder="1993-08-04"
+    className="flex-1 rounded-xl border p-3"
+    value={form.birthDate}
+    onChange={(e) => {
+      setForm({
+        ...form,
+        birthDate: formatDateInput(e.target.value),
+      });
 
-                  setSajuResult(null);
-                  setResult("");
-                }}
-              />
+      setSajuResult(null);
+      setResult("");
+    }}
+  />
+
+  <label className="flex items-center gap-1 text-sm font-bold">
+    <input
+      type="checkbox"
+      checked={form.calendarType === "solar"}
+      onChange={() =>
+        setForm({
+          ...form,
+          calendarType: "solar",
+          isLeapMonth: false,
+        })
+      }
+    />
+    양력
+  </label>
+
+  <label className="flex items-center gap-1 text-sm font-bold">
+    <input
+      type="checkbox"
+      checked={form.calendarType === "lunar"}
+      onChange={() =>
+        setForm({
+          ...form,
+          calendarType: "lunar",
+        })
+      }
+    />
+    음력
+  </label>
+
+  {form.calendarType === "lunar" && (
+    <label className="flex items-center gap-1 text-sm font-bold text-[#6b3f24]">
+      <input
+        type="checkbox"
+        checked={form.isLeapMonth}
+        onChange={(e) =>
+          setForm({
+            ...form,
+            isLeapMonth: e.target.checked,
+          })
+        }
+      />
+      윤달
+    </label>
+  )}
+</div>
 
               <input
                 type="text"
@@ -1963,29 +2163,85 @@ export default function Home() {
                       <option value="여성">여성</option>
                     </select>
 
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      placeholder="1993-08-04"
-                      className="w-full rounded-xl border p-3"
-                      value={compatibilityForm[key].birthDate}
-                      onChange={(e) => {
-                        setCompatibilityForm({
-                          ...compatibilityForm,
-                          [key]: {
-                            ...compatibilityForm[key],
-                            birthDate: formatDateInput(e.target.value),
-                          },
-                        });
+                    <div className="flex items-center gap-3">
+  <input
+    type="text"
+    inputMode="numeric"
+    placeholder="1993-08-04"
+    className="flex-1 rounded-xl border p-3"
+    value={compatibilityForm[key].birthDate}
+    onChange={(e) => {
+      setCompatibilityForm({
+        ...compatibilityForm,
+        [key]: {
+          ...compatibilityForm[key],
+          birthDate: formatDateInput(e.target.value),
+        },
+      });
 
-                        setCompatibilityResult({
-                          left: null,
-                          right: null,
-                        });
+      setCompatibilityResult({
+        left: null,
+        right: null,
+      });
 
-                        setResult("");
-                      }}
-                    />
+      setResult("");
+    }}
+  />
+
+  <label className="flex items-center gap-1 text-sm font-bold">
+    <input
+      type="checkbox"
+      checked={compatibilityForm[key].calendarType === "solar"}
+      onChange={() =>
+        setCompatibilityForm({
+          ...compatibilityForm,
+          [key]: {
+            ...compatibilityForm[key],
+            calendarType: "solar",
+            isLeapMonth: false,
+          },
+        })
+      }
+    />
+    양력
+  </label>
+
+  <label className="flex items-center gap-1 text-sm font-bold">
+    <input
+      type="checkbox"
+      checked={compatibilityForm[key].calendarType === "lunar"}
+      onChange={() =>
+        setCompatibilityForm({
+          ...compatibilityForm,
+          [key]: {
+            ...compatibilityForm[key],
+            calendarType: "lunar",
+          },
+        })
+      }
+    />
+    음력
+  </label>
+
+  {compatibilityForm[key].calendarType === "lunar" && (
+    <label className="flex items-center gap-1 text-sm font-bold text-[#6b3f24]">
+      <input
+        type="checkbox"
+        checked={compatibilityForm[key].isLeapMonth}
+        onChange={(e) =>
+          setCompatibilityForm({
+            ...compatibilityForm,
+            [key]: {
+              ...compatibilityForm[key],
+              isLeapMonth: e.target.checked,
+            },
+          })
+        }
+      />
+      윤달
+    </label>
+  )}
+</div>
 
                     <input
                       type="text"
@@ -2222,8 +2478,8 @@ export default function Home() {
                                     }));
                                   }}
                                   className={`rounded-xl p-3 text-center transition ${selected
-                                      ? "bg-[#6b3f24] text-white shadow-md"
-                                      : "bg-zinc-100 text-black hover:bg-zinc-200"
+                                    ? "bg-[#6b3f24] text-white shadow-md"
+                                    : "bg-zinc-100 text-black hover:bg-zinc-200"
                                     }`}
                                 >
                                   <div
@@ -2308,8 +2564,8 @@ export default function Home() {
                                         }))
                                       }
                                       className={`rounded-xl p-3 text-center shadow-sm transition ${selected
-                                          ? "bg-[#6b3f24] text-white shadow-md"
-                                          : "bg-white text-black hover:bg-zinc-50"
+                                        ? "bg-[#6b3f24] text-white shadow-md"
+                                        : "bg-white text-black hover:bg-zinc-50"
                                         }`}
                                     >
                                       <div
