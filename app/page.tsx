@@ -1792,7 +1792,7 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-[#f7efe3] px-5 py-10 text-[#2b1d12]">
-      <div className="mx-auto max-w-5xl rounded-3xl bg-white p-6 shadow-xl">
+      <div className="mx-auto w-[1400px] min-w-[1400px] rounded-3xl bg-white p-6 shadow-xl">
         <h1 className="text-center text-3xl font-bold">
           {mode === "saju"
             ? "사주 분석"
