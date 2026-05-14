@@ -664,7 +664,7 @@ function getDaewoonStartAge(
   if (Number.isNaN(birthDate.getTime())) {
     return {
       startAge: 1,
-      startAgeText: "1대운",
+      startAgeText: "1 대운",
     };
   }
 
@@ -708,7 +708,7 @@ const startAge = Math.max(
 );
   return {
     startAge,
-    startAgeText: `${startAge}대운`,
+    startAgeText: `${startAge} 대운`,
   };
 }
 
@@ -742,7 +742,7 @@ function getDaewoon(
     return {
       index: step,
       startAge: startInfo.startAge + i * 10,
-startAgeText: `${startInfo.startAge + i * 10}대운`,
+      startAgeText: `${startInfo.startAge + i * 10} 대운`,
       ganji,
       stemTenGod: getTenGod(
         day.stemIndex,

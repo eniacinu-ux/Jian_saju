@@ -47,12 +47,9 @@ export default function Home() {
       birthTimeUnknown: false,
     },
   });
-  const [selectedDaewoonKey, setSelectedDaewoonKey] = useState<string | null>(
-    null,
-  );
-  const [selectedYearLuckKey, setSelectedYearLuckKey] = useState<string | null>(
-    null,
-  );
+  const [selectedDaewoonKey, setSelectedDaewoonKey] = useState<Record<string, string | null>>({});
+
+const [selectedYearLuckKey, setSelectedYearLuckKey] = useState<Record<string, string | null>>({});
   const [showCompatibilityRelations, setShowCompatibilityRelations] =
     useState(false);
   const [result, setResult] = useState("");
@@ -638,7 +635,7 @@ export default function Home() {
     return (
       <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="rounded-2xl border border-[#ead8c4] bg-[#fffaf3] p-4 text-center">
-          <div className="text-sm font-bold text-zinc-700">
+          <div className="text-smm font-bold text-zinc-700">
             공망 / 일주 기준
           </div>
 
@@ -648,7 +645,7 @@ export default function Home() {
         </div>
 
         <div className="rounded-2xl border border-[#ead8c4] bg-[#fffaf3] p-4 text-center">
-          <div className="text-sm font-bold text-zinc-700">천을귀인</div>
+          <div className="text-smm font-bold text-zinc-700">천을귀인</div>
 
           <div className="mt-2 text-2xl font-bold text-[#6b3f24]">
             {getCheoneulGwiyin(targetSaju)}
@@ -1339,9 +1336,9 @@ export default function Home() {
     if (!item.data) {
       return (
         <div key={item.label} className="rounded-xl bg-zinc-100 p-3">
-          <div className="text-s text-zinc-500">{item.label}</div>
+          <div className="text-smm font-bold text-black">{item.label}</div>
 
-          <div className="mt-8 flex min-h-[150px] items-center justify-center rounded-xl border border-dashed border-zinc-300 bg-white/60 text-sm font-bold text-zinc-400">
+          <div className="mt-8 flex min-h-[150px] items-center justify-center rounded-xl border border-dashed border-zinc-300 bg-white/60 text-smm font-bold text-zinc-400">
             시간 미상
           </div>
         </div>
@@ -1350,7 +1347,8 @@ export default function Home() {
 
     return (
       <div key={item.label} className="rounded-xl bg-zinc-100 p-3">
-        <div className="text-s text-zinc-500">{item.label}</div>
+        <div className="text-smm font-bold text-black">
+          {item.label}</div>
 
         <div className="mt-2 flex flex-col items-center">
           <div
@@ -1375,7 +1373,7 @@ export default function Home() {
             {item.data.branch}
           </div>
 
-          <div className="mt-3 text-sm font-semibold text-zinc-600">
+          <div className="mt-3 text-smm font-semibold text-zinc-600">
             {item.data.stemKor}
             {item.data.branchKor}
           </div>
@@ -1385,11 +1383,14 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="mt-3 text-s text-zinc-500">{item.tenGodStem}</div>
+<div className="mt-3 text-sm font-bold text-black">
+  {item.tenGodStem}
+</div>
 
-        <div className="text-s text-zinc-500">{item.tenGodBranch}</div>
-
-        <div className="mt-2 text-s font-bold text-[#6b3f24]">
+<div className="text-sm font-bold text-black">
+  {item.tenGodBranch}
+</div>
+        <div className="mt-2 text-sm font-bold text-[#6b3f24]">
           {item.twelveStage}
         </div>
 
@@ -1399,7 +1400,7 @@ export default function Home() {
               {item.branchRelations.map((relation: string) => (
                 <span
                   key={relation}
-                  className="rounded-full border border-[#ead8c4] bg-[#fffaf3] px-2 py-0.5 text-[12px] font-bold text-[#6b3f24]"
+                  className="rounded-full border border-[#ead8c4] bg-[#fffaf3] px-2 py-0.5 text-sm font-bold text-[#6b3f24]"
                 >
                   {relation}
                 </span>
@@ -1410,7 +1411,7 @@ export default function Home() {
         {item.shinsals?.length > 0 &&
           (!isCompatibilityMode || showCompatibilityRelations) && (
             <div className="mt-2 border-t border-[#ead8c4] pt-2">
-              <div className="mb-1 text-center text-[12px] font-bold text-zinc-500">
+              <div className="mb-1 text-center text-sm font-bold text-zinc-500">
                 신살
               </div>
 
@@ -1418,7 +1419,7 @@ export default function Home() {
                 {item.shinsals.map((shinsal: string) => (
                   <span
                     key={shinsal}
-                    className="rounded-full border border-[#d7c4ad] bg-white px-2 py-0.5 text-[12px] font-bold text-[#5f3a20]"
+                    className="rounded-full border border-[#d7c4ad] bg-white px-2 py-0.5 text-sm font-bold text-[#5f3a20]"
                   >
                     {shinsal}
                   </span>
@@ -1438,17 +1439,18 @@ export default function Home() {
     if (!targetSaju?.daewoon || !birthDate) return null;
 
     const selectedDaewoon = targetSaju.daewoon.find(
-      (item: any) => selectedDaewoonKey === `${cardKey}-daewoon-${item.index}`,
-    );
+  (item: any) =>
+    selectedDaewoonKey[cardKey] === `${cardKey}-daewoon-${item.index}`,
+);
 
     const yearLuckList = selectedDaewoon
       ? buildYearLuckList(targetSaju, selectedDaewoon, birthDate)
       : [];
 
     const selectedYearLuck = yearLuckList.find(
-      (yearLuck: any) =>
-        selectedYearLuckKey === `${cardKey}-year-${yearLuck.year}`,
-    );
+  (yearLuck: any) =>
+    selectedYearLuckKey[cardKey] === `${cardKey}-year-${yearLuck.year}`,
+);
 
     const monthLuckList = selectedYearLuck
       ? buildMonthLuckList(targetSaju, selectedYearLuck)
@@ -1461,15 +1463,21 @@ export default function Home() {
         <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-5">
           {targetSaju.daewoon.map((item: any) => {
             const daewoonKey = `${cardKey}-daewoon-${item.index}`;
-            const selected = selectedDaewoonKey === daewoonKey;
+            const selected = selectedDaewoonKey[cardKey] === daewoonKey;
 
             return (
               <button
                 type="button"
                 key={item.index}
                 onClick={() => {
-                  setSelectedDaewoonKey(selected ? null : daewoonKey);
-                  setSelectedYearLuckKey(null);
+                  setSelectedDaewoonKey((prev) => ({
+  ...prev,
+  [cardKey]: selected ? null : daewoonKey,
+}));
+                  setSelectedYearLuckKey((prev) => ({
+  ...prev,
+  [cardKey]: null,
+}));
                 }}
                 className={`rounded-xl p-3 text-center transition ${
                   selected
@@ -1479,7 +1487,7 @@ export default function Home() {
               >
                 <div
                   className={
-                    selected ? "text-s text-white/80" : "text-s text-zinc-500"
+                    selected ? "text-sm text-white/80 font-bold " : "text-sm text-black font-bold "
                   }
                 >
                   {item.startAgeText}
@@ -1497,7 +1505,7 @@ export default function Home() {
                   </div>
 
                   <div
-                    className="text-3xl font-bold"
+                    className="text-3xl font-bold "
                     style={{
                       color: getElementColor(item.ganji.branchElement),
                       WebkitTextStroke: "1px black",
@@ -1507,23 +1515,25 @@ export default function Home() {
                   </div>
                 </div>
 
-                <div
-                  className={
-                    selected
-                      ? "mt-2 text-s text-white/80"
-                      : "mt-2 text-s text-zinc-500"
-                  }
-                >
-                  {item.stemTenGod}
-                </div>
+               <div
+  className={
+    selected
+      ? "mt-2 text-sm font-bold text-white"
+      : "mt-2 text-sm font-bold text-black"
+  }
+>
+  {item.stemTenGod}
+</div>
 
-                <div
-                  className={
-                    selected ? "text-s text-white/80" : "text-s text-zinc-500"
-                  }
-                >
-                  {item.branchTenGod}
-                </div>
+<div
+  className={
+    selected
+      ? "text-sm font-bold text-white"
+      : "text-sm font-bold text-black"
+  }
+>
+  {item.branchTenGod}
+</div>
               </button>
             );
           })}
@@ -1536,14 +1546,17 @@ export default function Home() {
             <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-5">
               {yearLuckList.map((yearLuck: any) => {
                 const yearLuckKey = `${cardKey}-year-${yearLuck.year}`;
-                const selected = selectedYearLuckKey === yearLuckKey;
+                const selected = selectedYearLuckKey[cardKey] === yearLuckKey;
 
                 return (
                   <button
                     type="button"
                     key={yearLuck.year}
                     onClick={() =>
-                      setSelectedYearLuckKey(selected ? null : yearLuckKey)
+                      setSelectedYearLuckKey((prev) => ({
+  ...prev,
+  [cardKey]: selected ? null : yearLuckKey,
+}))
                     }
                     className={`rounded-xl p-3 text-center shadow-sm transition ${
                       selected
@@ -1554,11 +1567,11 @@ export default function Home() {
                     <div
                       className={
                         selected
-                          ? "text-s text-white/80"
-                          : "text-s text-zinc-500"
+                          ? "text-sm font-bold text-white/80"
+                          : "text-sm font-bold text-black"
                       }
                     >
-                      {yearLuck.year}년 / {yearLuck.age}세
+                      {yearLuck.year} / <br /> {yearLuck.age}세
                     </div>
 
                     <div className="mt-2 flex flex-col items-center leading-tight">
@@ -1585,8 +1598,8 @@ export default function Home() {
                       <div
                         className={
                           selected
-                            ? "mt-2 text-sm font-semibold text-white"
-                            : "mt-2 text-sm font-semibold text-black"
+                            ? "text-smm font-semibold font-bold text-white"
+                            : "text-smm font-semibold font-bold text-black"
                         }
                       >
                         {yearLuck.stemTenGod}
@@ -1595,8 +1608,8 @@ export default function Home() {
                       <div
                         className={
                           selected
-                            ? "text-sm font-semibold text-white"
-                            : "text-sm font-semibold text-black"
+                            ? "text-smm font-semibold text-white"
+                            : "text-smm font-semibold text-black"
                         }
                       >
                         {yearLuck.branchTenGod}
@@ -1619,7 +1632,7 @@ export default function Home() {
                       key={`${monthLuck.year}-${monthLuck.month}`}
                       className="rounded-xl bg-zinc-100 p-3 text-center shadow-sm"
                     >
-                      <div className="text-s text-zinc-500">
+                      <div className="text-sm font-bold text-black">
                         {monthLuck.month}월
                       </div>
 
@@ -1646,11 +1659,11 @@ export default function Home() {
                           {BRANCH_HANJA[monthLuck.ganji.branch]}
                         </div>
 
-                        <div className="mt-2 text-sm font-semibold text-black">
+                        <div className="text-sm font-semibold font-bold  text-black">
                           {monthLuck.stemTenGod}
                         </div>
 
-                        <div className="text-sm font-semibold text-black">
+                        <div className="text-sm font-semibold font-bold  text-black">
                           {monthLuck.branchTenGod}
                         </div>
                       </div>
@@ -1687,30 +1700,30 @@ export default function Home() {
         <div className="mt-5 rounded-2xl bg-zinc-100 p-4">
           <h4 className="font-bold">오행 분포</h4>
 
-          <div className="mt-3 grid grid-cols-5 gap-2 text-center text-s">
+          <div className="mt-3 grid grid-cols-5 gap-2 text-center text-sm">
             <div>
-              <div className="font-bold">木</div>
-              <div>{targetSaju?.elementCount?.wood ?? 0}</div>
+              <div className="font-bold text-xl">木</div>
+              <div className="font-bold text-xl"> {targetSaju?.elementCount?.wood ?? 0}</div>
             </div>
 
             <div>
-              <div className="font-bold">火</div>
-              <div>{targetSaju?.elementCount?.fire ?? 0}</div>
+              <div className="font-bold text-xl">火</div>
+              <div className="font-bold text-xl"> {targetSaju?.elementCount?.fire ?? 0}</div>
             </div>
 
             <div>
-              <div className="font-bold">土</div>
-              <div>{targetSaju?.elementCount?.earth ?? 0}</div>
+              <div className="font-bold text-xl">土</div>
+              <div className="font-bold text-xl"> {targetSaju?.elementCount?.earth ?? 0}</div>
             </div>
 
             <div>
-              <div className="font-bold">金</div>
-              <div>{targetSaju?.elementCount?.metal ?? 0}</div>
+              <div className="font-bold text-xl">金</div>
+              <div className="font-bold text-xl"> {targetSaju?.elementCount?.metal ?? 0}</div>
             </div>
 
             <div>
-              <div className="font-bold">水</div>
-              <div>{targetSaju?.elementCount?.water ?? 0}</div>
+              <div className="font-bold text-xl">水</div>
+              <div className="font-bold text-xl"> {targetSaju?.elementCount?.water ?? 0}</div>
             </div>
           </div>
         </div>
@@ -1746,7 +1759,7 @@ export default function Home() {
               }
             />
 
-            <div className="rounded-xl bg-white p-3 text-sm font-bold text-[#6b3f24]">
+            <div className="rounded-xl bg-white p-3 text-smm font-bold text-[#6b3f24]">
               음력:{" "}
               {solarToLunarDate
                 ? convertSolarToLunar(solarToLunarDate)
@@ -1763,7 +1776,7 @@ export default function Home() {
               setResult("");
               setShowSaju(false);
             }}
-            className={`rounded-xl py-3 text-sm font-bold transition ${
+            className={`rounded-xl py-3 text-smm font-bold transition ${
               mode === "saju"
                 ? "bg-[#6b3f24] text-white shadow"
                 : "text-[#6b3f24]"
@@ -1779,7 +1792,7 @@ export default function Home() {
               setResult("");
               setShowSaju(false);
             }}
-            className={`rounded-xl py-3 text-sm font-bold transition ${
+            className={`rounded-xl py-3 text-smm font-bold transition ${
               mode === "compatibility"
                 ? "bg-[#6b3f24] text-white shadow"
                 : "text-[#6b3f24]"
@@ -1795,7 +1808,7 @@ export default function Home() {
               setResult("");
               setShowSaju(false);
             }}
-            className={`rounded-xl py-3 text-sm font-bold transition ${
+            className={`rounded-xl py-3 text-smm font-bold transition ${
               mode === "zodiac"
                 ? "bg-[#6b3f24] text-white shadow"
                 : "text-[#6b3f24]"
@@ -1869,7 +1882,7 @@ export default function Home() {
                 }}
               />
 
-              <label className="flex items-center gap-2 rounded-xl border border-[#ead8c4] bg-[#fffaf3] px-4 py-3 text-sm font-bold text-[#6b3f24]">
+              <label className="flex items-center gap-2 rounded-xl border border-[#ead8c4] bg-[#fffaf3] px-4 py-3 text-smm font-bold text-[#6b3f24]">
                 <input
                   type="checkbox"
                   checked={form.birthTimeUnknown}
@@ -2005,7 +2018,7 @@ export default function Home() {
                       }}
                     />
 
-                    <label className="flex items-center gap-2 rounded-xl border border-[#ead8c4] bg-white px-4 py-3 text-sm font-bold text-[#6b3f24]">
+                    <label className="flex items-center gap-2 rounded-xl border border-[#ead8c4] bg-white px-4 py-3 text-smm font-bold text-[#6b3f24]">
                       <input
                         type="checkbox"
                         checked={compatibilityForm[key].birthTimeUnknown}
@@ -2099,7 +2112,7 @@ export default function Home() {
             <section className="mt-6 rounded-3xl border border-[#ead8c4] bg-[#fffaf3] p-5 shadow-inner">
               <h2 className="text-xl font-bold">만세력 계산</h2>
 
-              <p className="mt-2 text-sm text-zinc-600">
+              <p className="mt-2 text-smm text-zinc-600">
                 위에 입력한 생년월일시를 기준으로 사주팔자와 오행 분포를
                 계산합니다.
               </p>
@@ -2131,7 +2144,7 @@ export default function Home() {
 
                   <h3 className="mt-4 text-lg font-bold">사주팔자</h3>
 
-                  <div className="mt-4 grid grid-cols-2 gap-3 text-center sm:grid-cols-4">
+                  <div className="mt-4 grid grid-cols-2 gap-3 text-center sm:grid-cols-4 font-bold text-black">
                     {sajuItems.map((item) => renderPillarCard(item, "main"))}
                   </div>
 
@@ -2140,30 +2153,30 @@ export default function Home() {
                   <div className="mt-5 rounded-2xl bg-zinc-100 p-4">
                     <h4 className="font-bold">오행 분포</h4>
 
-                    <div className="mt-3 grid grid-cols-5 gap-2 text-center text-sm">
+                    <div className="mt-3 grid grid-cols-5 gap-2 text-center text-smm">
                       <div>
-                        <div className="font-bold">木</div>
-                        <div>{sajuResult?.elementCount?.wood ?? 0}</div>
+                        <div className="font-bold text-2xl">木</div>
+                        <div className="font-bold text-lg">{sajuResult?.elementCount?.wood ?? 0}</div>
                       </div>
 
                       <div>
-                        <div className="font-bold">火</div>
-                        <div>{sajuResult?.elementCount?.fire ?? 0}</div>
+                        <div className="font-bold text-2xl">火</div>
+                        <div className="font-bold text-lg">{sajuResult?.elementCount?.fire ?? 0}</div>
                       </div>
 
                       <div>
-                        <div className="font-bold">土</div>
-                        <div>{sajuResult?.elementCount?.earth ?? 0}</div>
+                        <div className="font-bold text-2xl">土</div>
+                        <div className="font-bold text-lg">{sajuResult?.elementCount?.earth ?? 0}</div>
                       </div>
 
                       <div>
-                        <div className="font-bold">金</div>
-                        <div>{sajuResult?.elementCount?.metal ?? 0}</div>
+                        <div className="font-bold text-2xl">金</div>
+                        <div className="font-bold text-lg"> {sajuResult?.elementCount?.metal ?? 0}</div>
                       </div>
 
                       <div>
-                        <div className="font-bold">水</div>
-                        <div>{sajuResult?.elementCount?.water ?? 0}</div>
+                        <div className="font-bold text-2xl">水</div>
+                        <div className="font-bold text-lg"> {sajuResult?.elementCount?.water ?? 0}</div>
                       </div>
                     </div>
                   </div>
@@ -2218,15 +2231,15 @@ export default function Home() {
                                       : "bg-zinc-100 text-black hover:bg-zinc-200"
                                   }`}
                                 >
-                                  <div
-                                    className={
-                                      selected
-                                        ? "text-s text-white/80"
-                                        : "text-s text-zinc-500"
-                                    }
-                                  >
-                                    {item.startAgeText}
-                                  </div>
+                                 <div
+                                  className={
+                                    selected
+                                      ? "text-smm font-bold text-white"
+                                      : "text-smm font-bold text-black"
+                                  }
+                                >
+                                  {item.startAgeText}
+                                </div>
 
                                   <div className="mt-2 flex flex-col items-center">
                                     <div
@@ -2255,24 +2268,24 @@ export default function Home() {
                                   </div>
 
                                   <div
-                                    className={
-                                      selected
-                                        ? "mt-2 text-s text-white/80"
-                                        : "mt-2 text-s text-zinc-500"
-                                    }
-                                  >
-                                    {item.stemTenGod}
-                                  </div>
+  className={
+    selected
+      ? "mt-2 text-sm font-bold text-white"
+      : "mt-2 text-sm font-bold text-black"
+  }
+>
+  {item.stemTenGod}
+</div>
 
-                                  <div
-                                    className={
-                                      selected
-                                        ? "text-s text-white/80"
-                                        : "text-s text-zinc-500"
-                                    }
-                                  >
-                                    {item.branchTenGod}
-                                  </div>
+<div
+  className={
+    selected
+      ? "text-sm font-bold text-white"
+      : "text-sm font-bold text-black"
+  }
+>
+  {item.branchTenGod}
+</div>
                                 </button>
                               );
                             })}
@@ -2308,8 +2321,8 @@ export default function Home() {
                                       <div
                                         className={
                                           selected
-                                            ? "text-s text-white/80"
-                                            : "text-s text-zinc-500"
+                                            ? "font-bold text-sm text-black"
+                                            : "font-bold text-sm text-black"
                                         }
                                       >
                                         {yearLuck.year}년 / {yearLuck.age}세
@@ -2343,8 +2356,8 @@ export default function Home() {
                                         <div
                                           className={
                                             selected
-                                              ? "mt-2 text-sm font-semibold text-white"
-                                              : "mt-2 text-sm font-semibold text-black"
+                                              ? "text-sm font-semibold text-white font-bold "
+                                              : "text-sm font-semibold text-black font-bold "
                                           }
                                         >
                                           {yearLuck.stemTenGod}
@@ -2353,8 +2366,8 @@ export default function Home() {
                                         <div
                                           className={
                                             selected
-                                              ? "text-sm font-semibold text-white"
-                                              : "text-sm font-semibold text-black"
+                                              ? "text-sm font-semibold text-white font-bold "
+                                              : "text-sm font-semibold text-black font-bold "
                                           }
                                         >
                                           {yearLuck.branchTenGod}
@@ -2377,7 +2390,7 @@ export default function Home() {
                                         key={`${monthLuck.year}-${monthLuck.month}`}
                                         className="rounded-xl bg-zinc-100 p-3 text-center shadow-sm"
                                       >
-                                        <div className="text-s text-zinc-500">
+                                        <div className="text-sm font-bold text-black">
                                           {monthLuck.month}월
                                         </div>
 
@@ -2410,11 +2423,11 @@ export default function Home() {
                                             }
                                           </div>
 
-                                          <div className="mt-2 text-sm font-semibold text-black">
+                                          <div className="mt-2 text-sm font-semibold text-black font-bold ">
                                             {monthLuck.stemTenGod}
                                           </div>
 
-                                          <div className="text-sm font-semibold text-black">
+                                          <div className="text-sm font-semibold text-black font-bold ">
                                             {monthLuck.branchTenGod}
                                           </div>
                                         </div>
@@ -2454,7 +2467,7 @@ export default function Home() {
                     onClick={() =>
                       setShowCompatibilityRelations((prev) => !prev)
                     }
-                    className="rounded-full border border-[#6b3f24]/40 bg-white px-4 py-2 text-sm font-bold text-[#6b3f24] shadow-sm transition hover:bg-[#f3e1cf]"
+                    className="rounded-full border border-[#6b3f24]/40 bg-white px-4 py-2 text-smm font-bold text-[#6b3f24] shadow-sm transition hover:bg-[#f3e1cf]"
                   >
                     {showCompatibilityRelations
                       ? "지지 관계·신살 전체 접기 ▲"
