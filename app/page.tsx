@@ -470,9 +470,12 @@ export default function Home() {
                 text: `공망(일주 기준): ${getDayGongmang(sajuResult)}`,
               }),
 
-              new Paragraph({
-                text: `천을귀인: ${getCheoneulGwiyin(sajuResult)}`,
-              }),
+              ...getGwiyinList(sajuResult).map(
+                (gwiyin) =>
+                  new Paragraph({
+                    text: `${gwiyin.label}: ${gwiyin.value}`,
+                  }),
+              ),
 
               new Paragraph({ text: "" }),
 
@@ -660,7 +663,34 @@ export default function Home() {
     const firstEmptyBranch = BRANCHES[(xunStartIndex + 10) % 12];
     const secondEmptyBranch = BRANCHES[(xunStartIndex + 11) % 12];
 
-    return `${firstEmptyBranch}${BRANCH_HANJA[firstEmptyBranch]} · ${secondEmptyBranch}${BRANCH_HANJA[secondEmptyBranch]}`;
+    return `${BRANCH_HANJA[firstEmptyBranch]}·${BRANCH_HANJA[secondEmptyBranch]}`;
+  };
+
+  const formatGwiyinTargets = (targets: string[]) => {
+    if (!targets?.length) return "-";
+
+    return targets
+      .map((target: string) => {
+        const normalizedStem = normalizeStem(target);
+        const normalizedBranch = normalizeBranch(target);
+
+        if (STEM_HANJA[normalizedStem]) {
+          return `${STEM_HANJA[normalizedStem]}`;
+        }
+
+        if (BRANCH_HANJA[normalizedBranch]) {
+          return `${BRANCH_HANJA[normalizedBranch]}`;
+        }
+
+        return target;
+      })
+      .join("·");
+  };
+
+  const getMonthBranch = (targetSaju: any) => {
+    const monthGanji = String(targetSaju?.month?.ganji || "");
+
+    return normalizeBranch(targetSaju?.month?.branch || monthGanji.slice(1, 2));
   };
 
   const getCheoneulGwiyin = (targetSaju: any) => {
@@ -679,23 +709,207 @@ export default function Home() {
       신: ["오", "인"],
     };
 
-    const branches = cheoneulMap[stem];
-
-    if (!branches) return "-";
-
-    return branches
-      .map((branch: string) => `${branch}${BRANCH_HANJA[branch]}`)
-      .join(" · ");
+    return formatGwiyinTargets(cheoneulMap[stem] || []);
   };
+
+  const getHakdangGwiyin = (targetSaju: any) => {
+    const { stem } = getDayGanjiParts(targetSaju);
+
+    const hakdangMap: any = {
+      갑: ["해"],
+      을: ["오"],
+      병: ["인"],
+      정: ["유"],
+      무: ["인"],
+      기: ["유"],
+      경: ["사"],
+      신: ["자"],
+      임: ["신"],
+      계: ["묘"],
+    };
+
+    return formatGwiyinTargets(hakdangMap[stem] || []);
+  };
+
+  const getMungokGwiyin = (targetSaju: any) => {
+    const { stem } = getDayGanjiParts(targetSaju);
+
+    const mungokMap: any = {
+      갑: ["사"],
+      을: ["오"],
+      병: ["신"],
+      정: ["유"],
+      무: ["신"],
+      기: ["유"],
+      경: ["해"],
+      신: ["자"],
+      임: ["인"],
+      계: ["묘"],
+    };
+
+    return formatGwiyinTargets(mungokMap[stem] || []);
+  };
+
+  const getTaegukGwiyin = (targetSaju: any) => {
+    const { stem } = getDayGanjiParts(targetSaju);
+
+    const taegukMap: any = {
+      갑: ["자", "오"],
+      을: ["자", "오"],
+      병: ["묘", "유"],
+      정: ["묘", "유"],
+      무: ["진", "술", "축", "미"],
+      기: ["진", "술", "축", "미"],
+      경: ["인", "해"],
+      신: ["인", "해"],
+      임: ["사", "신"],
+      계: ["사", "신"],
+    };
+
+    return formatGwiyinTargets(taegukMap[stem] || []);
+  };
+
+  const getCheondeokGwiyin = (targetSaju: any) => {
+    const monthBranch = getMonthBranch(targetSaju);
+
+    const cheondeokMap: any = {
+      인: ["정"],
+      묘: ["신"],
+      진: ["임"],
+      사: ["신"],
+      오: ["해"],
+      미: ["갑"],
+      신: ["계"],
+      유: ["인"],
+      술: ["병"],
+      해: ["을"],
+      자: ["사"],
+      축: ["경"],
+    };
+
+    return formatGwiyinTargets(cheondeokMap[monthBranch] || []);
+  };
+
+  const getWoldeokGwiyin = (targetSaju: any) => {
+    const monthBranch = getMonthBranch(targetSaju);
+
+    const woldeokMap: any = {
+      인: ["병"],
+      오: ["병"],
+      술: ["병"],
+      해: ["갑"],
+      묘: ["갑"],
+      미: ["갑"],
+      신: ["임"],
+      자: ["임"],
+      진: ["임"],
+      사: ["경"],
+      유: ["경"],
+      축: ["경"],
+    };
+
+    return formatGwiyinTargets(woldeokMap[monthBranch] || []);
+  };
+
+  const getCheonjuGwiyin = (targetSaju: any) => {
+    const { stem } = getDayGanjiParts(targetSaju);
+
+    const cheonjuMap: any = {
+      갑: ["사"],
+      을: ["오"],
+      병: ["사"],
+      정: ["오"],
+      무: ["신"],
+      기: ["유"],
+      경: ["해"],
+      신: ["자"],
+      임: ["인"],
+      계: ["묘"],
+    };
+
+    return formatGwiyinTargets(cheonjuMap[stem] || []);
+  };
+
+  const getGeumnyeorok = (targetSaju: any) => {
+    const { stem } = getDayGanjiParts(targetSaju);
+
+    const geumnyeoMap: any = {
+      갑: ["진"],
+      을: ["사"],
+      병: ["미"],
+      정: ["신"],
+      무: ["미"],
+      기: ["신"],
+      경: ["술"],
+      신: ["해"],
+      임: ["축"],
+      계: ["인"],
+    };
+
+    return formatGwiyinTargets(geumnyeoMap[stem] || []);
+  };
+
+  const getBokseongGwiyin = (targetSaju: any) => {
+    const { stem } = getDayGanjiParts(targetSaju);
+
+    const bokseongMap: any = {
+      갑: ["인"],
+      을: ["묘"],
+      병: ["술"],
+      정: ["해"],
+      무: ["신"],
+      기: ["미"],
+      경: ["오"],
+      신: ["사"],
+      임: ["진"],
+      계: ["축"],
+    };
+
+    return formatGwiyinTargets(bokseongMap[stem] || []);
+  };
+
+  const getGukinGwiyin = (targetSaju: any) => {
+    const { stem } = getDayGanjiParts(targetSaju);
+
+    const gukinMap: any = {
+      갑: ["술"],
+      을: ["해"],
+      병: ["축"],
+      정: ["인"],
+      무: ["축"],
+      기: ["인"],
+      경: ["진"],
+      신: ["사"],
+      임: ["미"],
+      계: ["신"],
+    };
+
+    return formatGwiyinTargets(gukinMap[stem] || []);
+  };
+
+  const getGwiyinList = (targetSaju: any) => [
+    { label: "천을", value: getCheoneulGwiyin(targetSaju) },
+    { label: "학당", value: getHakdangGwiyin(targetSaju) },
+    { label: "문곡", value: getMungokGwiyin(targetSaju) },
+    { label: "태극", value: getTaegukGwiyin(targetSaju) },
+    { label: "천덕", value: getCheondeokGwiyin(targetSaju) },
+    { label: "월덕", value: getWoldeokGwiyin(targetSaju) },
+    { label: "천주", value: getCheonjuGwiyin(targetSaju) },
+    { label: "금여록", value: getGeumnyeorok(targetSaju) },
+    { label: "복성", value: getBokseongGwiyin(targetSaju) },
+    { label: "국인", value: getGukinGwiyin(targetSaju) },
+  ];
 
   const renderSpecialInfo = (targetSaju: any) => {
     if (!targetSaju) return null;
 
+    const gwiyinList = getGwiyinList(targetSaju);
+
     return (
-      <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-6">
         <div className="rounded-2xl border border-[#ead8c4] bg-[#fffaf3] p-4 text-center">
           <div className="text-smm font-bold text-zinc-700">
-            공망 / 일주 기준
+            공망 / <br /> 일주
           </div>
 
           <div className="mt-2 text-2xl font-bold text-[#6b3f24]">
@@ -703,16 +917,24 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-[#ead8c4] bg-[#fffaf3] p-4 text-center">
-          <div className="text-smm font-bold text-zinc-700">천을귀인</div>
+        {gwiyinList.map((gwiyin) => (
+          <div
+            key={gwiyin.label}
+            className="rounded-2xl border border-[#ead8c4] bg-[#fffaf3] p-4 text-center"
+          >
+            <div className="text-smm font-bold text-zinc-700">
+              {gwiyin.label}
+            </div>
 
-          <div className="mt-2 text-2xl font-bold text-[#6b3f24]">
-            {getCheoneulGwiyin(targetSaju)}
+            <div className="mt-2 text-2xl font-bold text-[#6b3f24]">
+              {gwiyin.value}
+            </div>
           </div>
-        </div>
+        ))}
       </div>
     );
   };
+
 
   const STEM_INFO: any = {
     갑: { element: "목", yinYang: "양" },
