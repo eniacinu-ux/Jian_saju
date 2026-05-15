@@ -208,7 +208,7 @@ export default function Home() {
       name: "",
       gender: "남성",
       birthDate: "",
-      birthTime: "23:00",
+      birthTime: "00:10",
       birthTimeUnknown: false,
       calendarType: "solar",
       isLeapMonth: false,
@@ -217,7 +217,7 @@ export default function Home() {
       name: "",
       gender: "여성",
       birthDate: "",
-      birthTime: "23:00",
+      birthTime: "00:10",
       birthTimeUnknown: false,
       calendarType: "solar",
       isLeapMonth: false,
@@ -231,6 +231,8 @@ export default function Home() {
   const [result, setResult] = useState("");
   const [loading, setLoading] = useState(false);
   const [showSaju, setShowSaju] = useState(false);
+  const [showDailyCalendar, setShowDailyCalendar] = useState(false);
+const [calendarDate, setCalendarDate] = useState(new Date());
   const [sajuResult, setSajuResult] = useState<any>(null);
   const [compatibilityResult, setCompatibilityResult] = useState<any>({
     left: null,
@@ -1650,7 +1652,61 @@ export default function Home() {
 
     return "";
   };
+const DAY_STEMS = ["갑", "을", "병", "정", "무", "기", "경", "신", "임", "계"];
+const DAY_BRANCHES = [
+  "자",
+  "축",
+  "인",
+  "묘",
+  "진",
+  "사",
+  "오",
+  "미",
+  "신",
+  "유",
+  "술",
+  "해",
+];
 
+const getDayGanji = (date: Date) => {
+  const baseDate = new Date(1936, 1, 12);
+
+  const diffDays = Math.floor(
+    (date.getTime() - baseDate.getTime()) / (1000 * 60 * 60 * 24),
+  );
+
+  const stem = DAY_STEMS[((diffDays % 10) + 10) % 10];
+  const branch = DAY_BRANCHES[((diffDays % 12) + 12) % 12];
+
+  return {
+    stem,
+    branch,
+  };
+};
+
+const buildDailyCalendar = (date: Date) => {
+  const year = date.getFullYear();
+  const month = date.getMonth();
+
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+
+  const startWeekDay = firstDay.getDay();
+  const totalDays = lastDay.getDate();
+
+  const blanks = Array.from({ length: startWeekDay }, () => null);
+
+  const days = Array.from({ length: totalDays }, (_, index) => {
+    const currentDate = new Date(year, month, index + 1);
+
+    return {
+      day: index + 1,
+      ganji: getDayGanji(currentDate),
+    };
+  });
+
+  return [...blanks, ...days];
+};
   const getGanjiByYear = (year: number) => {
     const stem = STEMS[(((year - 4) % 10) + 10) % 10];
     const branch = BRANCHES[(((year - 4) % 12) + 12) % 12];
@@ -2356,7 +2412,7 @@ export default function Home() {
               <input
                 type="text"
                 inputMode="numeric"
-                placeholder="23:00"
+                placeholder="00:10"
                 className={`w-full rounded-xl border p-3 ${FONT.inputText} disabled:bg-zinc-100 disabled:text-zinc-400`}
                 value={form.birthTime}
                 disabled={form.birthTimeUnknown}
@@ -2536,12 +2592,13 @@ export default function Home() {
                           윤달
                         </label>
                       )}
+
                     </div>
 
                     <input
                       type="text"
                       inputMode="numeric"
-                      placeholder="23:00"
+                      placeholder="00:10"
                       className={`w-full rounded-xl border p-3 ${FONT.inputText} disabled:bg-zinc-100 disabled:text-zinc-400`}
                       value={compatibilityForm[key].birthTime}
                       disabled={compatibilityForm[key].birthTimeUnknown}
@@ -2601,6 +2658,13 @@ export default function Home() {
               >
                 {showSaju ? "만세력 닫기" : "만세력 보기"}
               </button>
+              <button
+  type="button"
+  onClick={() => setShowDailyCalendar(true)}
+  className={`w-full rounded-xl border border-[#6b3f24]/40 bg-[#fff7ed] py-4 ${FONT.buttonText} font-bold text-[#6b3f24] shadow-sm transition hover:bg-[#f3e1cf]`}
+>
+  일진달력 보기
+</button>
 
               <button
                 type="button"
@@ -2822,6 +2886,105 @@ export default function Home() {
           )}
         </div>
       </div>
+      {showDailyCalendar && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-6">
+    <div className="max-h-[90vh] w-[1200px] overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl">
+      <div className="mb-6 flex items-center justify-between">
+        <button
+          type="button"
+          onClick={() =>
+            setCalendarDate(
+              new Date(
+                calendarDate.getFullYear(),
+                calendarDate.getMonth() - 1,
+                1,
+              ),
+            )
+          }
+          className="rounded-xl bg-zinc-100 px-4 py-2 text-2xl font-bold"
+        >
+          이전달
+        </button>
+
+        <div className="text-4xl font-bold text-[#6b3f24]">
+          {calendarDate.getFullYear()}년{" "}
+          {calendarDate.getMonth() + 1}월 일진달력
+        </div>
+
+        <button
+          type="button"
+          onClick={() =>
+            setCalendarDate(
+              new Date(
+                calendarDate.getFullYear(),
+                calendarDate.getMonth() + 1,
+                1,
+              ),
+            )
+          }
+          className="rounded-xl bg-zinc-100 px-4 py-2 text-2xl font-bold"
+        >
+          다음달
+        </button>
+      </div>
+
+      <div className="mb-2 grid grid-cols-7 gap-2 text-center text-3xl font-bold">
+        {["일", "월", "화", "수", "목", "금", "토"].map((day) => (
+          <div key={day}>{day}</div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-7 gap-2">
+        {buildDailyCalendar(calendarDate).map((item, index) =>
+          item === null ? (
+            <div key={index} className="h-[120px]" />
+          ) : (
+            <div
+              key={index}
+              className="rounded-2xl border bg-[#fffaf3] p-2 text-center"
+            >
+              <div className="text-2xl font-bold">{item.day}</div>
+
+              <div
+                className="mt-2 text-5xl font-bold"
+                style={{
+                  color: getElementColor(
+                    STEM_INFO[item.ganji.stem].element,
+                  ),
+                  WebkitTextStroke: "1px black",
+                }}
+              >
+                {STEM_HANJA[item.ganji.stem]}
+              </div>
+
+              <div
+                className="text-5xl font-bold"
+                style={{
+                  color: getElementColor(
+                    STEM_INFO[
+                      BRANCH_MAIN_STEM[item.ganji.branch]
+                    ].element,
+                  ),
+                  WebkitTextStroke: "1px black",
+                }}
+              >
+                {BRANCH_HANJA[item.ganji.branch]}
+              </div>
+            </div>
+          ),
+        )}
+      </div>
+
+      <button
+        type="button"
+        onClick={() => setShowDailyCalendar(false)}
+        className="mt-6 w-full rounded-2xl bg-[#6b3f24] py-4 text-3xl font-bold text-white"
+      >
+        닫기
+      </button>
+    </div>
+  </div>
+)}
     </main>
   );
 }
