@@ -43,7 +43,7 @@ export default function Home() {
 
     // 공망 / 귀인
     specialLabel: "text-4xl",
-    specialValue: "text-4xl",
+    specialValue: "text-7xl",
 
     // 지지 관계 / 신살
     relation: "text-3xl",
@@ -196,7 +196,7 @@ export default function Home() {
     name: "",
     gender: "남성",
     birthDate: "",
-    birthTime: "23:00",
+    birthTime: "00:10",
     birthTimeUnknown: false,
     birthLocation: "",
     calendarType: "solar",
