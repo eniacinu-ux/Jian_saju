@@ -17,6 +17,171 @@ import {
 import { calculateSaju } from "./lib/sajuCalculator";
 
 export default function Home() {
+  const FONT = {
+    // 제목
+    pageTitle: "text-5xl",
+    sectionTitle: "text-5xl",
+    cardTitle: "text-5xl",
+    panelTitle: "text-4xl",
+
+    // 입력창 / 라벨 / 일반 설명
+    inputText: "text-4xl",
+    formLabel: "text-4xl",
+    body: "text-4xl",
+    analysisBody: "text-4xl",
+
+    // 사주 카드
+    pillarLabel: "text-4xl",
+    pillarMainHanja: "text-8xl",
+    pillarKor: "text-4xl",
+    hiddenStem: "text-4xl",
+    timeUnknown: "text-4xl",
+
+    // 십성 / 십이운성
+    tenGod: "text-4xl",
+    twelveState: "text-4xl",
+
+    // 공망 / 귀인
+    specialLabel: "text-4xl",
+    specialValue: "text-4xl",
+
+    // 지지 관계 / 신살
+    relation: "text-3xl",
+    shinsalTitle: "text-3xl",
+    shinsal: "text-3xl",
+
+    // 대운
+    daewoonTitle: "text-4xl",
+    daewoonAge: "text-3xl",
+    daewoonHanja: "text-5xl",
+    daewoonTenGod: "text-3xl",
+
+    // 년운
+    yearLuckTitle: "text-3xl",
+    yearLuckAge: "text-3xl",
+    yearLuckHanja: "text-5xl",
+    yearLuckTenGod: "text-3xl",
+
+    // 월운
+    monthLuckTitle: "text-3xl",
+    monthLuckMonth: "text-3xl",
+    monthLuckHanja: "text-5xl",
+    monthLuckTenGod: "text-3xl",
+
+    // 오행
+    elementTitle: "text-4xl",
+    elementValue: "text-4xl",
+
+    // 버튼
+    modeButtonText: "text-3xl",
+    buttonText: "text-3xl",
+  };
+
+
+  const COLOR = {
+    pageTitle: "text-[#2b1d12]",
+    sectionTitle: "text-[#2b1d12]",
+    cardTitle: "text-black",
+    panelTitle: "text-black",
+
+    inputText: "text-black",
+    formLabel: "text-[#6b3f24]",
+    body: "text-zinc-600",
+    analysisBody: "text-zinc-700",
+
+    pillarLabel: "text-black",
+    pillarKor: "text-zinc-600",
+    hiddenStem: "text-zinc-600",
+    timeUnknown: "text-zinc-400",
+
+    tenGod: "text-zinc-700",
+    twelveState: "text-[#6b3f24]",
+
+    specialLabel: "text-zinc-700",
+    specialValue: "text-[#6b3f24]",
+
+    relation: "text-[#6b3f24]",
+    shinsalTitle: "text-zinc-500",
+    shinsal: "text-[#5f3a20]",
+
+    daewoonTitle: "text-black",
+    daewoonAge: "text-zinc-700",
+    daewoonAgeSelected: "text-white/80",
+    daewoonTenGod: "text-black",
+    daewoonTenGodSelected: "text-white",
+
+    yearLuckTitle: "text-black",
+    yearLuckAge: "text-zinc-700",
+    yearLuckAgeSelected: "text-white/80",
+    yearLuckTenGod: "text-black",
+    yearLuckTenGodSelected: "text-white",
+
+    monthLuckTitle: "text-black",
+    monthLuckMonth: "text-zinc-700",
+    monthLuckTenGod: "text-black",
+
+    elementTitle: "text-black",
+    elementValue: "text-black",
+
+    modeButtonText: "text-[#6b3f24]",
+    buttonText: "text-white",
+  };
+
+  const WEIGHT = {
+    pageTitle: "font-bold",
+    sectionTitle: "font-bold",
+    cardTitle: "font-bold",
+    panelTitle: "font-bold",
+
+    inputText: "font-normal",
+    formLabel: "font-bold",
+    body: "font-normal",
+    analysisBody: "font-normal",
+
+    pillarLabel: "font-bold",
+    pillarMainHanja: "font-bold",
+    pillarKor: "font-semibold",
+    hiddenStem: "font-semibold",
+    timeUnknown: "font-bold",
+
+    tenGod: "font-bold",
+    twelveState: "font-bold",
+
+    specialLabel: "font-bold",
+    specialValue: "font-bold",
+
+    relation: "font-bold",
+    shinsalTitle: "font-bold",
+    shinsal: "font-bold",
+
+    daewoonTitle: "font-bold",
+    daewoonAge: "font-bold",
+    daewoonHanja: "font-bold",
+    daewoonTenGod: "font-bold",
+
+    yearLuckTitle: "font-bold",
+    yearLuckAge: "font-bold",
+    yearLuckHanja: "font-bold",
+    yearLuckTenGod: "font-bold",
+
+    monthLuckTitle: "font-bold",
+    monthLuckMonth: "font-bold",
+    monthLuckHanja: "font-bold",
+    monthLuckTenGod: "font-bold",
+
+    elementTitle: "font-bold",
+    elementValue: "font-bold",
+
+    modeButtonText: "font-bold",
+    buttonText: "font-bold",
+  };
+
+
+  const WORD_FONT = {
+    title: 36,
+    sectionTitle: 28,
+    body: 24,
+  };
   const [lunarToSolarDate, setLunarToSolarDate] = useState("");
   const [lunarToSolarIsLeapMonth, setLunarToSolarIsLeapMonth] = useState(false);
   const [lunarToSolarResult, setLunarToSolarResult] = useState("");
@@ -342,7 +507,7 @@ export default function Home() {
                   new TextRun({
                     text: "사주 분석 결과",
                     bold: true,
-                    size: 36,
+                    size: WORD_FONT.title,
                   }),
                 ],
               }),
@@ -353,7 +518,7 @@ export default function Home() {
                 children: [
                   new TextRun({
                     text: `이름: ${form.name}`,
-                    size: 24,
+                    size: WORD_FONT.body,
                   }),
                 ],
               }),
@@ -363,7 +528,7 @@ export default function Home() {
                   new TextRun({
                     text: `생년월일: ${form.birthDate} ${form.birthTimeUnknown ? "시간 미상" : form.birthTime
                       }`,
-                    size: 24,
+                    size: WORD_FONT.body,
                   }),
                 ],
               }),
@@ -375,7 +540,7 @@ export default function Home() {
                   new TextRun({
                     text: "만세력",
                     bold: true,
-                    size: 28,
+                    size: WORD_FONT.sectionTitle,
                   }),
                 ],
               }),
@@ -452,7 +617,7 @@ export default function Home() {
                   new TextRun({
                     text: "오행 분포",
                     bold: true,
-                    size: 28,
+                    size: WORD_FONT.sectionTitle,
                   }),
                 ],
               }),
@@ -484,7 +649,7 @@ export default function Home() {
                   new TextRun({
                     text: "사주 풀이",
                     bold: true,
-                    size: 28,
+                    size: WORD_FONT.sectionTitle,
                   }),
                 ],
               }),
@@ -496,7 +661,7 @@ export default function Home() {
                       children: [
                         new TextRun({
                           text: line,
-                          size: 24,
+                          size: WORD_FONT.body,
                         }),
                       ],
                       spacing: {
@@ -934,11 +1099,11 @@ export default function Home() {
     return (
       <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-6">
         <div className="rounded-2xl border border-[#ead8c4] bg-[#fffaf3] p-4 text-center">
-          <div className="text-smm font-bold text-zinc-700">
+          <div className={`${FONT.specialLabel} ${WEIGHT.specialLabel} ${COLOR.specialLabel}`}>
             공망 / <br /> 일주
           </div>
 
-          <div className="mt-2 text-2xl font-bold text-[#6b3f24]">
+          <div className={`mt-2 ${FONT.specialValue} ${WEIGHT.specialValue} ${COLOR.specialValue}`}>
             {getDayGongmang(targetSaju)}
           </div>
         </div>
@@ -948,11 +1113,11 @@ export default function Home() {
             key={gwiyin.label}
             className="rounded-2xl border border-[#ead8c4] bg-[#fffaf3] p-4 text-center"
           >
-            <div className="text-smm font-bold text-zinc-700">
+            <div className={`${FONT.specialLabel} ${WEIGHT.specialLabel} ${COLOR.specialLabel}`}>
               {gwiyin.label}
             </div>
 
-            <div className="mt-2 text-2xl font-bold text-[#6b3f24]">
+            <div className={`mt-2 ${FONT.specialValue} ${WEIGHT.specialValue} ${COLOR.specialValue}`}>
               {gwiyin.value}
             </div>
           </div>
@@ -1643,9 +1808,9 @@ export default function Home() {
     if (!item.data) {
       return (
         <div key={item.label} className="rounded-xl bg-zinc-100 p-3">
-          <div className="text-smm font-bold text-black">{item.label}</div>
+          <div className={`${FONT.pillarLabel} ${WEIGHT.pillarLabel} ${COLOR.pillarLabel}`}>{item.label}</div>
 
-          <div className="mt-8 flex min-h-[150px] items-center justify-center rounded-xl border border-dashed border-zinc-300 bg-white/60 text-smm font-bold text-zinc-400">
+          <div className={`mt-8 flex min-h-[150px] items-center justify-center rounded-xl border border-dashed border-zinc-300 bg-white/60 ${FONT.timeUnknown} ${WEIGHT.timeUnknown} ${COLOR.timeUnknown}`}>
             시간 미상
           </div>
         </div>
@@ -1654,12 +1819,12 @@ export default function Home() {
 
     return (
       <div key={item.label} className="rounded-xl bg-zinc-100 p-3">
-        <div className="text-smm font-bold text-black">
+        <div className={`${FONT.pillarLabel} ${WEIGHT.pillarLabel} ${COLOR.pillarLabel}`}>
           {item.label}</div>
 
         <div className="mt-2 flex flex-col items-center">
           <div
-            className="text-3xl font-bold leading-none"
+            className={`${FONT.pillarMainHanja} ${WEIGHT.pillarMainHanja} leading-none`}
             style={{
               color: getElementColor(item.data.stemElement),
               WebkitTextStroke: "1.5px black",
@@ -1670,7 +1835,7 @@ export default function Home() {
           </div>
 
           <div
-            className="mt-2 text-3xl font-bold leading-none"
+            className={`mt-2 ${FONT.pillarMainHanja} ${WEIGHT.pillarMainHanja} leading-none`}
             style={{
               color: getElementColor(item.data.branchElement),
               WebkitTextStroke: "1.5px black",
@@ -1680,34 +1845,33 @@ export default function Home() {
             {item.data.branch}
           </div>
 
-          <div className="mt-3 text-smm font-semibold text-zinc-600">
+          <div className={`mt-3 ${FONT.pillarKor} ${WEIGHT.pillarKor} ${COLOR.pillarKor}`}>
             {item.data.stemKor}
             {item.data.branchKor}
           </div>
 
-          <div className="mt-1 rounded-lg bg-white/70 px-2 py-1 text-[15px] font-semibold text-zinc-600">
+          <div className={`mt-1 rounded-lg bg-white/70 px-2 py-1 ${FONT.hiddenStem} ${WEIGHT.hiddenStem} ${COLOR.hiddenStem}`}>
             {getHiddenStemsText(item.data.branch)}
           </div>
         </div>
 
-        <div className="mt-3 text-sm font-bold text-black">
+        <div className={`mt-3 ${FONT.tenGod} ${WEIGHT.tenGod} ${COLOR.tenGod}`}>
           {item.tenGodStem}
         </div>
 
-        <div className="text-sm font-bold text-black">
+        <div className={`${FONT.tenGod} ${WEIGHT.tenGod} ${COLOR.tenGod}`}>
           {item.tenGodBranch}
         </div>
-        <div className="mt-2 text-sm font-bold text-[#6b3f24]">
+        <div className={`mt-2 ${FONT.twelveState} ${WEIGHT.twelveState} ${COLOR.twelveState}`}>
           {item.twelveStage}
         </div>
 
-        {item.branchRelations?.length > 0 &&
-          (!isCompatibilityMode || showCompatibilityRelations) && (
+        {item.branchRelations?.length > 0 && showCompatibilityRelations && (
             <div className="mt-2 flex flex-wrap justify-center gap-1">
               {item.branchRelations.map((relation: string) => (
                 <span
                   key={relation}
-                  className="rounded-full border border-[#ead8c4] bg-[#fffaf3] px-2 py-0.5 text-sm font-bold text-[#6b3f24]"
+                  className={`rounded-full border border-[#ead8c4] bg-[#fffaf3] px-2 py-0.5 ${FONT.relation} ${WEIGHT.relation} ${COLOR.relation}`}
                 >
                   {relation}
                 </span>
@@ -1715,10 +1879,9 @@ export default function Home() {
             </div>
           )}
 
-        {item.shinsals?.length > 0 &&
-          (!isCompatibilityMode || showCompatibilityRelations) && (
+        {item.shinsals?.length > 0 && showCompatibilityRelations && (
             <div className="mt-2 border-t border-[#ead8c4] pt-2">
-              <div className="mb-1 text-center text-sm font-bold text-zinc-500">
+              <div className={`mb-1 text-center ${FONT.shinsalTitle} ${WEIGHT.shinsalTitle} ${COLOR.shinsalTitle}`}>
                 신살
               </div>
 
@@ -1726,7 +1889,7 @@ export default function Home() {
                 {item.shinsals.map((shinsal: string) => (
                   <span
                     key={shinsal}
-                    className="rounded-full border border-[#d7c4ad] bg-white px-2 py-0.5 text-sm font-bold text-[#5f3a20]"
+                    className={`rounded-full border border-[#d7c4ad] bg-white px-2 py-0.5 ${FONT.shinsal} ${WEIGHT.shinsal} ${COLOR.shinsal}`}
                   >
                     {shinsal}
                   </span>
@@ -1765,7 +1928,7 @@ export default function Home() {
 
     return (
       <div className="mt-6 rounded-2xl bg-white p-4 shadow-sm">
-        <h3 className="text-lg font-bold text-black">대운</h3>
+        <h3 className={`${FONT.daewoonTitle} ${WEIGHT.daewoonTitle} ${COLOR.daewoonTitle}`}>대운</h3>
 
         <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-5">
           {targetSaju.daewoon.map((item: any) => {
@@ -1793,7 +1956,7 @@ export default function Home() {
               >
                 <div
                   className={
-                    selected ? "text-sm text-white/80 font-bold " : "text-sm text-black font-bold "
+                    selected ? `${FONT.daewoonAge} ${WEIGHT.daewoonAge} ${COLOR.daewoonAgeSelected}` : `${FONT.daewoonAge} ${WEIGHT.daewoonAge} ${COLOR.daewoonAge}`
                   }
                 >
                   {item.startAgeText}
@@ -1801,7 +1964,7 @@ export default function Home() {
 
                 <div className="mt-2 flex flex-col items-center">
                   <div
-                    className="text-3xl font-bold"
+                    className={`${FONT.daewoonHanja} font-bold`}
                     style={{
                       color: getElementColor(item.ganji.stemElement),
                       WebkitTextStroke: "1px black",
@@ -1811,7 +1974,7 @@ export default function Home() {
                   </div>
 
                   <div
-                    className="text-3xl font-bold "
+                    className={`${FONT.daewoonHanja} font-bold`}
                     style={{
                       color: getElementColor(item.ganji.branchElement),
                       WebkitTextStroke: "1px black",
@@ -1824,8 +1987,8 @@ export default function Home() {
                 <div
                   className={
                     selected
-                      ? "mt-2 text-sm font-bold text-white"
-                      : "mt-2 text-sm font-bold text-black"
+                      ? `mt-2 ${FONT.daewoonTenGod} ${WEIGHT.daewoonTenGod} ${COLOR.daewoonTenGodSelected}`
+                      : `mt-2 ${FONT.daewoonTenGod} ${WEIGHT.daewoonTenGod} ${COLOR.daewoonTenGod}`
                   }
                 >
                   {item.stemTenGod}
@@ -1834,8 +1997,8 @@ export default function Home() {
                 <div
                   className={
                     selected
-                      ? "text-sm font-bold text-white"
-                      : "text-sm font-bold text-black"
+                      ? `${FONT.daewoonTenGod} ${WEIGHT.daewoonTenGod} ${COLOR.daewoonTenGodSelected}`
+                      : `${FONT.daewoonTenGod} ${WEIGHT.daewoonTenGod} ${COLOR.daewoonTenGod}`
                   }
                 >
                   {item.branchTenGod}
@@ -1847,7 +2010,7 @@ export default function Home() {
 
         {selectedDaewoon && (
           <div className="mt-5 rounded-2xl bg-zinc-100 p-4">
-            <h4 className="font-bold text-black">선택한 대운의 년운</h4>
+            <h4 className={`${FONT.yearLuckTitle} ${WEIGHT.yearLuckTitle} ${COLOR.yearLuckTitle}`}>선택한 대운의 년운</h4>
 
             <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-5">
               {yearLuckList.map((yearLuck: any) => {
@@ -1872,8 +2035,8 @@ export default function Home() {
                     <div
                       className={
                         selected
-                          ? "text-sm font-bold text-white/80"
-                          : "text-sm font-bold text-black"
+                          ? `${FONT.yearLuckAge} ${WEIGHT.yearLuckAge} ${COLOR.yearLuckAgeSelected}`
+                          : `${FONT.yearLuckAge} ${WEIGHT.yearLuckAge} ${COLOR.yearLuckAge}`
                       }
                     >
                       {yearLuck.year} / <br /> {yearLuck.age}세
@@ -1881,7 +2044,7 @@ export default function Home() {
 
                     <div className="mt-2 flex flex-col items-center leading-tight">
                       <div
-                        className="text-3xl font-bold leading-none"
+                        className={`${FONT.yearLuckHanja} font-bold leading-none`}
                         style={{
                           color: getElementColor(yearLuck.ganji.stemElement),
                           WebkitTextStroke: "1.5px black",
@@ -1891,7 +2054,7 @@ export default function Home() {
                       </div>
 
                       <div
-                        className="mt-1 text-3xl font-bold leading-none"
+                        className={`mt-1 ${FONT.yearLuckHanja} font-bold leading-none`}
                         style={{
                           color: getElementColor(yearLuck.ganji.branchElement),
                           WebkitTextStroke: "1.5px black",
@@ -1903,8 +2066,8 @@ export default function Home() {
                       <div
                         className={
                           selected
-                            ? "text-smm font-semibold font-bold text-white"
-                            : "text-smm font-semibold font-bold text-black"
+                            ? `${FONT.yearLuckTenGod} ${WEIGHT.yearLuckTenGod} ${COLOR.yearLuckTenGodSelected}`
+                            : `${FONT.yearLuckTenGod} ${WEIGHT.yearLuckTenGod} ${COLOR.yearLuckTenGod}`
                         }
                       >
                         {yearLuck.stemTenGod}
@@ -1913,8 +2076,8 @@ export default function Home() {
                       <div
                         className={
                           selected
-                            ? "text-smm font-semibold text-white"
-                            : "text-smm font-semibold text-black"
+                            ? `${FONT.yearLuckTenGod} ${WEIGHT.yearLuckTenGod} ${COLOR.yearLuckTenGodSelected}`
+                            : `${FONT.yearLuckTenGod} ${WEIGHT.yearLuckTenGod} ${COLOR.yearLuckTenGod}`
                         }
                       >
                         {yearLuck.branchTenGod}
@@ -1927,7 +2090,7 @@ export default function Home() {
 
             {selectedYearLuck && (
               <div className="mt-5 rounded-2xl bg-white p-4">
-                <h4 className="font-bold text-black">
+                <h4 className={`${FONT.monthLuckTitle} ${WEIGHT.monthLuckTitle} ${COLOR.monthLuckTitle}`}>
                   {selectedYearLuck.year}년 월운
                 </h4>
 
@@ -1937,13 +2100,13 @@ export default function Home() {
                       key={`${monthLuck.year}-${monthLuck.month}`}
                       className="rounded-xl bg-zinc-100 p-3 text-center shadow-sm"
                     >
-                      <div className="text-sm font-bold text-black">
+                      <div className={`${FONT.monthLuckMonth} ${WEIGHT.monthLuckMonth} ${COLOR.monthLuckMonth}`}>
                         {monthLuck.month}월
                       </div>
 
                       <div className="mt-2 flex flex-col items-center leading-tight">
                         <div
-                          className="text-3xl font-bold leading-none"
+                          className={`${FONT.monthLuckHanja} font-bold leading-none`}
                           style={{
                             color: getElementColor(monthLuck.ganji.stemElement),
                             WebkitTextStroke: "1.5px black",
@@ -1953,7 +2116,7 @@ export default function Home() {
                         </div>
 
                         <div
-                          className="mt-1 text-3xl font-bold leading-none"
+                          className={`mt-1 ${FONT.monthLuckHanja} font-bold leading-none`}
                           style={{
                             color: getElementColor(
                               monthLuck.ganji.branchElement,
@@ -1964,11 +2127,11 @@ export default function Home() {
                           {BRANCH_HANJA[monthLuck.ganji.branch]}
                         </div>
 
-                        <div className="text-sm font-semibold font-bold  text-black">
+                        <div className={`${FONT.monthLuckTenGod} ${WEIGHT.monthLuckTenGod} ${COLOR.monthLuckTenGod}`}>
                           {monthLuck.stemTenGod}
                         </div>
 
-                        <div className="text-sm font-semibold font-bold  text-black">
+                        <div className={`${FONT.monthLuckTenGod} ${WEIGHT.monthLuckTenGod} ${COLOR.monthLuckTenGod}`}>
                           {monthLuck.branchTenGod}
                         </div>
                       </div>
@@ -1994,7 +2157,7 @@ export default function Home() {
 
     return (
       <div className="mt-4 rounded-2xl bg-[#ffffff] p-4 text-[#000000] shadow-sm">
-        <h3 className="text-lg font-bold">사주팔자</h3>
+        <h3 className={`${FONT.cardTitle} ${WEIGHT.cardTitle} ${COLOR.cardTitle}`}>사주팔자</h3>
 
         <div className="mt-4 grid grid-cols-2 gap-3 text-center sm:grid-cols-4">
           {items.map((item) => renderPillarCard(item, cardKey))}
@@ -2003,32 +2166,32 @@ export default function Home() {
         {renderSpecialInfo(targetSaju)}
 
         <div className="mt-5 rounded-2xl bg-zinc-100 p-4">
-          <h4 className="font-bold">오행 분포</h4>
+          <h4 className={`${FONT.elementTitle} ${WEIGHT.elementTitle} ${COLOR.elementTitle}`}>오행 분포</h4>
 
-          <div className="mt-3 grid grid-cols-5 gap-2 text-center text-sm">
+          <div className={`mt-3 grid grid-cols-5 gap-2 text-center ${FONT.elementValue}`}>
             <div>
-              <div className="font-bold text-xl">木</div>
-              <div className="font-bold text-xl"> {targetSaju?.elementCount?.wood ?? 0}</div>
+              <div className={`${FONT.elementValue} ${WEIGHT.elementValue} ${COLOR.elementValue}`}>木</div>
+              <div className={`${FONT.elementValue} ${WEIGHT.elementValue} ${COLOR.elementValue}`}> {targetSaju?.elementCount?.wood ?? 0}</div>
             </div>
 
             <div>
-              <div className="font-bold text-xl">火</div>
-              <div className="font-bold text-xl"> {targetSaju?.elementCount?.fire ?? 0}</div>
+              <div className={`${FONT.elementValue} ${WEIGHT.elementValue} ${COLOR.elementValue}`}>火</div>
+              <div className={`${FONT.elementValue} ${WEIGHT.elementValue} ${COLOR.elementValue}`}> {targetSaju?.elementCount?.fire ?? 0}</div>
             </div>
 
             <div>
-              <div className="font-bold text-xl">土</div>
-              <div className="font-bold text-xl"> {targetSaju?.elementCount?.earth ?? 0}</div>
+              <div className={`${FONT.elementValue} ${WEIGHT.elementValue} ${COLOR.elementValue}`}>土</div>
+              <div className={`${FONT.elementValue} ${WEIGHT.elementValue} ${COLOR.elementValue}`}> {targetSaju?.elementCount?.earth ?? 0}</div>
             </div>
 
             <div>
-              <div className="font-bold text-xl">金</div>
-              <div className="font-bold text-xl"> {targetSaju?.elementCount?.metal ?? 0}</div>
+              <div className={`${FONT.elementValue} ${WEIGHT.elementValue} ${COLOR.elementValue}`}>金</div>
+              <div className={`${FONT.elementValue} ${WEIGHT.elementValue} ${COLOR.elementValue}`}> {targetSaju?.elementCount?.metal ?? 0}</div>
             </div>
 
             <div>
-              <div className="font-bold text-xl">水</div>
-              <div className="font-bold text-xl"> {targetSaju?.elementCount?.water ?? 0}</div>
+              <div className={`${FONT.elementValue} ${WEIGHT.elementValue} ${COLOR.elementValue}`}>水</div>
+              <div className={`${FONT.elementValue} ${WEIGHT.elementValue} ${COLOR.elementValue}`}> {targetSaju?.elementCount?.water ?? 0}</div>
             </div>
           </div>
         </div>
@@ -2041,7 +2204,7 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-[#f7efe3] px-5 py-10 text-[#2b1d12]">
       <div className="mx-auto w-[1400px] min-w-[1400px] rounded-3xl bg-white p-6 shadow-xl">
-        <h1 className="text-center text-3xl font-bold">
+        <h1 className={`text-center ${FONT.pageTitle} ${WEIGHT.pageTitle} ${COLOR.pageTitle}`}>
           {mode === "saju"
             ? "사주 분석"
             : mode === "compatibility"
@@ -2049,123 +2212,7 @@ export default function Home() {
               : "점성술 분석"}
         </h1>
 
-        <div className="mt-6 rounded-2xl border border-[#ead8c4] bg-[#fffaf3] p-4 shadow-inner">
-          <h2 className="text-lg font-bold">양력 → 음력 변환</h2>
-
-          <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
-            <input
-              type="text"
-              inputMode="numeric"
-              placeholder="예: 1993-08-04"
-              className="w-full rounded-xl border p-3"
-              value={solarToLunarDate}
-              onChange={(e) =>
-                setSolarToLunarDate(formatDateInput(e.target.value))
-              }
-            />
-
-            <div className="rounded-xl bg-white p-3 text-smm font-bold text-[#6b3f24]">
-              음력:{" "}
-              {solarToLunarDate
-                ? convertSolarToLunar(solarToLunarDate)
-                : "양력을 입력하세요"}
-            </div>
-          </div>
-        </div>
-        <div className="mt-4 rounded-2xl border border-[#ead8c4] bg-[#fffaf3] p-4 shadow-inner">
-          <h2 className="text-lg font-bold">음력 → 양력 변환</h2>
-
-          <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
-            <input
-              type="text"
-              inputMode="numeric"
-              placeholder="예: 1993-08-04"
-              className="w-full rounded-xl border p-3"
-              value={lunarToSolarDate}
-              onChange={(e) => {
-                const formatted = formatDateInput(e.target.value);
-
-                setLunarToSolarDate(formatted);
-
-                if (/^\d{4}-\d{2}-\d{2}$/.test(formatted)) {
-                  const calendar: any = new KoreanLunarCalendar();
-
-                  const [year, month, day] = formatted.split("-").map(Number);
-
-                  const success = calendar.setLunarDate(
-                    year,
-                    month,
-                    day,
-                    lunarToSolarIsLeapMonth,
-                  );
-
-                  if (!success) {
-                    setLunarToSolarResult("변환 불가");
-                    return;
-                  }
-
-                  const solar = calendar.getSolarCalendar();
-
-                  setLunarToSolarResult(
-                    `${solar.year}-${String(solar.month).padStart(2, "0")}-${String(
-                      solar.day,
-                    ).padStart(2, "0")}`,
-                  );
-                } else {
-                  setLunarToSolarResult("");
-                }
-              }}
-            />
-
-            <div className="rounded-xl bg-white p-3 text-smm font-bold text-[#6b3f24]">
-              양력: {lunarToSolarResult || "음력을 입력하세요"}
-            </div>
-          </div>
-
-          <label className="mt-3 flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold text-[#6b3f24]">
-            <input
-              type="checkbox"
-              checked={lunarToSolarIsLeapMonth}
-              onChange={(e) => {
-                const checked = e.target.checked;
-
-                setLunarToSolarIsLeapMonth(checked);
-
-                if (!/^\d{4}-\d{2}-\d{2}$/.test(lunarToSolarDate)) {
-                  setLunarToSolarResult("");
-                  return;
-                }
-
-                const calendar: any = new KoreanLunarCalendar();
-
-                const [year, month, day] = lunarToSolarDate.split("-").map(Number);
-
-                const success = calendar.setLunarDate(
-                  year,
-                  month,
-                  day,
-                  checked,
-                );
-
-                if (!success) {
-                  setLunarToSolarResult("변환 불가");
-                  return;
-                }
-
-                const solar = calendar.getSolarCalendar();
-
-                setLunarToSolarResult(
-                  `${solar.year}-${String(solar.month).padStart(2, "0")}-${String(
-                    solar.day,
-                  ).padStart(2, "0")}`,
-                );
-              }}
-            />
-            윤달
-          </label>
-
-
-        </div>
+        
         <div className="mt-6 grid grid-cols-3 gap-2 rounded-2xl bg-[#f7efe3] p-1">
           <button
             type="button"
@@ -2174,7 +2221,7 @@ export default function Home() {
               setResult("");
               setShowSaju(false);
             }}
-            className={`rounded-xl py-3 text-smm font-bold transition ${mode === "saju"
+            className={`rounded-xl py-3 ${FONT.modeButtonText} ${WEIGHT.modeButtonText} ${COLOR.modeButtonText} transition ${mode === "saju"
               ? "bg-[#6b3f24] text-white shadow"
               : "text-[#6b3f24]"
               }`}
@@ -2189,7 +2236,7 @@ export default function Home() {
               setResult("");
               setShowSaju(false);
             }}
-            className={`rounded-xl py-3 text-smm font-bold transition ${mode === "compatibility"
+            className={`rounded-xl py-3 ${FONT.modeButtonText} ${WEIGHT.modeButtonText} ${COLOR.modeButtonText} transition ${mode === "compatibility"
               ? "bg-[#6b3f24] text-white shadow"
               : "text-[#6b3f24]"
               }`}
@@ -2204,7 +2251,7 @@ export default function Home() {
               setResult("");
               setShowSaju(false);
             }}
-            className={`rounded-xl py-3 text-smm font-bold transition ${mode === "zodiac"
+            className={`rounded-xl py-3 ${FONT.modeButtonText} ${WEIGHT.modeButtonText} ${COLOR.modeButtonText} transition ${mode === "zodiac"
               ? "bg-[#6b3f24] text-white shadow"
               : "text-[#6b3f24]"
               }`}
@@ -2217,7 +2264,7 @@ export default function Home() {
           {mode !== "compatibility" && (
             <>
               <input
-                className="w-full rounded-xl border p-3"
+                className={`w-full rounded-xl border p-3 ${FONT.inputText}`}
                 placeholder="이름"
                 value={form.name}
                 onChange={(e) =>
@@ -2229,7 +2276,7 @@ export default function Home() {
               />
 
               <select
-                className="w-full rounded-xl border p-3"
+                className={`w-full rounded-xl border p-3 ${FONT.inputText}`}
                 value={form.gender}
                 onChange={(e) =>
                   setForm({
@@ -2246,8 +2293,8 @@ export default function Home() {
                 <input
                   type="text"
                   inputMode="numeric"
-                  placeholder="1993-08-04"
-                  className="flex-1 rounded-xl border p-3"
+                  placeholder="1988-02-02"
+                  className={`flex-1 rounded-xl border p-3 ${FONT.inputText}`}
                   value={form.birthDate}
                   onChange={(e) => {
                     setForm({
@@ -2260,7 +2307,7 @@ export default function Home() {
                   }}
                 />
 
-                <label className="flex items-center gap-1 text-sm font-bold">
+                <label className={`flex items-center gap-1 ${FONT.formLabel} font-bold`}>
                   <input
                     type="checkbox"
                     checked={form.calendarType === "solar"}
@@ -2275,7 +2322,7 @@ export default function Home() {
                   양력
                 </label>
 
-                <label className="flex items-center gap-1 text-sm font-bold">
+                <label className={`flex items-center gap-1 ${FONT.formLabel} font-bold`}>
                   <input
                     type="checkbox"
                     checked={form.calendarType === "lunar"}
@@ -2290,7 +2337,7 @@ export default function Home() {
                 </label>
 
                 {form.calendarType === "lunar" && (
-                  <label className="flex items-center gap-1 text-sm font-bold text-[#6b3f24]">
+                  <label className={`flex items-center gap-1 ${FONT.formLabel} font-bold text-[#6b3f24]`}>
                     <input
                       type="checkbox"
                       checked={form.isLeapMonth}
@@ -2310,7 +2357,7 @@ export default function Home() {
                 type="text"
                 inputMode="numeric"
                 placeholder="23:00"
-                className="w-full rounded-xl border p-3 disabled:bg-zinc-100 disabled:text-zinc-400"
+                className={`w-full rounded-xl border p-3 ${FONT.inputText} disabled:bg-zinc-100 disabled:text-zinc-400`}
                 value={form.birthTime}
                 disabled={form.birthTimeUnknown}
                 onChange={(e) => {
@@ -2324,7 +2371,7 @@ export default function Home() {
                 }}
               />
 
-              <label className="flex items-center gap-2 rounded-xl border border-[#ead8c4] bg-[#fffaf3] px-4 py-3 text-smm font-bold text-[#6b3f24]">
+              <label className={`flex items-center gap-2 rounded-xl border border-[#ead8c4] bg-[#fffaf3] px-4 py-3 ${FONT.formLabel} font-bold text-[#6b3f24]`}>
                 <input
                   type="checkbox"
                   checked={form.birthTimeUnknown}
@@ -2345,7 +2392,7 @@ export default function Home() {
                 <input
                   type="text"
                   placeholder="태어난 위치 예: 서울, 대한민국"
-                  className="w-full rounded-xl border p-3"
+                  className={`w-full rounded-xl border p-3 ${FONT.inputText}`}
                   value={form.birthLocation}
                   onChange={(e) =>
                     setForm({
@@ -2365,13 +2412,13 @@ export default function Home() {
                   key={key}
                   className="rounded-3xl border border-[#ead8c4] bg-[#fffaf3] p-5 shadow-inner"
                 >
-                  <h2 className="mb-4 text-center text-xl font-bold">
+                  <h2 className={`mb-4 text-center ${FONT.sectionTitle} ${WEIGHT.sectionTitle} ${COLOR.sectionTitle}`}>
                     {key === "left" ? "본인" : "상대"}
                   </h2>
 
                   <div className="space-y-4">
                     <input
-                      className="w-full rounded-xl border p-3"
+                      className={`w-full rounded-xl border p-3 ${FONT.inputText}`}
                       placeholder="이름"
                       value={compatibilityForm[key].name}
                       onChange={(e) => {
@@ -2388,7 +2435,7 @@ export default function Home() {
                     />
 
                     <select
-                      className="w-full rounded-xl border p-3"
+                      className={`w-full rounded-xl border p-3 ${FONT.inputText}`}
                       value={compatibilityForm[key].gender}
                       onChange={(e) => {
                         setCompatibilityForm({
@@ -2415,8 +2462,8 @@ export default function Home() {
                       <input
                         type="text"
                         inputMode="numeric"
-                        placeholder="1993-08-04"
-                        className="flex-1 rounded-xl border p-3"
+                        placeholder="1988-02-02"
+                        className={`flex-1 rounded-xl border p-3 ${FONT.inputText}`}
                         value={compatibilityForm[key].birthDate}
                         onChange={(e) => {
                           setCompatibilityForm({
@@ -2436,7 +2483,7 @@ export default function Home() {
                         }}
                       />
 
-                      <label className="flex items-center gap-1 text-sm font-bold">
+                      <label className={`flex items-center gap-1 ${FONT.formLabel} font-bold`}>
                         <input
                           type="checkbox"
                           checked={compatibilityForm[key].calendarType === "solar"}
@@ -2454,7 +2501,7 @@ export default function Home() {
                         양력
                       </label>
 
-                      <label className="flex items-center gap-1 text-sm font-bold">
+                      <label className={`flex items-center gap-1 ${FONT.formLabel} font-bold`}>
                         <input
                           type="checkbox"
                           checked={compatibilityForm[key].calendarType === "lunar"}
@@ -2472,7 +2519,7 @@ export default function Home() {
                       </label>
 
                       {compatibilityForm[key].calendarType === "lunar" && (
-                        <label className="flex items-center gap-1 text-sm font-bold text-[#6b3f24]">
+                        <label className={`flex items-center gap-1 ${FONT.formLabel} font-bold text-[#6b3f24]`}>
                           <input
                             type="checkbox"
                             checked={compatibilityForm[key].isLeapMonth}
@@ -2495,7 +2542,7 @@ export default function Home() {
                       type="text"
                       inputMode="numeric"
                       placeholder="23:00"
-                      className="w-full rounded-xl border p-3 disabled:bg-zinc-100 disabled:text-zinc-400"
+                      className={`w-full rounded-xl border p-3 ${FONT.inputText} disabled:bg-zinc-100 disabled:text-zinc-400`}
                       value={compatibilityForm[key].birthTime}
                       disabled={compatibilityForm[key].birthTimeUnknown}
                       onChange={(e) => {
@@ -2516,7 +2563,7 @@ export default function Home() {
                       }}
                     />
 
-                    <label className="flex items-center gap-2 rounded-xl border border-[#ead8c4] bg-white px-4 py-3 text-smm font-bold text-[#6b3f24]">
+                    <label className={`flex items-center gap-2 rounded-xl border border-[#ead8c4] bg-white px-4 py-3 ${FONT.formLabel} font-bold text-[#6b3f24]`}>
                       <input
                         type="checkbox"
                         checked={compatibilityForm[key].birthTimeUnknown}
@@ -2550,7 +2597,7 @@ export default function Home() {
               <button
                 type="button"
                 onClick={() => setShowSaju((prev) => !prev)}
-                className="w-full rounded-xl border border-[#6b3f24]/40 bg-[#fff7ed] py-4 font-bold text-[#6b3f24] shadow-sm transition hover:bg-[#f3e1cf]"
+                className={`w-full rounded-xl border border-[#6b3f24]/40 bg-[#fff7ed] py-4 ${FONT.buttonText} font-bold text-[#6b3f24] shadow-sm transition hover:bg-[#f3e1cf]`}
               >
                 {showSaju ? "만세력 닫기" : "만세력 보기"}
               </button>
@@ -2559,7 +2606,7 @@ export default function Home() {
                 type="button"
                 onClick={handleSubmit}
                 disabled={loading}
-                className="w-full cursor-pointer rounded-xl bg-[#6b3f24] py-4 font-bold text-white disabled:opacity-50"
+                className={`w-full cursor-pointer rounded-xl bg-[#6b3f24] py-4 ${FONT.buttonText} ${WEIGHT.buttonText} ${COLOR.buttonText} disabled:opacity-50`}
               >
                 {loading ? "분석 중..." : "사주 분석하기"}
               </button>
@@ -2579,7 +2626,7 @@ export default function Home() {
                   (!compatibilityForm.right.birthTime &&
                     !compatibilityForm.right.birthTimeUnknown)
                 }
-                className="w-full rounded-xl border border-[#6b3f24]/40 bg-[#fff7ed] py-4 font-bold text-[#6b3f24] shadow-sm transition hover:bg-[#f3e1cf] disabled:opacity-40"
+                className={`w-full rounded-xl border border-[#6b3f24]/40 bg-[#fff7ed] py-4 ${FONT.buttonText} font-bold text-[#6b3f24] shadow-sm transition hover:bg-[#f3e1cf] disabled:opacity-40`}
               >
                 두 사람 만세력 보기
               </button>
@@ -2588,7 +2635,7 @@ export default function Home() {
                 type="button"
                 onClick={handleSubmit}
                 disabled={loading}
-                className="w-full cursor-pointer rounded-xl bg-[#6b3f24] py-4 font-bold text-white disabled:opacity-50"
+                className={`w-full cursor-pointer rounded-xl bg-[#6b3f24] py-4 ${FONT.buttonText} ${WEIGHT.buttonText} ${COLOR.buttonText} disabled:opacity-50`}
               >
                 {loading ? "분석 중..." : "궁합 분석하기"}
               </button>
@@ -2600,7 +2647,7 @@ export default function Home() {
               type="button"
               onClick={handleSubmit}
               disabled={loading}
-              className="w-full cursor-pointer rounded-xl bg-[#6b3f24] py-4 font-bold text-white disabled:opacity-50"
+              className={`w-full cursor-pointer rounded-xl bg-[#6b3f24] py-4 ${FONT.buttonText} ${WEIGHT.buttonText} ${COLOR.buttonText} disabled:opacity-50`}
             >
               {loading ? "분석 중..." : "점성술 분석하기"}
             </button>
@@ -2608,9 +2655,9 @@ export default function Home() {
 
           {mode === "saju" && showSaju && (
             <section className="mt-6 rounded-3xl border border-[#ead8c4] bg-[#fffaf3] p-5 shadow-inner">
-              <h2 className="text-xl font-bold">만세력 계산</h2>
+              <h2 className={`${FONT.sectionTitle} ${WEIGHT.sectionTitle} ${COLOR.sectionTitle}`}>만세력 계산</h2>
 
-              <p className="mt-2 text-smm text-zinc-600">
+              <p className={`mt-2 ${FONT.body} ${WEIGHT.body} ${COLOR.body}`}>
                 위에 입력한 생년월일시를 기준으로 사주팔자와 오행 분포를
                 계산합니다.
               </p>
@@ -2621,7 +2668,7 @@ export default function Home() {
                 disabled={
                   !form.birthDate || (!form.birthTime && !form.birthTimeUnknown)
                 }
-                className="mt-5 w-full rounded-xl bg-[#2b1d12] px-5 py-3 font-bold text-white transition hover:bg-[#4a2f1c] disabled:opacity-40"
+                className={`mt-5 w-full rounded-xl bg-[#2b1d12] px-5 py-3 ${FONT.buttonText} ${WEIGHT.buttonText} ${COLOR.buttonText} transition hover:bg-[#4a2f1c] disabled:opacity-40`}
               >
                 계산하기
               </button>
@@ -2635,12 +2682,26 @@ export default function Home() {
                   <button
                     type="button"
                     onClick={downloadWord}
-                    className="mt-4 w-full rounded-xl bg-black px-5 py-3 font-bold text-white shadow-md"
+                    className={`mt-4 w-full rounded-xl bg-black px-5 py-3 ${FONT.buttonText} ${WEIGHT.buttonText} ${COLOR.buttonText} shadow-md`}
                   >
                     저장하기
                   </button>
 
-                  <h3 className="mt-4 text-lg font-bold">사주팔자</h3>
+                  <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <h3 className={`${FONT.cardTitle} ${WEIGHT.cardTitle} ${COLOR.cardTitle}`}>사주팔자</h3>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setShowCompatibilityRelations((prev) => !prev)
+                      }
+                      className={`rounded-full border border-[#6b3f24]/40 bg-white px-4 py-2 ${FONT.buttonText} ${WEIGHT.buttonText} text-[#6b3f24] shadow-sm transition hover:bg-[#f3e1cf]`}
+                    >
+                      {showCompatibilityRelations
+                        ? "지지 관계·신살 전체 접기 ▲"
+                        : "지지 관계·신살 전체 열기 ▼"}
+                    </button>
+                  </div>
 
                   <div className="mt-4 grid grid-cols-2 gap-3 text-center sm:grid-cols-4 font-bold text-black">
                     {sajuItems.map((item) => renderPillarCard(item, "main"))}
@@ -2649,32 +2710,32 @@ export default function Home() {
                   {renderSpecialInfo(sajuResult)}
 
                   <div className="mt-5 rounded-2xl bg-zinc-100 p-4">
-                    <h4 className="font-bold">오행 분포</h4>
+                    <h4 className={`${FONT.elementTitle} ${WEIGHT.elementTitle} ${COLOR.elementTitle}`}>오행 분포</h4>
 
-                    <div className="mt-3 grid grid-cols-5 gap-2 text-center text-smm">
+                    <div className={`mt-3 grid grid-cols-5 gap-2 text-center ${FONT.elementValue}`}>
                       <div>
-                        <div className="font-bold text-2xl">木</div>
-                        <div className="font-bold text-lg">{sajuResult?.elementCount?.wood ?? 0}</div>
+                        <div className={`${FONT.elementTitle} ${WEIGHT.elementTitle} ${COLOR.elementTitle}`}>木</div>
+                        <div className={`${FONT.elementValue} ${WEIGHT.elementValue} ${COLOR.elementValue}`}>{sajuResult?.elementCount?.wood ?? 0}</div>
                       </div>
 
                       <div>
-                        <div className="font-bold text-2xl">火</div>
-                        <div className="font-bold text-lg">{sajuResult?.elementCount?.fire ?? 0}</div>
+                        <div className={`${FONT.elementTitle} ${WEIGHT.elementTitle} ${COLOR.elementTitle}`}>火</div>
+                        <div className={`${FONT.elementValue} ${WEIGHT.elementValue} ${COLOR.elementValue}`}>{sajuResult?.elementCount?.fire ?? 0}</div>
                       </div>
 
                       <div>
-                        <div className="font-bold text-2xl">土</div>
-                        <div className="font-bold text-lg">{sajuResult?.elementCount?.earth ?? 0}</div>
+                        <div className={`${FONT.elementTitle} ${WEIGHT.elementTitle} ${COLOR.elementTitle}`}>土</div>
+                        <div className={`${FONT.elementValue} ${WEIGHT.elementValue} ${COLOR.elementValue}`}>{sajuResult?.elementCount?.earth ?? 0}</div>
                       </div>
 
                       <div>
-                        <div className="font-bold text-2xl">金</div>
-                        <div className="font-bold text-lg"> {sajuResult?.elementCount?.metal ?? 0}</div>
+                        <div className={`${FONT.elementTitle} ${WEIGHT.elementTitle} ${COLOR.elementTitle}`}>金</div>
+                        <div className={`${FONT.elementValue} ${WEIGHT.elementValue} ${COLOR.elementValue}`}> {sajuResult?.elementCount?.metal ?? 0}</div>
                       </div>
 
                       <div>
-                        <div className="font-bold text-2xl">水</div>
-                        <div className="font-bold text-lg"> {sajuResult?.elementCount?.water ?? 0}</div>
+                        <div className={`${FONT.elementTitle} ${WEIGHT.elementTitle} ${COLOR.elementTitle}`}>水</div>
+                        <div className={`${FONT.elementValue} ${WEIGHT.elementValue} ${COLOR.elementValue}`}> {sajuResult?.elementCount?.water ?? 0}</div>
                       </div>
                     </div>
                   </div>
@@ -2683,9 +2744,9 @@ export default function Home() {
 
                   {result && (
                     <div className="mt-5 rounded-2xl bg-zinc-100 p-4">
-                      <h4 className="font-bold">사주 해석</h4>
+                      <h4 className={`${FONT.panelTitle} ${WEIGHT.panelTitle} ${COLOR.panelTitle}`}>사주 해석</h4>
 
-                      <div className="mt-3 whitespace-pre-wrap leading-7 text-zinc-700">
+                      <div className={`mt-3 whitespace-pre-wrap leading-7 ${FONT.analysisBody} ${WEIGHT.analysisBody} ${COLOR.analysisBody}`}>
                         {result}
                       </div>
                     </div>
@@ -2699,14 +2760,14 @@ export default function Home() {
             (compatibilityResult.left || compatibilityResult.right) && (
               <section className="mt-6 rounded-3xl border border-[#ead8c4] bg-[#fffaf3] p-5 shadow-inner">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <h2 className="text-xl font-bold">두 사람 만세력</h2>
+                  <h2 className={`${FONT.sectionTitle} ${WEIGHT.sectionTitle} ${COLOR.sectionTitle}`}>두 사람 만세력</h2>
 
                   <button
                     type="button"
                     onClick={() =>
                       setShowCompatibilityRelations((prev) => !prev)
                     }
-                    className="rounded-full border border-[#6b3f24]/40 bg-white px-4 py-2 text-smm font-bold text-[#6b3f24] shadow-sm transition hover:bg-[#f3e1cf]"
+                    className={`rounded-full border border-[#6b3f24]/40 bg-white px-4 py-2 ${FONT.buttonText} font-bold text-[#6b3f24] shadow-sm transition hover:bg-[#f3e1cf]`}
                   >
                     {showCompatibilityRelations
                       ? "지지 관계·신살 전체 접기 ▲"
@@ -2716,7 +2777,7 @@ export default function Home() {
 
                 <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
                   <div>
-                    <h3 className="text-center text-lg font-bold">
+                    <h3 className={`text-center ${FONT.cardTitle} ${WEIGHT.cardTitle} ${COLOR.cardTitle}`}>
                       {compatibilityForm.left.name || "본인"}
                     </h3>
                     {renderSajuCard(
@@ -2727,7 +2788,7 @@ export default function Home() {
                   </div>
 
                   <div>
-                    <h3 className="text-center text-lg font-bold">
+                    <h3 className={`text-center ${FONT.cardTitle} ${WEIGHT.cardTitle} ${COLOR.cardTitle}`}>
                       {compatibilityForm.right.name || "상대"}
                     </h3>
                     {renderSajuCard(
@@ -2742,9 +2803,9 @@ export default function Home() {
 
           {mode === "compatibility" && result && (
             <section className="mt-6 rounded-3xl border border-[#ead8c4] bg-[#fffaf3] p-5 shadow-inner">
-              <h2 className="text-xl font-bold">궁합 해석</h2>
+              <h2 className={`${FONT.sectionTitle} ${WEIGHT.sectionTitle} ${COLOR.sectionTitle}`}>궁합 해석</h2>
 
-              <div className="mt-3 whitespace-pre-wrap leading-7 text-zinc-700">
+              <div className={`mt-3 whitespace-pre-wrap leading-7 ${FONT.analysisBody} ${WEIGHT.analysisBody} ${COLOR.analysisBody}`}>
                 {result}
               </div>
             </section>
@@ -2752,9 +2813,9 @@ export default function Home() {
 
           {mode === "zodiac" && result && (
             <section className="mt-6 rounded-3xl border border-[#ead8c4] bg-[#fffaf3] p-5 shadow-inner">
-              <h2 className="text-xl font-bold">점성술 해석</h2>
+              <h2 className={`${FONT.sectionTitle} ${WEIGHT.sectionTitle} ${COLOR.sectionTitle}`}>점성술 해석</h2>
 
-              <div className="mt-3 whitespace-pre-wrap leading-7 text-zinc-700">
+              <div className={`mt-3 whitespace-pre-wrap leading-7 ${FONT.analysisBody} ${WEIGHT.analysisBody} ${COLOR.analysisBody}`}>
                 {result}
               </div>
             </section>
