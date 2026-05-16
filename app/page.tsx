@@ -2666,14 +2666,14 @@ const buildDailyCalendar = (date: Date) => {
   일진달력 보기
 </button>
 
-              <button
+              {/*<button
                 type="button"
                 onClick={handleSubmit}
                 disabled={loading}
                 className={`w-full cursor-pointer rounded-xl bg-[#6b3f24] py-4 ${FONT.buttonText} ${WEIGHT.buttonText} ${COLOR.buttonText} disabled:opacity-50`}
               >
                 {loading ? "분석 중..." : "사주 분석하기"}
-              </button>
+              </button>*/}
             </>
           )}
 
