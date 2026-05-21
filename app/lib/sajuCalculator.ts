@@ -300,8 +300,8 @@ function getMonthBranchIndex(date: Date): number {
   const y = date.getFullYear();
 
   const terms = [
-    { date: new Date(y, 0, 6), branchIndex: 1 },
-    { date: new Date(y, 1, 4), branchIndex: 2 },
+    { date: new Date(y, 0, 6), branchIndex: 1 },  // 소한: 축월
+    { date: new Date(y, 1, 4), branchIndex: 2 },  // 입춘: 인월
     { date: new Date(y, 2, 6), branchIndex: 3 },
     { date: new Date(y, 3, 5), branchIndex: 4 },
     { date: new Date(y, 4, 6), branchIndex: 5 },
@@ -311,10 +311,10 @@ function getMonthBranchIndex(date: Date): number {
     { date: new Date(y, 8, 8), branchIndex: 9 },
     { date: new Date(y, 9, 8), branchIndex: 10 },
     { date: new Date(y, 10, 7), branchIndex: 11 },
-    { date: new Date(y, 11, 7), branchIndex: 0 },
+    { date: new Date(y, 11, 7), branchIndex: 0 }, // 대설: 자월
   ];
 
-  let branchIndex = 1;
+  let branchIndex = 0; // 핵심 수정: 1월 6일 전은 전년도 대설 이후 자월
 
   for (const term of terms) {
     if (date >= term.date) {
@@ -324,7 +324,6 @@ function getMonthBranchIndex(date: Date): number {
 
   return branchIndex;
 }
-
 function getMonthGanZhi(
   date: Date,
   yearStemIndex: number
