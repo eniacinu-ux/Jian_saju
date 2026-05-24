@@ -363,20 +363,26 @@ function getMonthGanZhi(
 }
 
 function getDayGanZhi(date: Date): GanZhi {
-  const baseDate = new Date(1993, 7, 4);
+  // 기준일: 1993-08-04 = 丁巳
+  // Date 객체의 로컬/서버 타임존 차이와 DST 영향을 피하기 위해
+  // 날짜 차이는 UTC 정오 기준으로만 계산한다.
+  const baseDate = Date.UTC(1993, 7, 4, 12, 0, 0, 0);
 
   const baseStemIndex = 3;
   const baseBranchIndex = 5;
 
-  const targetDate = new Date(
+  const targetDate = Date.UTC(
     date.getFullYear(),
     date.getMonth(),
-    date.getDate()
+    date.getDate(),
+    12,
+    0,
+    0,
+    0
   );
 
-  const diffDays = Math.floor(
-    (targetDate.getTime() - baseDate.getTime()) /
-      86400000
+  const diffDays = Math.round(
+    (targetDate - baseDate) / 86400000
   );
 
   return makeGanZhi(
@@ -773,9 +779,13 @@ export function calculateSaju(
 
   const dayDate = new Date(date);
 
+  // 일주는 사용자가 입력한 한국 표준시 기준 날짜로 계산한다.
+  // 진태양시 보정값으로 일주 날짜를 바꾸면 00시 초반/23시 근처에서
+  // 하루씩 밀리는 문제가 생길 수 있다.
+  // lateZiMode가 켜진 경우에만 입력 시각 23:00~23:59를 다음 날 일주로 본다.
   if (
     input.lateZiMode &&
-    correctedTimeDate.getHours() === 23
+    date.getHours() === 23
   ) {
     dayDate.setDate(dayDate.getDate() + 1);
   }
