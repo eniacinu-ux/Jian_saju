@@ -31,19 +31,19 @@ export default function Home() {
     analysisBody: "text-4xl",
 
     // 사주 카드
-    pillarLabel: "text-4xl",
-    pillarMainHanja: "text-8xl",
-    pillarKor: "text-4xl",
-    hiddenStem: "text-4xl",
-    timeUnknown: "text-4xl",
+    pillarLabel: "text-3xl",
+    pillarMainHanja: "text-6xl",
+    pillarKor: "text-3xl",
+    hiddenStem: "text-3xl",
+    timeUnknown: "text-3xl",
 
     // 십성 / 십이운성
-    tenGod: "text-4xl",
-    twelveState: "text-4xl",
+    tenGod: "text-3xl",
+    twelveState: "text-3xl",
 
     // 공망 / 귀인
-    specialLabel: "text-4xl",
-    specialValue: "text-7xl",
+    specialLabel: "text-3xl",
+    specialValue: "text-4xl",
 
     // 지지 관계 / 신살
     relation: "text-3xl",
@@ -51,8 +51,8 @@ export default function Home() {
     shinsal: "text-3xl",
 
     // 대운
-    daewoonTitle: "text-4xl",
-    daewoonAge: "text-3xl",
+    daewoonTitle: "text-3xl",
+    daewoonAge: "text-2xl",
     daewoonHanja: "text-5xl",
     daewoonTenGod: "text-3xl",
 
@@ -1090,7 +1090,7 @@ const [calendarDate, setCalendarDate] = useState(new Date());
     { label: "천주", value: getCheonjuGwiyin(targetSaju) },
     { label: "금여록", value: getGeumnyeorok(targetSaju) },
     { label: "복성", value: getBokseongGwiyin(targetSaju) },
-    { label: "국인", value: getGukinGwiyin(targetSaju) },
+    //{ label: "국인", value: getGukinGwiyin(targetSaju) },
   ];
 
   const renderSpecialInfo = (targetSaju: any) => {
@@ -1102,7 +1102,7 @@ const [calendarDate, setCalendarDate] = useState(new Date());
       <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-6">
         <div className="rounded-2xl border border-[#ead8c4] bg-[#fffaf3] p-4 text-center">
           <div className={`${FONT.specialLabel} ${WEIGHT.specialLabel} ${COLOR.specialLabel}`}>
-            공망 / <br /> 일주
+            공망
           </div>
 
           <div className={`mt-2 ${FONT.specialValue} ${WEIGHT.specialValue} ${COLOR.specialValue}`}>
@@ -1124,6 +1124,103 @@ const [calendarDate, setCalendarDate] = useState(new Date());
             </div>
           </div>
         ))}
+      </div>
+    );
+  };
+
+
+  const renderElementInfo = (targetSaju: any) => {
+    if (!targetSaju) return null;
+
+    return (
+      <div className="rounded-2xl bg-zinc-100 p-4">
+        <h4 className={`${FONT.elementTitle} ${WEIGHT.elementTitle} ${COLOR.elementTitle}`}>
+          오행 분포
+        </h4>
+
+        <div className={`mt-3 grid grid-cols-5 gap-2 text-center ${FONT.elementValue}`}>
+          <div>
+            <div className={`${FONT.elementTitle} ${WEIGHT.elementTitle} ${COLOR.elementTitle}`}>木</div>
+            <div className={`${FONT.elementValue} ${WEIGHT.elementValue} ${COLOR.elementValue}`}>
+              {targetSaju?.elementCount?.wood ?? 0}
+            </div>
+          </div>
+
+          <div>
+            <div className={`${FONT.elementTitle} ${WEIGHT.elementTitle} ${COLOR.elementTitle}`}>火</div>
+            <div className={`${FONT.elementValue} ${WEIGHT.elementValue} ${COLOR.elementValue}`}>
+              {targetSaju?.elementCount?.fire ?? 0}
+            </div>
+          </div>
+
+          <div>
+            <div className={`${FONT.elementTitle} ${WEIGHT.elementTitle} ${COLOR.elementTitle}`}>土</div>
+            <div className={`${FONT.elementValue} ${WEIGHT.elementValue} ${COLOR.elementValue}`}>
+              {targetSaju?.elementCount?.earth ?? 0}
+            </div>
+          </div>
+
+          <div>
+            <div className={`${FONT.elementTitle} ${WEIGHT.elementTitle} ${COLOR.elementTitle}`}>金</div>
+            <div className={`${FONT.elementValue} ${WEIGHT.elementValue} ${COLOR.elementValue}`}>
+              {targetSaju?.elementCount?.metal ?? 0}
+            </div>
+          </div>
+
+          <div>
+            <div className={`${FONT.elementTitle} ${WEIGHT.elementTitle} ${COLOR.elementTitle}`}>水</div>
+            <div className={`${FONT.elementValue} ${WEIGHT.elementValue} ${COLOR.elementValue}`}>
+              {targetSaju?.elementCount?.water ?? 0}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderSajuOverview = (
+    targetSaju: any,
+    items: any[],
+    cardKey: string,
+  ) => {
+    if (!targetSaju) return null;
+
+    return (
+      <div className="mt-4 grid grid-cols-12 gap-4">
+        <div className="col-span-9 flex flex-col gap-4">
+          <div className="grid grid-cols-4 gap-3 text-center font-bold text-black">
+            {items.map((item) => renderPillarCard(item, cardKey))}
+          </div>
+
+          {renderElementInfo(targetSaju)}
+        </div>
+
+        <div className="col-span-3">
+          <div className=" rounded-2xl border border-[#ead8c4] bg-[#fffaf3] p-4">
+            
+
+            <div className={`${FONT.specialLabel} ${WEIGHT.specialLabel} ${COLOR.specialLabel} space-y-2`}>
+              <div className="flex items-center justify-between gap-3 border-b border-[#ead8c4] px-1 pb-2">
+                <span>공망</span>
+                <span className={`${FONT.specialValue} ${WEIGHT.specialValue} ${COLOR.specialValue}`}>
+                  {getDayGongmang(targetSaju)}
+                </span>
+              </div>
+
+              {getGwiyinList(targetSaju).map((gwiyin) => (
+                <div
+                  key={gwiyin.label}
+                  className="flex items-center justify-between gap-3 border-b border-[#ead8c4] px-1 pb-2"
+                >
+                  <span>{gwiyin.label}</span>
+                  <span className={`${FONT.specialValue} ${WEIGHT.specialValue} ${COLOR.specialValue}`}>
+                    {gwiyin.value}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     );
   };
@@ -1986,7 +2083,7 @@ const buildDailyCalendar = (date: Date) => {
       <div className="mt-6 rounded-2xl bg-white p-4 shadow-sm">
         <h3 className={`${FONT.daewoonTitle} ${WEIGHT.daewoonTitle} ${COLOR.daewoonTitle}`}>대운</h3>
 
-        <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-5">
+        <div className="mt-4 grid grid-cols-10 gap-3">
           {targetSaju.daewoon.map((item: any) => {
             const daewoonKey = `${cardKey}-daewoon-${item.index}`;
             const selected = selectedDaewoonKey[cardKey] === daewoonKey;
@@ -2068,7 +2165,7 @@ const buildDailyCalendar = (date: Date) => {
           <div className="mt-5 rounded-2xl bg-zinc-100 p-4">
             <h4 className={`${FONT.yearLuckTitle} ${WEIGHT.yearLuckTitle} ${COLOR.yearLuckTitle}`}>선택한 대운의 년운</h4>
 
-            <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-5">
+            <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-10">
               {yearLuckList.map((yearLuck: any) => {
                 const yearLuckKey = `${cardKey}-year-${yearLuck.year}`;
                 const selected = selectedYearLuckKey[cardKey] === yearLuckKey;
@@ -2095,7 +2192,7 @@ const buildDailyCalendar = (date: Date) => {
                           : `${FONT.yearLuckAge} ${WEIGHT.yearLuckAge} ${COLOR.yearLuckAge}`
                       }
                     >
-                      {yearLuck.year} / <br /> {yearLuck.age}세
+                      {yearLuck.year} <br /> {yearLuck.age}세
                     </div>
 
                     <div className="mt-2 flex flex-col items-center leading-tight">
@@ -2150,7 +2247,7 @@ const buildDailyCalendar = (date: Date) => {
                   {selectedYearLuck.year}년 월운
                 </h4>
 
-                <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-12">
                   {monthLuckList.map((monthLuck: any) => (
                     <div
                       key={`${monthLuck.year}-${monthLuck.month}`}
@@ -2215,42 +2312,7 @@ const buildDailyCalendar = (date: Date) => {
       <div className="mt-4 rounded-2xl bg-[#ffffff] p-4 text-[#000000] shadow-sm">
         <h3 className={`${FONT.cardTitle} ${WEIGHT.cardTitle} ${COLOR.cardTitle}`}>사주팔자</h3>
 
-        <div className="mt-4 grid grid-cols-2 gap-3 text-center sm:grid-cols-4">
-          {items.map((item) => renderPillarCard(item, cardKey))}
-        </div>
-
-        {renderSpecialInfo(targetSaju)}
-
-        <div className="mt-5 rounded-2xl bg-zinc-100 p-4">
-          <h4 className={`${FONT.elementTitle} ${WEIGHT.elementTitle} ${COLOR.elementTitle}`}>오행 분포</h4>
-
-          <div className={`mt-3 grid grid-cols-5 gap-2 text-center ${FONT.elementValue}`}>
-            <div>
-              <div className={`${FONT.elementValue} ${WEIGHT.elementValue} ${COLOR.elementValue}`}>木</div>
-              <div className={`${FONT.elementValue} ${WEIGHT.elementValue} ${COLOR.elementValue}`}> {targetSaju?.elementCount?.wood ?? 0}</div>
-            </div>
-
-            <div>
-              <div className={`${FONT.elementValue} ${WEIGHT.elementValue} ${COLOR.elementValue}`}>火</div>
-              <div className={`${FONT.elementValue} ${WEIGHT.elementValue} ${COLOR.elementValue}`}> {targetSaju?.elementCount?.fire ?? 0}</div>
-            </div>
-
-            <div>
-              <div className={`${FONT.elementValue} ${WEIGHT.elementValue} ${COLOR.elementValue}`}>土</div>
-              <div className={`${FONT.elementValue} ${WEIGHT.elementValue} ${COLOR.elementValue}`}> {targetSaju?.elementCount?.earth ?? 0}</div>
-            </div>
-
-            <div>
-              <div className={`${FONT.elementValue} ${WEIGHT.elementValue} ${COLOR.elementValue}`}>金</div>
-              <div className={`${FONT.elementValue} ${WEIGHT.elementValue} ${COLOR.elementValue}`}> {targetSaju?.elementCount?.metal ?? 0}</div>
-            </div>
-
-            <div>
-              <div className={`${FONT.elementValue} ${WEIGHT.elementValue} ${COLOR.elementValue}`}>水</div>
-              <div className={`${FONT.elementValue} ${WEIGHT.elementValue} ${COLOR.elementValue}`}> {targetSaju?.elementCount?.water ?? 0}</div>
-            </div>
-          </div>
-        </div>
+        {renderSajuOverview(targetSaju, items, cardKey)}
 
         {renderLuckPanel(targetSaju, cardKey, birthDate)}
       </div>
@@ -2767,42 +2829,7 @@ const buildDailyCalendar = (date: Date) => {
                     </button>
                   </div>
 
-                  <div className="mt-4 grid grid-cols-2 gap-3 text-center sm:grid-cols-4 font-bold text-black">
-                    {sajuItems.map((item) => renderPillarCard(item, "main"))}
-                  </div>
-
-                  {renderSpecialInfo(sajuResult)}
-
-                  <div className="mt-5 rounded-2xl bg-zinc-100 p-4">
-                    <h4 className={`${FONT.elementTitle} ${WEIGHT.elementTitle} ${COLOR.elementTitle}`}>오행 분포</h4>
-
-                    <div className={`mt-3 grid grid-cols-5 gap-2 text-center ${FONT.elementValue}`}>
-                      <div>
-                        <div className={`${FONT.elementTitle} ${WEIGHT.elementTitle} ${COLOR.elementTitle}`}>木</div>
-                        <div className={`${FONT.elementValue} ${WEIGHT.elementValue} ${COLOR.elementValue}`}>{sajuResult?.elementCount?.wood ?? 0}</div>
-                      </div>
-
-                      <div>
-                        <div className={`${FONT.elementTitle} ${WEIGHT.elementTitle} ${COLOR.elementTitle}`}>火</div>
-                        <div className={`${FONT.elementValue} ${WEIGHT.elementValue} ${COLOR.elementValue}`}>{sajuResult?.elementCount?.fire ?? 0}</div>
-                      </div>
-
-                      <div>
-                        <div className={`${FONT.elementTitle} ${WEIGHT.elementTitle} ${COLOR.elementTitle}`}>土</div>
-                        <div className={`${FONT.elementValue} ${WEIGHT.elementValue} ${COLOR.elementValue}`}>{sajuResult?.elementCount?.earth ?? 0}</div>
-                      </div>
-
-                      <div>
-                        <div className={`${FONT.elementTitle} ${WEIGHT.elementTitle} ${COLOR.elementTitle}`}>金</div>
-                        <div className={`${FONT.elementValue} ${WEIGHT.elementValue} ${COLOR.elementValue}`}> {sajuResult?.elementCount?.metal ?? 0}</div>
-                      </div>
-
-                      <div>
-                        <div className={`${FONT.elementTitle} ${WEIGHT.elementTitle} ${COLOR.elementTitle}`}>水</div>
-                        <div className={`${FONT.elementValue} ${WEIGHT.elementValue} ${COLOR.elementValue}`}> {sajuResult?.elementCount?.water ?? 0}</div>
-                      </div>
-                    </div>
-                  </div>
+                  {renderSajuOverview(sajuResult, sajuItems, "main")}
 
                   {renderLuckPanel(sajuResult, "main", form.birthDate)}
 
