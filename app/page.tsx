@@ -1,7 +1,7 @@
 "use client";
 
 import KoreanLunarCalendar from "korean-lunar-calendar";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { saveAs } from "file-saver";
 import {
   Document,
@@ -247,6 +247,15 @@ const [calendarDate, setCalendarDate] = useState(new Date());
     left: null,
     right: null,
   });
+  const [recentPeople, setRecentPeople] = useState<any[]>([]);
+  const [favoritePeople, setFavoritePeople] = useState<any[]>([]);
+  const [peopleStorageOpen, setPeopleStorageOpen] = useState(false);
+  const [favoritePeopleOpen, setFavoritePeopleOpen] = useState(true);
+const [recentPeopleOpen, setRecentPeopleOpen] = useState(true);
+  const [storageLoaded, setStorageLoaded] = useState(false);
+  const [memoOpen, setMemoOpen] = useState(false);
+  const [memoText, setMemoText] = useState("");
+  const [memoLoaded, setMemoLoaded] = useState(false);
 
   const formatDateInput = (value: string) => {
     const onlyNumber = value.replace(/\D/g, "").slice(0, 8);
@@ -440,16 +449,317 @@ const [calendarDate, setCalendarDate] = useState(new Date());
     return calculatedWithBirthInfo;
   };
 
+  const makePersonKey = (person: any) => {
+    return [
+      person.name || "이름없음",
+      person.gender || "남성",
+      normalizeDateForCalc(person.birthDate || ""),
+      person.birthTimeUnknown ? "시간미상" : person.birthTime || "00:10",
+      person.calendarType || "solar",
+      person.isLeapMonth ? "윤달" : "평달",
+    ].join("|");
+  };
+
+  const normalizeRecentPerson = (person: any) => {
+    return {
+      name: person.name || "",
+      gender: person.gender || "남성",
+      birthDate: normalizeDateForCalc(person.birthDate || ""),
+      birthTime: person.birthTime || "00:10",
+      birthTimeUnknown: person.birthTimeUnknown || false,
+      calendarType: person.calendarType || "solar",
+      isLeapMonth: person.isLeapMonth || false,
+    };
+  };
+
+  const normalizePeopleList = (people: any[]) => {
+    const seen = new Set<string>();
+
+    return (people || [])
+      .map((person) => normalizeRecentPerson(person))
+      .filter((person) => person.birthDate)
+      .filter((person) => {
+        const key = makePersonKey(person);
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+  };
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    try {
+      const savedRecentPeople = window.localStorage.getItem("sajuRecentPeople");
+      const savedFavoritePeople = window.localStorage.getItem("sajuFavoritePeople");
+      const savedMemoText = window.localStorage.getItem("sajuMemoText");
+
+      if (savedMemoText !== null) {
+        setMemoText(savedMemoText);
+      }
+
+      setMemoLoaded(true);
+
+      if (savedRecentPeople) {
+        setRecentPeople(normalizePeopleList(JSON.parse(savedRecentPeople)));
+      }
+
+      if (savedFavoritePeople) {
+        setFavoritePeople(normalizePeopleList(JSON.parse(savedFavoritePeople)));
+      }
+    } catch (error) {
+      console.error("저장된 사람 목록을 불러오지 못했습니다.", error);
+    } finally {
+      setMemoLoaded(true);
+      setStorageLoaded(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!storageLoaded || typeof window === "undefined") return;
+
+    window.localStorage.setItem("sajuRecentPeople", JSON.stringify(recentPeople));
+  }, [recentPeople, storageLoaded]);
+
+  useEffect(() => {
+    if (!storageLoaded || typeof window === "undefined") return;
+
+    window.localStorage.setItem("sajuFavoritePeople", JSON.stringify(favoritePeople));
+  }, [favoritePeople, storageLoaded]);
+
+  useEffect(() => {
+    if (!memoLoaded || typeof window === "undefined") return;
+
+    window.localStorage.setItem("sajuMemoText", memoText);
+  }, [memoText, memoLoaded]);
+
+  const saveRecentPerson = (person: any) => {
+    if (!person?.birthDate) return;
+
+    const normalizedPerson = normalizeRecentPerson(person);
+
+    setRecentPeople((prev) => {
+      const key = makePersonKey(normalizedPerson);
+
+      return [
+        normalizedPerson,
+        ...prev.filter((item) => makePersonKey(item) !== key),
+      ].slice(0, 50);
+    });
+  };
+
+  const isFavoritePerson = (person: any) => {
+    const key = makePersonKey(normalizeRecentPerson(person));
+
+    return favoritePeople.some((item) => makePersonKey(item) === key);
+  };
+
+  const addFavoritePerson = (person: any) => {
+    if (!person?.birthDate) return;
+
+    const normalizedPerson = normalizeRecentPerson(person);
+    const key = makePersonKey(normalizedPerson);
+
+    setFavoritePeople((prev) => [
+      normalizedPerson,
+      ...prev.filter((item) => makePersonKey(item) !== key),
+    ].slice(0, 100));
+  };
+
+  const removeFavoritePerson = (person: any) => {
+    const key = makePersonKey(normalizeRecentPerson(person));
+
+    setFavoritePeople((prev) =>
+      prev.filter((item) => makePersonKey(item) !== key),
+    );
+  };
+
+  const removeRecentPerson = (person: any) => {
+    const key = makePersonKey(normalizeRecentPerson(person));
+
+    setRecentPeople((prev) =>
+      prev.filter((item) => makePersonKey(item) !== key),
+    );
+  };
+
+  const loadRecentPersonToSaju = (person: any) => {
+    const normalizedPerson = normalizeRecentPerson(person);
+
+    setForm({
+      ...form,
+      ...normalizedPerson,
+    });
+    setSajuResult(null);
+    setResult("");
+  };
+
+  const loadRecentPersonToCompatibility = (side: "left" | "right", person: any) => {
+    const normalizedPerson = normalizeRecentPerson(person);
+
+    setCompatibilityForm({
+      ...compatibilityForm,
+      [side]: {
+        ...compatibilityForm[side],
+        ...normalizedPerson,
+      },
+    });
+    setCompatibilityResult({
+      left: null,
+      right: null,
+    });
+    setResult("");
+  };
+
+  const renderPeopleButton = (
+    person: any,
+    onSelect: (person: any) => void,
+    options?: { favoriteButton?: boolean; removeFavoriteButton?: boolean; removeRecentButton?: boolean },
+  ) => {
+    const favorite = isFavoritePerson(person);
+
+    return (
+      <div
+        key={makePersonKey(person)}
+        className="flex items-center gap-1 rounded-xl bg-white p-1 shadow-sm"
+      >
+        <button
+          type="button"
+          onClick={() => onSelect(person)}
+          className="rounded-lg px-4 py-2 text-2xl font-bold text-[#6b3f24] transition hover:bg-[#f3e1cf]"
+        >
+          {person.name || "이름없음"} / {person.birthDate}
+          {person.birthTimeUnknown ? " / 시간미상" : ` / ${person.birthTime}`}
+        </button>
+
+        {options?.favoriteButton && (
+          <button
+            type="button"
+            onClick={() => addFavoritePerson(person)}
+            disabled={favorite}
+            className="rounded-lg px-3 py-2 text-2xl font-bold text-[#6b3f24] transition hover:bg-[#f3e1cf] disabled:opacity-40"
+            title={favorite ? "이미 즐겨찾기에 저장됨" : "즐겨찾기 추가"}
+          >
+            {favorite ? "★" : "☆"}
+          </button>
+        )}
+
+        {options?.removeFavoriteButton && (
+          <button
+            type="button"
+            onClick={() => removeFavoritePerson(person)}
+            className="rounded-lg px-3 py-2 text-2xl font-bold text-red-700 transition hover:bg-red-50"
+            title="즐겨찾기 삭제"
+          >
+            삭제
+          </button>
+        )}
+
+        {options?.removeRecentButton && (
+          <button
+            type="button"
+            onClick={() => removeRecentPerson(person)}
+            className="rounded-lg px-3 py-2 text-2xl font-bold text-red-700 transition hover:bg-red-50"
+            title="최근 본 사람 삭제"
+          >
+            삭제
+          </button>
+        )}
+      </div>
+    );
+  };
+
+  const renderPeopleStoragePanel = (onSelect: (person: any) => void) => {
+    return (
+      <div className="rounded-2xl border border-[#ead8c4] bg-[#fffaf3] p-4">
+        <button
+          type="button"
+          onClick={() => setPeopleStorageOpen((prev) => !prev)}
+          className="flex w-full items-center justify-between rounded-xl bg-white px-4 py-3 text-left text-[#6b3f24] shadow-sm transition hover:bg-[#f3e1cf]"
+        >
+          <span className={`${FONT.formLabel} font-bold`}>
+            저장한 사람 불러오기
+          </span>
+          <span className="text-2xl font-bold">
+            {peopleStorageOpen ? "닫기 ▲" : "열기 ▼"}
+          </span>
+        </button>
+
+        {peopleStorageOpen && (
+          <>
+            <div className="mt-4 rounded-2xl bg-white/70 p-3">
+  <button
+    type="button"
+    onClick={() => setFavoritePeopleOpen((prev) => !prev)}
+    className="flex w-full items-center justify-between text-left text-2xl font-bold text-[#6b3f24]"
+  >
+    <span>즐겨찾기</span>
+    <span>{favoritePeopleOpen ? "▲" : "▼"}</span>
+  </button>
+
+  {favoritePeopleOpen && (
+    <div className="mt-3 flex flex-wrap gap-2">
+      {favoritePeople.length > 0 ? (
+        favoritePeople.map((person) =>
+          renderPeopleButton(person, onSelect, {
+            removeFavoriteButton: true,
+          }),
+        )
+      ) : (
+        <div className="text-2xl font-bold text-zinc-400">
+          즐겨찾기한 사람이 없습니다.
+        </div>
+      )}
+    </div>
+  )}
+</div>
+
+            <div className="mt-4 rounded-2xl bg-white/70 p-3">
+  <button
+    type="button"
+    onClick={() => setRecentPeopleOpen((prev) => !prev)}
+    className="flex w-full items-center justify-between text-left text-2xl font-bold text-[#6b3f24]"
+  >
+    <span>최근 본 사람</span>
+    <span>{recentPeopleOpen ? "▲" : "▼"}</span>
+  </button>
+
+  {recentPeopleOpen && (
+    <div className="mt-3 flex flex-wrap gap-2">
+      {recentPeople.length > 0 ? (
+        recentPeople.map((person) =>
+          renderPeopleButton(person, onSelect, {
+            favoriteButton: true,
+            removeRecentButton: true,
+          }),
+        )
+      ) : (
+        <div className="text-2xl font-bold text-zinc-400">
+          최근 본 사람이 없습니다.
+        </div>
+      )}
+    </div>
+  )}
+</div>
+          </>
+        )}
+      </div>
+    );
+  };
+
   const handleCalculateSaju = () => {
     const calculated = calculateOneSaju(form);
     if (!calculated) return;
 
+    saveRecentPerson(form);
     setSajuResult(calculated);
   };
 
   const handleCalculateCompatibility = () => {
     const left = calculateOneSaju(compatibilityForm.left);
     const right = calculateOneSaju(compatibilityForm.right);
+
+    if (left) saveRecentPerson(compatibilityForm.left);
+    if (right) saveRecentPerson(compatibilityForm.right);
 
     setCompatibilityResult({
       left,
@@ -1348,20 +1658,6 @@ const [calendarDate, setCalendarDate] = useState(new Date());
   };
 
 
-  const MONTH_JEOLIP_TERMS: { month: number; day: number; branch: string }[] = [
-    { month: 1, day: 6, branch: "축" },
-    { month: 2, day: 4, branch: "인" },
-    { month: 3, day: 6, branch: "묘" },
-    { month: 4, day: 5, branch: "진" },
-    { month: 5, day: 6, branch: "사" },
-    { month: 6, day: 6, branch: "오" },
-    { month: 7, day: 7, branch: "미" },
-    { month: 8, day: 8, branch: "신" },
-    { month: 9, day: 8, branch: "유" },
-    { month: 10, day: 8, branch: "술" },
-    { month: 11, day: 7, branch: "해" },
-    { month: 12, day: 7, branch: "자" },
-  ];
 
   const getBirthDateTimeForJuGwonShin = (targetSaju: any) => {
     const birthDate = String(targetSaju?.solarBirthDate || "");
@@ -1375,21 +1671,21 @@ const [calendarDate, setCalendarDate] = useState(new Date());
     return new Date(year, month - 1, day, hour, minute, 0, 0);
   };
 
-  const getLatestJeolipDate = (birthDateTime: Date, monthBranch: string) => {
-    const normalizedMonthBranch = normalizeBranch(monthBranch);
-    const birthYear = birthDateTime.getFullYear();
+const getLatestJeolipDate = (birthDateTime: Date, monthBranch: string) => {
+  const normalizedMonthBranch = normalizeBranch(monthBranch);
+  const birthYear = birthDateTime.getFullYear();
 
-    const candidates = [birthYear - 1, birthYear, birthYear + 1]
-      .flatMap((year) =>
-        MONTH_JEOLIP_TERMS
-          .filter((term) => term.branch === normalizedMonthBranch)
-          .map((term) => new Date(year, term.month - 1, term.day, 0, 0, 0, 0)),
-      )
-      .filter((date) => date.getTime() <= birthDateTime.getTime())
-      .sort((a, b) => b.getTime() - a.getTime());
+  const candidates = [birthYear - 1, birthYear, birthYear + 1]
+    .flatMap((year) => getSolarTermsOfYear(year))
+    .filter((term) => {
+      return MONTH_BRANCH_BY_SOLAR_TERM[term.name] === normalizedMonthBranch;
+    })
+    .map((term) => term.date)
+    .filter((date) => date.getTime() <= birthDateTime.getTime())
+    .sort((a, b) => b.getTime() - a.getTime());
 
-    return candidates[0] || null;
-  };
+  return candidates[0] || null;
+};
 
   const getDaysAfterJeolip = (targetSaju: any) => {
     const birthDateTime = getBirthDateTimeForJuGwonShin(targetSaju);
@@ -1974,6 +2270,139 @@ const getDayGanji = (date: Date) => {
     branch,
   };
 };
+const SOLAR_TERM_NAMES = [
+  "소한", "대한",
+  "입춘", "우수",
+  "경칩", "춘분",
+  "청명", "곡우",
+  "입하", "소만",
+  "망종", "하지",
+  "소서", "대서",
+  "입추", "처서",
+  "백로", "추분",
+  "한로", "상강",
+  "입동", "소설",
+  "대설", "동지",
+];
+const MONTH_BRANCH_BY_SOLAR_TERM: Record<string, string> = {
+  소한: "축",
+  입춘: "인",
+  경칩: "묘",
+  청명: "진",
+  입하: "사",
+  망종: "오",
+  소서: "미",
+  입추: "신",
+  백로: "유",
+  한로: "술",
+  입동: "해",
+  대설: "자",
+};
+const degToRad = (deg: number) => (deg * Math.PI) / 180;
+
+const normalizeDegree = (deg: number) => {
+  return ((deg % 360) + 360) % 360;
+};
+
+const normalizeDegree180 = (deg: number) => {
+  const normalized = normalizeDegree(deg);
+  return normalized > 180 ? normalized - 360 : normalized;
+};
+
+const dateToJulianDay = (date: Date) => {
+  return date.getTime() / 86400000 + 2440587.5;
+};
+
+const getSunApparentLongitude = (date: Date) => {
+  const jd = dateToJulianDay(date);
+  const t = (jd - 2451545.0) / 36525;
+
+  const meanLongitude = normalizeDegree(
+    280.46646 + 36000.76983 * t + 0.0003032 * t * t,
+  );
+
+  const meanAnomaly = normalizeDegree(
+    357.52911 + 35999.05029 * t - 0.0001537 * t * t,
+  );
+
+  const equationOfCenter =
+    (1.914602 - 0.004817 * t - 0.000014 * t * t) *
+      Math.sin(degToRad(meanAnomaly)) +
+    (0.019993 - 0.000101 * t) * Math.sin(degToRad(2 * meanAnomaly)) +
+    0.000289 * Math.sin(degToRad(3 * meanAnomaly));
+
+  const trueLongitude = meanLongitude + equationOfCenter;
+  const omega = 125.04 - 1934.136 * t;
+  const apparentLongitude =
+    trueLongitude - 0.00569 - 0.00478 * Math.sin(degToRad(omega));
+
+  return normalizeDegree(apparentLongitude);
+};
+
+const getApproxSolarTermDate = (year: number, termIndex: number) => {
+  const y = year - 1900;
+
+  const minutes =
+    525948.76 * y +
+    6.2 +
+    15.2184 * 24 * 60 * termIndex -
+    1.9 * Math.sin(degToRad(0.262 * y));
+
+  const base = new Date(1900, 0, 6, 2, 5);
+  return new Date(base.getTime() + minutes * 60 * 1000);
+};
+
+const getSolarTermTargetLongitude = (termIndex: number) => {
+  return normalizeDegree(285 + 15 * termIndex);
+};
+
+const getSolarTermDate = (year: number, termIndex: number) => {
+  const targetLongitude = getSolarTermTargetLongitude(termIndex);
+  const approxDate = getApproxSolarTermDate(year, termIndex);
+
+  let left = new Date(approxDate.getTime() - 10 * 24 * 60 * 60 * 1000);
+  let right = new Date(approxDate.getTime() + 10 * 24 * 60 * 60 * 1000);
+
+  for (let index = 0; index < 80; index += 1) {
+    const mid = new Date((left.getTime() + right.getTime()) / 2);
+    const diff = normalizeDegree180(
+      getSunApparentLongitude(mid) - targetLongitude,
+    );
+
+    if (diff < 0) {
+      left = mid;
+    } else {
+      right = mid;
+    }
+  }
+
+  return right;
+};
+
+const getSolarTermsOfYear = (year: number) => {
+  return SOLAR_TERM_NAMES.map((name, index) => ({
+    name,
+    date: getSolarTermDate(year, index),
+  }));
+};
+
+const formatTermTime = (date: Date) => {
+  return `${String(date.getHours()).padStart(2, "0")}:${String(
+    date.getMinutes(),
+  ).padStart(2, "0")}`;
+};
+
+const getSolarTermsForDate = (date: Date) => {
+  const year = date.getFullYear();
+
+  return getSolarTermsOfYear(year).filter((term) => {
+    return (
+      term.date.getFullYear() === date.getFullYear() &&
+      term.date.getMonth() === date.getMonth() &&
+      term.date.getDate() === date.getDate()
+    );
+  });
+};
 
 const buildDailyCalendar = (date: Date) => {
   const year = date.getFullYear();
@@ -1991,9 +2420,10 @@ const buildDailyCalendar = (date: Date) => {
     const currentDate = new Date(year, month, index + 1);
 
     return {
-      day: index + 1,
-      ganji: getDayGanji(currentDate),
-    };
+  day: index + 1,
+  ganji: getDayGanji(currentDate),
+  solarTerms: getSolarTermsForDate(currentDate),
+};
   });
 
   return [...blanks, ...days];
@@ -2739,6 +3169,8 @@ onBlur={(e) => {
                 출생 시간을 모릅니다
               </label>
 
+              {mode === "saju" && renderPeopleStoragePanel(loadRecentPersonToSaju)}
+
               {mode === "zodiac" && (
                 <input
                   type="text"
@@ -2947,6 +3379,10 @@ onBlur={(e) => {
                       />
                       출생 시간을 모릅니다
                     </label>
+
+                    {renderPeopleStoragePanel((person) =>
+                      loadRecentPersonToCompatibility(key, person),
+                    )}
                   </div>
                 </div>
               ))}
@@ -3213,6 +3649,14 @@ onBlur={(e) => {
               className="rounded-2xl border bg-[#fffaf3] p-2 text-center"
             >
               <div className="text-2xl font-bold">{item.day}</div>
+              {item.solarTerms?.map((term: any) => (
+  <div
+    key={term.name}
+    className="mt-1 rounded-full bg-[#6b3f24] px-2 py-1 text-lg font-bold text-white"
+  >
+    {term.name} {formatTermTime(term.date)}
+  </div>
+))}
 
               <div
                 className="mt-2 text-5xl font-bold"
@@ -3254,6 +3698,44 @@ onBlur={(e) => {
     </div>
   </div>
 )}
+     
+
+      {!memoOpen && (
+        <button
+          type="button"
+          onClick={() => setMemoOpen(true)}
+          className="fixed right-6 top-1/2 z-[60] -translate-y-1/2 rounded-l-2xl rounded-r-md bg-[#6b3f24] px-4 py-6 text-2xl font-bold text-white shadow-2xl transition hover:bg-[#4a2f1c]"
+        >
+          메모 열기
+        </button>
+      )}
+
+      {memoOpen && (
+        <div className="fixed right-24 top-24 z-[60] flex h-[70vh] w-[420px] flex-col rounded-3xl border border-[#ead8c4] bg-[#fffaf3] p-4 shadow-2xl">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-3xl font-bold text-[#6b3f24]">상담 메모장</h2>
+
+            <button
+              type="button"
+              onClick={() => setMemoOpen(false)}
+              className="rounded-xl bg-white px-3 py-2 text-xl font-bold text-[#6b3f24] shadow-sm"
+            >
+              닫기
+            </button>
+          </div>
+
+          <textarea
+            value={memoText}
+            onChange={(e) => setMemoText(e.target.value)}
+            placeholder="상담 중 메모를 입력하세요. 새로고침 후에도 유지됩니다."
+            className="min-h-0 flex-1 resize-none rounded-2xl border border-[#ead8c4] bg-white p-4 text-2xl leading-relaxed text-black outline-none"
+          />
+
+          <div className="mt-3 text-right text-xl font-bold text-[#6b3f24]">
+            자동 저장됨
+          </div>
+        </div>
+      )}
     </main>
   );
 }

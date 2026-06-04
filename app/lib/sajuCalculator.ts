@@ -281,10 +281,106 @@ function makeGanZhi(
   };
 }
 
+
+const SOLAR_TERM_NAMES = [
+  "소한",
+  "대한",
+  "입춘",
+  "우수",
+  "경칩",
+  "춘분",
+  "청명",
+  "곡우",
+  "입하",
+  "소만",
+  "망종",
+  "하지",
+  "소서",
+  "대서",
+  "입추",
+  "처서",
+  "백로",
+  "추분",
+  "한로",
+  "상강",
+  "입동",
+  "소설",
+  "대설",
+  "동지",
+];
+
+const MONTH_START_SOLAR_TERM_TO_BRANCH_INDEX: Record<string, number> = {
+  소한: 1,
+  입춘: 2,
+  경칩: 3,
+  청명: 4,
+  입하: 5,
+  망종: 6,
+  소서: 7,
+  입추: 8,
+  백로: 9,
+  한로: 10,
+  입동: 11,
+  대설: 0,
+};
+
+function getSolarTermDate(
+  year: number,
+  termIndex: number
+): Date {
+  const y = year - 1900;
+
+  const minutes =
+    525948.76 * y +
+    6.2 +
+    15.2184 * 24 * 60 * termIndex -
+    1.9 * Math.sin((0.262 * y * Math.PI) / 180);
+
+  const base = new Date(1900, 0, 6, 2, 5, 0, 0);
+
+  return new Date(base.getTime() + minutes * 60 * 1000);
+}
+
+function getSolarTermsOfYear(
+  year: number
+): { name: string; date: Date; index: number }[] {
+  return SOLAR_TERM_NAMES.map((name, index) => ({
+    name,
+    date: getSolarTermDate(year, index),
+    index,
+  }));
+}
+
+function getMonthStartSolarTermsOfYear(
+  year: number
+): { name: string; date: Date; branchIndex: number }[] {
+  return getSolarTermsOfYear(year)
+    .filter((term) => MONTH_START_SOLAR_TERM_TO_BRANCH_INDEX[term.name] !== undefined)
+    .map((term) => ({
+      name: term.name,
+      date: term.date,
+      branchIndex: MONTH_START_SOLAR_TERM_TO_BRANCH_INDEX[term.name],
+    }));
+}
+
+function getMonthStartSolarTermsAround(
+  date: Date
+): { name: string; date: Date; branchIndex: number }[] {
+  const year = date.getFullYear();
+
+  return [
+    year - 1,
+    year,
+    year + 1,
+  ]
+    .flatMap(getMonthStartSolarTermsOfYear)
+    .sort((a, b) => a.date.getTime() - b.date.getTime());
+}
+
 function getYearGanZhi(date: Date): GanZhi {
   let year = date.getFullYear();
 
-  const lichun = new Date(year, 1, 4, 0, 0, 0);
+  const lichun = getSolarTermDate(year, 2);
 
   if (date < lichun) {
     year -= 1;
@@ -297,33 +393,13 @@ function getYearGanZhi(date: Date): GanZhi {
 }
 
 function getMonthBranchIndex(date: Date): number {
-  const y = date.getFullYear();
+  const latestMonthStartTerm = getMonthStartSolarTermsAround(date)
+    .filter((term) => term.date.getTime() <= date.getTime())
+    .sort((a, b) => b.date.getTime() - a.date.getTime())[0];
 
-  const terms = [
-    { date: new Date(y, 0, 6), branchIndex: 1 },  // 소한: 축월
-    { date: new Date(y, 1, 4), branchIndex: 2 },  // 입춘: 인월
-    { date: new Date(y, 2, 6), branchIndex: 3 },
-    { date: new Date(y, 3, 5), branchIndex: 4 },
-    { date: new Date(y, 4, 6), branchIndex: 5 },
-    { date: new Date(y, 5, 6), branchIndex: 6 },
-    { date: new Date(y, 6, 7), branchIndex: 7 },
-    { date: new Date(y, 7, 8), branchIndex: 8 },
-    { date: new Date(y, 8, 8), branchIndex: 9 },
-    { date: new Date(y, 9, 8), branchIndex: 10 },
-    { date: new Date(y, 10, 7), branchIndex: 11 },
-    { date: new Date(y, 11, 7), branchIndex: 0 }, // 대설: 자월
-  ];
-
-  let branchIndex = 0; // 핵심 수정: 1월 6일 전은 전년도 대설 이후 자월
-
-  for (const term of terms) {
-    if (date >= term.date) {
-      branchIndex = term.branchIndex;
-    }
-  }
-
-  return branchIndex;
+  return latestMonthStartTerm?.branchIndex ?? 0;
 }
+
 function getMonthGanZhi(
   date: Date,
   yearStemIndex: number
@@ -631,20 +707,7 @@ function getTenGods(
   };
 }
 function getSolarTermDates(year: number): Date[] {
-  return [
-    new Date(year, 0, 6),
-    new Date(year, 1, 4),
-    new Date(year, 2, 6),
-    new Date(year, 3, 5),
-    new Date(year, 4, 6),
-    new Date(year, 5, 6),
-    new Date(year, 6, 7),
-    new Date(year, 7, 8),
-    new Date(year, 8, 8),
-    new Date(year, 9, 8),
-    new Date(year, 10, 7),
-    new Date(year, 11, 7),
-  ];
+  return getMonthStartSolarTermsOfYear(year).map((term) => term.date);
 }
 
 function isForwardDaewoon(
