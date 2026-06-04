@@ -1216,52 +1216,83 @@ const [calendarDate, setCalendarDate] = useState(new Date());
     );
   };
 
-  const renderSajuOverview = (
-    targetSaju: any,
-    items: any[],
-    cardKey: string,
-  ) => {
-    if (!targetSaju) return null;
+ const renderSajuOverview = (
+  targetSaju: any,
+  items: any[],
+  cardKey: string,
+) => {
+  if (!targetSaju) return null;
 
+  const isCompatibilityMode = mode === "compatibility";
+
+  if (isCompatibilityMode) {
     return (
-      <div className="mt-4 grid grid-cols-12 gap-4">
-        <div className="col-span-9 flex flex-col gap-4">
-          <div className="grid grid-cols-4 gap-3 text-center font-bold text-black">
-            {items.map((item) => renderPillarCard(item, cardKey))}
-          </div>
-
-          {renderElementInfo(targetSaju)}
+      <div className="mt-4 flex flex-col gap-4">
+        <div className="grid grid-cols-4 gap-3 text-center font-bold text-black">
+          {items.map((item) => renderPillarCard(item, cardKey))}
         </div>
 
-        <div className="col-span-3">
-          <div className=" rounded-2xl border border-[#ead8c4] bg-[#fffaf3] p-4">
-            
+        {renderElementInfo(targetSaju)}
 
-            <div className={`${FONT.specialLabel} ${WEIGHT.specialLabel} ${COLOR.specialLabel} space-y-2`}>
-              <div className="flex items-center justify-between gap-3 border-b border-[#ead8c4] px-1 pb-2">
-                <span>공망</span>
-                <span className={`${FONT.specialValue} ${WEIGHT.specialValue} ${COLOR.specialValue}`}>
-                  {getDayGongmang(targetSaju)}
-                </span>
-              </div>
-
-              {getGwiyinList(targetSaju).map((gwiyin) => (
-                <div
-                  key={gwiyin.label}
-                  className="flex items-center justify-between gap-3 border-b border-[#ead8c4] px-1 pb-2"
-                >
-                  <span>{gwiyin.label}</span>
-                  <span className={`${FONT.specialValue} ${WEIGHT.specialValue} ${COLOR.specialValue}`}>
-                    {gwiyin.value}
-                  </span>
+        <div className="rounded-2xl border border-[#ead8c4] bg-[#fffaf3] p-4">
+          <div className="grid grid-cols-5 gap-3 text-center">
+            {[
+              { label: "공망", value: getDayGongmang(targetSaju) },
+              ...getGwiyinList(targetSaju),
+            ].map((item) => (
+              <div key={item.label}>
+                <div className={`${FONT.specialLabel} ${WEIGHT.specialLabel} ${COLOR.specialLabel}`}>
+                  {item.label}
                 </div>
-              ))}
-            </div>
+
+                <div className={`mt-2 ${FONT.specialValue} ${WEIGHT.specialValue} ${COLOR.specialValue}`}>
+                  {item.value}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
     );
-  };
+  }
+
+  return (
+    <div className="mt-4 grid grid-cols-12 gap-4">
+      <div className="col-span-9 flex flex-col gap-4">
+        <div className="grid grid-cols-4 gap-3 text-center font-bold text-black">
+          {items.map((item) => renderPillarCard(item, cardKey))}
+        </div>
+
+        {renderElementInfo(targetSaju)}
+      </div>
+
+      <div className="col-span-3">
+        <div className="rounded-2xl border border-[#ead8c4] bg-[#fffaf3] p-4">
+          <div className={`${FONT.specialLabel} ${WEIGHT.specialLabel} ${COLOR.specialLabel} space-y-2`}>
+            <div className="flex items-center justify-between gap-3 border-b border-[#ead8c4] px-1 pb-2">
+              <span>공망</span>
+              <span className={`${FONT.specialValue} ${WEIGHT.specialValue} ${COLOR.specialValue}`}>
+                {getDayGongmang(targetSaju)}
+              </span>
+            </div>
+
+            {getGwiyinList(targetSaju).map((gwiyin) => (
+              <div
+                key={gwiyin.label}
+                className="flex items-center justify-between gap-3 border-b border-[#ead8c4] px-1 pb-2"
+              >
+                <span>{gwiyin.label}</span>
+                <span className={`${FONT.specialValue} ${WEIGHT.specialValue} ${COLOR.specialValue}`}>
+                  {gwiyin.value}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 
   const STEM_INFO: any = {
