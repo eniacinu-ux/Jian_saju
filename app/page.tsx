@@ -2374,8 +2374,14 @@ const buildDailyCalendar = (date: Date) => {
           <div className="mt-5 rounded-2xl bg-zinc-100 p-4">
             <h4 className={`${FONT.yearLuckTitle} ${WEIGHT.yearLuckTitle} ${COLOR.yearLuckTitle}`}>선택한 대운의 년운</h4>
 
-            <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-10">
-              {yearLuckList.map((yearLuck: any) => {
+            <div
+  className={
+    mode === "compatibility"
+      ? "mt-4 flex gap-3 overflow-x-auto pb-3"
+      : "mt-4 grid grid-cols-2 gap-3 sm:grid-cols-10"
+  }
+>
+  {yearLuckList.map((yearLuck: any) => {
                 const yearLuckKey = `${cardKey}-year-${yearLuck.year}`;
                 const selected = selectedYearLuckKey[cardKey] === yearLuckKey;
 
@@ -2389,7 +2395,9 @@ const buildDailyCalendar = (date: Date) => {
                         [cardKey]: selected ? null : yearLuckKey,
                       }))
                     }
-                    className={`rounded-xl p-3 text-center shadow-sm transition ${selected
+                    className={`${
+  mode === "compatibility" ? "min-w-[100px]" : ""
+} rounded-xl p-3 text-center shadow-sm transition ${selected
                       ? "bg-[#6b3f24] text-white shadow-md"
                       : "bg-white text-black hover:bg-zinc-50"
                       }`}
@@ -2456,11 +2464,21 @@ const buildDailyCalendar = (date: Date) => {
                   {selectedYearLuck.year}년 월운
                 </h4>
 
-                <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-12">
-                  {monthLuckList.map((monthLuck: any) => (
+                <div
+  className={
+    mode === "compatibility"
+      ? "mt-4 flex gap-3 overflow-x-auto pb-3"
+      : "mt-4 grid grid-cols-2 gap-3 sm:grid-cols-12"
+  }
+>
+  {monthLuckList.map((monthLuck: any) => (
                     <div
                       key={`${monthLuck.year}-${monthLuck.month}`}
-                      className="rounded-xl bg-zinc-100 p-3 text-center shadow-sm"
+                      className={
+  mode === "compatibility"
+    ? "min-w-[100px] rounded-xl bg-zinc-100 p-3 text-center shadow-sm"
+    : "rounded-xl bg-zinc-100 p-3 text-center shadow-sm"
+}
                     >
                       <div className={`${FONT.monthLuckMonth} ${WEIGHT.monthLuckMonth} ${COLOR.monthLuckMonth}`}>
                         {monthLuck.month}월
