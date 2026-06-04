@@ -35,6 +35,9 @@ export default function Home() {
     pillarMainHanja: "text-6xl",
     pillarKor: "text-3xl",
     hiddenStem: "text-3xl",
+    juGwonShin: "text-3xl",
+    jeolgiLabel: "text-3xl",
+    jeolgiValue: "text-3xl",
     timeUnknown: "text-3xl",
 
     // 십성 / 십이운성
@@ -92,6 +95,9 @@ export default function Home() {
     pillarLabel: "text-black",
     pillarKor: "text-zinc-600",
     hiddenStem: "text-zinc-600",
+    juGwonShin: "text-[#6b3f24]",
+    jeolgiLabel: "text-[#6b3f24]",
+    jeolgiValue: "text-[#6b3f24]",
     timeUnknown: "text-zinc-400",
 
     tenGod: "text-zinc-700",
@@ -142,6 +148,9 @@ export default function Home() {
     pillarMainHanja: "font-bold",
     pillarKor: "font-semibold",
     hiddenStem: "font-semibold",
+    juGwonShin: "font-bold",
+    jeolgiLabel: "font-bold",
+    jeolgiValue: "font-bold",
     timeUnknown: "font-bold",
 
     tenGod: "font-bold",
@@ -255,7 +264,26 @@ const [calendarDate, setCalendarDate] = useState(new Date());
 
     return onlyNumber;
   };
+  const normalizeDateOnBlur = (value: string) => {
+    return formatDateInput(value);
+  };
+  const normalizeDateForCalc = (value: string) => {
+  const onlyNumber = value.replace(/\D/g, "");
 
+  if (onlyNumber.length < 6) return value;
+
+  const parts = value.split("-");
+
+  if (parts.length === 3) {
+    const year = parts[0].padStart(4, "0");
+    const month = parts[1].padStart(2, "0");
+    const day = parts[2].padStart(2, "0");
+
+    return `${year}-${month}-${day}`;
+  }
+
+  return formatDateInput(value);
+};
   const formatTimeInput = (value: string) => {
     const onlyNumber = value.replace(/\D/g, "").slice(0, 4);
 
@@ -362,12 +390,14 @@ const [calendarDate, setCalendarDate] = useState(new Date());
 
     if (!targetForm.birthTimeUnknown && !targetForm.birthTime) return null;
 
-    let solarBirthDate = targetForm.birthDate;
+    let solarBirthDate = normalizeDateForCalc(targetForm.birthDate);
 
     if (targetForm.calendarType === "lunar") {
       const calendar: any = new KoreanLunarCalendar();
 
-      const [year, month, day] = targetForm.birthDate.split("-").map(Number);
+      const [year, month, day] = normalizeDateForCalc(targetForm.birthDate)
+  .split("-")
+  .map(Number);;
 
       const success = calendar.setLunarDate(
         year,
@@ -395,11 +425,19 @@ const [calendarDate, setCalendarDate] = useState(new Date());
       gender: targetForm.gender === "남성" ? "male" : "female",
     });
 
+    const calculatedWithBirthInfo = {
+      ...calculated,
+      solarBirthDate,
+      birthTimeForJuGwonShin: targetForm.birthTimeUnknown
+        ? "12:00"
+        : targetForm.birthTime,
+    };
+
     if (targetForm.birthTimeUnknown) {
-      return makeTimeUnknownSaju(calculated);
+      return makeTimeUnknownSaju(calculatedWithBirthInfo);
     }
 
-    return calculated;
+    return calculatedWithBirthInfo;
   };
 
   const handleCalculateSaju = () => {
@@ -1278,6 +1316,131 @@ const [calendarDate, setCalendarDate] = useState(new Date());
     return hiddenStems.map((stem: string) => STEM_HANJA[stem] ?? "").join("");
   };
 
+
+  const MONTH_JEOLIP_TERMS: { month: number; day: number; branch: string }[] = [
+    { month: 1, day: 6, branch: "축" },
+    { month: 2, day: 4, branch: "인" },
+    { month: 3, day: 6, branch: "묘" },
+    { month: 4, day: 5, branch: "진" },
+    { month: 5, day: 6, branch: "사" },
+    { month: 6, day: 6, branch: "오" },
+    { month: 7, day: 7, branch: "미" },
+    { month: 8, day: 8, branch: "신" },
+    { month: 9, day: 8, branch: "유" },
+    { month: 10, day: 8, branch: "술" },
+    { month: 11, day: 7, branch: "해" },
+    { month: 12, day: 7, branch: "자" },
+  ];
+
+  const getBirthDateTimeForJuGwonShin = (targetSaju: any) => {
+    const birthDate = String(targetSaju?.solarBirthDate || "");
+    const birthTime = String(targetSaju?.birthTimeForJuGwonShin || "12:00");
+
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(birthDate)) return null;
+
+    const [year, month, day] = birthDate.split("-").map(Number);
+    const [hour = 12, minute = 0] = birthTime.split(":").map(Number);
+
+    return new Date(year, month - 1, day, hour, minute, 0, 0);
+  };
+
+  const getLatestJeolipDate = (birthDateTime: Date, monthBranch: string) => {
+    const normalizedMonthBranch = normalizeBranch(monthBranch);
+    const birthYear = birthDateTime.getFullYear();
+
+    const candidates = [birthYear - 1, birthYear, birthYear + 1]
+      .flatMap((year) =>
+        MONTH_JEOLIP_TERMS
+          .filter((term) => term.branch === normalizedMonthBranch)
+          .map((term) => new Date(year, term.month - 1, term.day, 0, 0, 0, 0)),
+      )
+      .filter((date) => date.getTime() <= birthDateTime.getTime())
+      .sort((a, b) => b.getTime() - a.getTime());
+
+    return candidates[0] || null;
+  };
+
+  const getDaysAfterJeolip = (targetSaju: any) => {
+    const birthDateTime = getBirthDateTimeForJuGwonShin(targetSaju);
+    const monthBranch = getMonthBranch(targetSaju);
+
+    if (!birthDateTime || !monthBranch) return null;
+
+    const jeolipDate = getLatestJeolipDate(birthDateTime, monthBranch);
+
+    if (!jeolipDate) return null;
+
+    return Math.floor(
+      (birthDateTime.getTime() - jeolipDate.getTime()) /
+        (1000 * 60 * 60 * 24),
+    );
+  };
+
+  const getJuGwonShin = (branch: string, daysAfterJeolip: number | null) => {
+    const normalizedBranch = normalizeBranch(branch);
+
+    const saengji: Record<string, string> = {
+      인: "갑",
+      신: "경",
+      사: "병",
+      해: "임",
+    };
+
+    if (saengji[normalizedBranch]) return saengji[normalizedBranch];
+
+    if (daysAfterJeolip === null) return "";
+
+    const wangjiEarly: Record<string, string> = {
+      자: "임",
+      오: "병",
+      묘: "갑",
+      유: "경",
+    };
+    const wangjiLate: Record<string, string> = {
+      자: "계",
+      오: "정",
+      묘: "을",
+      유: "신",
+    };
+
+    if (wangjiEarly[normalizedBranch]) {
+      return daysAfterJeolip <= 6
+        ? wangjiEarly[normalizedBranch]
+        : wangjiLate[normalizedBranch];
+    }
+
+    const gojiEarly: Record<string, string> = {
+      진: "을",
+      술: "신",
+      축: "계",
+      미: "정",
+    };
+    const gojiLate: Record<string, string> = {
+      진: "무",
+      술: "무",
+      축: "기",
+      미: "기",
+    };
+
+    if (gojiEarly[normalizedBranch]) {
+      return daysAfterJeolip <= 12
+        ? gojiEarly[normalizedBranch]
+        : gojiLate[normalizedBranch];
+    }
+
+    return "";
+  };
+
+  const getJuGwonShinForItem = (item: any) => {
+    if (item?.label !== "월주") return "";
+
+    const branch = getItemBranch(item);
+    const daysAfterJeolip = getDaysAfterJeolip(item?.targetSaju);
+    const juGwonShin = getJuGwonShin(branch, daysAfterJeolip);
+
+    return juGwonShin ? STEM_HANJA[juGwonShin] || juGwonShin : "";
+  };
+
   const BRANCH_RELATION_RULES: any = {
     yukhap: [
       ["자", "축"],
@@ -1923,6 +2086,7 @@ const buildDailyCalendar = (date: Date) => {
         {
           label: "시주",
           data: targetSaju.hour,
+          targetSaju,
           tenGodStem: targetSaju.tenGods?.hourStem ?? "",
           tenGodBranch: targetSaju.tenGods?.hourBranch ?? "",
           twelveStage: targetSaju.twelveStages?.hour ?? "",
@@ -1930,6 +2094,7 @@ const buildDailyCalendar = (date: Date) => {
         {
           label: "일주",
           data: targetSaju.day,
+          targetSaju,
           tenGodStem: targetSaju.tenGods.dayStem,
           tenGodBranch: targetSaju.tenGods.dayBranch,
           twelveStage: targetSaju.twelveStages.day,
@@ -1937,6 +2102,7 @@ const buildDailyCalendar = (date: Date) => {
         {
           label: "월주",
           data: targetSaju.month,
+          targetSaju,
           tenGodStem: targetSaju.tenGods.monthStem,
           tenGodBranch: targetSaju.tenGods.monthBranch,
           twelveStage: targetSaju.twelveStages.month,
@@ -1944,6 +2110,7 @@ const buildDailyCalendar = (date: Date) => {
         {
           label: "년주",
           data: targetSaju.year,
+          targetSaju,
           tenGodStem: targetSaju.tenGods.yearStem,
           tenGodBranch: targetSaju.tenGods.yearBranch,
           twelveStage: targetSaju.twelveStages.year,
@@ -1997,6 +2164,17 @@ const buildDailyCalendar = (date: Date) => {
           >
             {item.data.branch}
           </div>
+
+          {getJuGwonShinForItem(item) && (
+            <div className="mt-1">
+              <span className={`${FONT.jeolgiLabel} ${WEIGHT.jeolgiLabel} ${COLOR.jeolgiLabel}`}>
+                主
+              </span>{" "}
+              <span className={`${FONT.jeolgiValue} ${WEIGHT.jeolgiValue} ${COLOR.jeolgiValue}`}>
+                {getJuGwonShinForItem(item)}
+              </span>
+            </div>
+          )}
 
           <div className={`mt-3 ${FONT.pillarKor} ${WEIGHT.pillarKor} ${COLOR.pillarKor}`}>
             {item.data.stemKor}
@@ -2415,14 +2593,20 @@ const buildDailyCalendar = (date: Date) => {
                   className={`flex-1 rounded-xl border p-3 ${FONT.inputText}`}
                   value={form.birthDate}
                   onChange={(e) => {
-                    setForm({
-                      ...form,
-                      birthDate: formatDateInput(e.target.value),
-                    });
+  setForm({
+    ...form,
+    birthDate: e.target.value,
+  });
 
-                    setSajuResult(null);
-                    setResult("");
-                  }}
+  setSajuResult(null);
+  setResult("");
+}}
+onBlur={(e) => {
+  setForm({
+    ...form,
+    birthDate: normalizeDateOnBlur(e.target.value),
+  });
+}}
                 />
 
                 <label className={`flex items-center gap-1 ${FONT.formLabel} font-bold`}>
@@ -2584,21 +2768,30 @@ const buildDailyCalendar = (date: Date) => {
                         className={`flex-1 rounded-xl border p-3 ${FONT.inputText}`}
                         value={compatibilityForm[key].birthDate}
                         onChange={(e) => {
-                          setCompatibilityForm({
-                            ...compatibilityForm,
-                            [key]: {
-                              ...compatibilityForm[key],
-                              birthDate: formatDateInput(e.target.value),
-                            },
-                          });
+  setCompatibilityForm({
+    ...compatibilityForm,
+    [key]: {
+      ...compatibilityForm[key],
+      birthDate: e.target.value,
+    },
+  });
 
-                          setCompatibilityResult({
-                            left: null,
-                            right: null,
-                          });
+  setCompatibilityResult({
+    left: null,
+    right: null,
+  });
 
-                          setResult("");
-                        }}
+  setResult("");
+}}
+onBlur={(e) => {
+  setCompatibilityForm({
+    ...compatibilityForm,
+    [key]: {
+      ...compatibilityForm[key],
+      birthDate: normalizeDateOnBlur(e.target.value),
+    },
+  });
+}}
                       />
 
                       <label className={`flex items-center gap-1 ${FONT.formLabel} font-bold`}>
@@ -2831,7 +3024,7 @@ const buildDailyCalendar = (date: Date) => {
 
                   {renderSajuOverview(sajuResult, sajuItems, "main")}
 
-                  {renderLuckPanel(sajuResult, "main", form.birthDate)}
+                  {renderLuckPanel(sajuResult, "main", normalizeDateForCalc(form.birthDate))}
 
                   {result && (
                     <div className="mt-5 rounded-2xl bg-zinc-100 p-4">
@@ -2872,10 +3065,10 @@ const buildDailyCalendar = (date: Date) => {
                       {compatibilityForm.left.name || "본인"}
                     </h3>
                     {renderSajuCard(
-                      compatibilityResult.left,
-                      "compat-left",
-                      compatibilityForm.left.birthDate,
-                    )}
+  compatibilityResult.right,
+  "compat-right",
+  normalizeDateForCalc(compatibilityForm.right.birthDate),
+)}
                   </div>
 
                   <div>
