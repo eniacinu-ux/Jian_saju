@@ -3065,9 +3065,9 @@ onBlur={(e) => {
                       {compatibilityForm.left.name || "본인"}
                     </h3>
                     {renderSajuCard(
-  compatibilityResult.right,
-  "compat-right",
-  normalizeDateForCalc(compatibilityForm.right.birthDate),
+  compatibilityResult.left,
+  "compat-left",
+  normalizeDateForCalc(compatibilityForm.left.birthDate),
 )}
                   </div>
 
