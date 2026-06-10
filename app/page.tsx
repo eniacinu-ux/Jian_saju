@@ -80,7 +80,6 @@ export default function Home() {
     buttonText: "text-3xl",
   };
 
-
   const COLOR = {
     pageTitle: "text-[#2b1d12]",
     sectionTitle: "text-[#2b1d12]",
@@ -185,7 +184,6 @@ export default function Home() {
     buttonText: "font-bold",
   };
 
-
   const WORD_FONT = {
     title: 36,
     sectionTitle: 28,
@@ -194,7 +192,6 @@ export default function Home() {
   const [lunarToSolarDate, setLunarToSolarDate] = useState("");
   const [lunarToSolarIsLeapMonth, setLunarToSolarIsLeapMonth] = useState(false);
   const [lunarToSolarResult, setLunarToSolarResult] = useState("");
-
 
   const [solarToLunarDate, setSolarToLunarDate] = useState("");
   const resultRef = useRef<HTMLDivElement>(null);
@@ -232,16 +229,20 @@ export default function Home() {
       isLeapMonth: false,
     },
   });
-  const [selectedDaewoonKey, setSelectedDaewoonKey] = useState<Record<string, string | null>>({});
+  const [selectedDaewoonKey, setSelectedDaewoonKey] = useState<
+    Record<string, string | null>
+  >({});
 
-  const [selectedYearLuckKey, setSelectedYearLuckKey] = useState<Record<string, string | null>>({});
+  const [selectedYearLuckKey, setSelectedYearLuckKey] = useState<
+    Record<string, string | null>
+  >({});
   const [showCompatibilityRelations, setShowCompatibilityRelations] =
     useState(false);
   const [result, setResult] = useState("");
   const [loading, setLoading] = useState(false);
   const [showSaju, setShowSaju] = useState(false);
   const [showDailyCalendar, setShowDailyCalendar] = useState(false);
-const [calendarDate, setCalendarDate] = useState(new Date());
+  const [calendarDate, setCalendarDate] = useState(new Date());
   const [sajuResult, setSajuResult] = useState<any>(null);
   const [compatibilityResult, setCompatibilityResult] = useState<any>({
     left: null,
@@ -251,7 +252,7 @@ const [calendarDate, setCalendarDate] = useState(new Date());
   const [favoritePeople, setFavoritePeople] = useState<any[]>([]);
   const [peopleStorageOpen, setPeopleStorageOpen] = useState(false);
   const [favoritePeopleOpen, setFavoritePeopleOpen] = useState(true);
-const [recentPeopleOpen, setRecentPeopleOpen] = useState(true);
+  const [recentPeopleOpen, setRecentPeopleOpen] = useState(true);
   const [storageLoaded, setStorageLoaded] = useState(false);
   const [memoOpen, setMemoOpen] = useState(false);
   const [memoText, setMemoText] = useState("");
@@ -277,22 +278,22 @@ const [recentPeopleOpen, setRecentPeopleOpen] = useState(true);
     return formatDateInput(value);
   };
   const normalizeDateForCalc = (value: string) => {
-  const onlyNumber = value.replace(/\D/g, "");
+    const onlyNumber = value.replace(/\D/g, "");
 
-  if (onlyNumber.length < 6) return value;
+    if (onlyNumber.length < 6) return value;
 
-  const parts = value.split("-");
+    const parts = value.split("-");
 
-  if (parts.length === 3) {
-    const year = parts[0].padStart(4, "0");
-    const month = parts[1].padStart(2, "0");
-    const day = parts[2].padStart(2, "0");
+    if (parts.length === 3) {
+      const year = parts[0].padStart(4, "0");
+      const month = parts[1].padStart(2, "0");
+      const day = parts[2].padStart(2, "0");
 
-    return `${year}-${month}-${day}`;
-  }
+      return `${year}-${month}-${day}`;
+    }
 
-  return formatDateInput(value);
-};
+    return formatDateInput(value);
+  };
   const formatTimeInput = (value: string) => {
     const onlyNumber = value.replace(/\D/g, "").slice(0, 4);
 
@@ -334,7 +335,6 @@ const [recentPeopleOpen, setRecentPeopleOpen] = useState(true);
       month,
       day,
       lunarToSolarIsLeapMonth,
-
     );
 
     if (!success) {
@@ -405,8 +405,8 @@ const [recentPeopleOpen, setRecentPeopleOpen] = useState(true);
       const calendar: any = new KoreanLunarCalendar();
 
       const [year, month, day] = normalizeDateForCalc(targetForm.birthDate)
-  .split("-")
-  .map(Number);;
+        .split("-")
+        .map(Number);
 
       const success = calendar.setLunarDate(
         year,
@@ -486,12 +486,29 @@ const [recentPeopleOpen, setRecentPeopleOpen] = useState(true);
       });
   };
 
+  const DEFAULT_FAVORITE_PEOPLE = [
+    { name: "에스크", gender: "여성", birthDate: "1997-12-31", birthTime: "09:15", birthTimeUnknown: false, calendarType: "solar", isLeapMonth: false },
+    { name: "Mgk", gender: "남성", birthDate: "1991-05-23", birthTime: "08:30", birthTimeUnknown: false, calendarType: "solar", isLeapMonth: false },
+    { name: "희망", gender: "남성", birthDate: "1999-02-23", birthTime: "10:00", birthTimeUnknown: false, calendarType: "solar", isLeapMonth: false },
+    { name: "유니콘", gender: "남성", birthDate: "1987-05-07", birthTime: "16:45", birthTimeUnknown: false, calendarType: "solar", isLeapMonth: false },
+    { name: "우지안", gender: "여성", birthDate: "1995-11-30", birthTime: "01:29", birthTimeUnknown: false, calendarType: "solar", isLeapMonth: false },
+    { name: "남태식", gender: "남성", birthDate: "1981-01-31", birthTime: "13:30", birthTimeUnknown: false, calendarType: "solar", isLeapMonth: false },
+    { name: "스파크", gender: "남성", birthDate: "1986-12-25", birthTime: "11:53", birthTimeUnknown: false, calendarType: "solar", isLeapMonth: false },
+    { name: "장민혁(쥬토피앙)", gender: "남성", birthDate: "1991-10-22", birthTime: "01:00", birthTimeUnknown: false, calendarType: "solar", isLeapMonth: false },
+    { name: "임딩", gender: "여성", birthDate: "2002-08-13", birthTime: "11:59", birthTimeUnknown: false, calendarType: "solar", isLeapMonth: false },
+    { name: "성민(민2)", gender: "남성", birthDate: "1993-03-28", birthTime: "04:30", birthTimeUnknown: false, calendarType: "solar", isLeapMonth: false },
+    { name: "킹스맨", gender: "남성", birthDate: "1986-03-23", birthTime: "20:30", birthTimeUnknown: false, calendarType: "solar", isLeapMonth: false },
+    { name: "뉴탄즈", gender: "남성", birthDate: "1993-08-04", birthTime: "23:00", birthTimeUnknown: false, calendarType: "solar", isLeapMonth: false },
+    { name: "간지남", gender: "남성", birthDate: "1988-02-02", birthTime: "00:10", birthTimeUnknown: false, calendarType: "solar", isLeapMonth: false },
+  ];
+
   useEffect(() => {
     if (typeof window === "undefined") return;
 
     try {
       const savedRecentPeople = window.localStorage.getItem("sajuRecentPeople");
-      const savedFavoritePeople = window.localStorage.getItem("sajuFavoritePeople");
+      const savedFavoritePeople =
+        window.localStorage.getItem("sajuFavoritePeople");
       const savedMemoText = window.localStorage.getItem("sajuMemoText");
 
       if (savedMemoText !== null) {
@@ -504,9 +521,16 @@ const [recentPeopleOpen, setRecentPeopleOpen] = useState(true);
         setRecentPeople(normalizePeopleList(JSON.parse(savedRecentPeople)));
       }
 
-      if (savedFavoritePeople) {
-        setFavoritePeople(normalizePeopleList(JSON.parse(savedFavoritePeople)));
-      }
+      const savedFavoriteList = savedFavoritePeople
+        ? JSON.parse(savedFavoritePeople)
+        : [];
+
+      setFavoritePeople(
+        normalizePeopleList([
+          ...DEFAULT_FAVORITE_PEOPLE,
+          ...savedFavoriteList,
+        ]),
+      );
     } catch (error) {
       console.error("저장된 사람 목록을 불러오지 못했습니다.", error);
     } finally {
@@ -518,13 +542,19 @@ const [recentPeopleOpen, setRecentPeopleOpen] = useState(true);
   useEffect(() => {
     if (!storageLoaded || typeof window === "undefined") return;
 
-    window.localStorage.setItem("sajuRecentPeople", JSON.stringify(recentPeople));
+    window.localStorage.setItem(
+      "sajuRecentPeople",
+      JSON.stringify(recentPeople),
+    );
   }, [recentPeople, storageLoaded]);
 
   useEffect(() => {
     if (!storageLoaded || typeof window === "undefined") return;
 
-    window.localStorage.setItem("sajuFavoritePeople", JSON.stringify(favoritePeople));
+    window.localStorage.setItem(
+      "sajuFavoritePeople",
+      JSON.stringify(favoritePeople),
+    );
   }, [favoritePeople, storageLoaded]);
 
   useEffect(() => {
@@ -560,10 +590,12 @@ const [recentPeopleOpen, setRecentPeopleOpen] = useState(true);
     const normalizedPerson = normalizeRecentPerson(person);
     const key = makePersonKey(normalizedPerson);
 
-    setFavoritePeople((prev) => [
-      normalizedPerson,
-      ...prev.filter((item) => makePersonKey(item) !== key),
-    ].slice(0, 100));
+    setFavoritePeople((prev) =>
+      [
+        normalizedPerson,
+        ...prev.filter((item) => makePersonKey(item) !== key),
+      ].slice(0, 100),
+    );
   };
 
   const removeFavoritePerson = (person: any) => {
@@ -593,7 +625,10 @@ const [recentPeopleOpen, setRecentPeopleOpen] = useState(true);
     setResult("");
   };
 
-  const loadRecentPersonToCompatibility = (side: "left" | "right", person: any) => {
+  const loadRecentPersonToCompatibility = (
+    side: "left" | "right",
+    person: any,
+  ) => {
     const normalizedPerson = normalizeRecentPerson(person);
 
     setCompatibilityForm({
@@ -613,7 +648,11 @@ const [recentPeopleOpen, setRecentPeopleOpen] = useState(true);
   const renderPeopleButton = (
     person: any,
     onSelect: (person: any) => void,
-    options?: { favoriteButton?: boolean; removeFavoriteButton?: boolean; removeRecentButton?: boolean },
+    options?: {
+      favoriteButton?: boolean;
+      removeFavoriteButton?: boolean;
+      removeRecentButton?: boolean;
+    },
   ) => {
     const favorite = isFavoritePerson(person);
 
@@ -687,59 +726,73 @@ const [recentPeopleOpen, setRecentPeopleOpen] = useState(true);
         {peopleStorageOpen && (
           <>
             <div className="mt-4 rounded-2xl bg-white/70 p-3">
-  <button
-    type="button"
-    onClick={() => setFavoritePeopleOpen((prev) => !prev)}
-    className="flex w-full items-center justify-between text-left text-2xl font-bold text-[#6b3f24]"
-  >
-    <span>즐겨찾기</span>
-    <span>{favoritePeopleOpen ? "▲" : "▼"}</span>
-  </button>
+              <button
+                type="button"
+                onClick={() => setFavoritePeopleOpen((prev) => !prev)}
+                className="flex w-full items-center justify-between text-left text-2xl font-bold text-[#6b3f24]"
+              >
+                <span>즐겨찾기</span>
+                <span>{favoritePeopleOpen ? "▲" : "▼"}</span>
+              </button>
 
-  {favoritePeopleOpen && (
-    <div className="mt-3 flex flex-wrap gap-2">
-      {favoritePeople.length > 0 ? (
-        favoritePeople.map((person) =>
-          renderPeopleButton(person, onSelect, {
-            removeFavoriteButton: true,
-          }),
-        )
-      ) : (
-        <div className="text-2xl font-bold text-zinc-400">
-          즐겨찾기한 사람이 없습니다.
-        </div>
-      )}
-    </div>
-  )}
-</div>
+              {favoritePeopleOpen && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {favoritePeople.length > 0 ? (
+                    favoritePeople.map((person) =>
+                      renderPeopleButton(person, onSelect, {
+                        removeFavoriteButton: true,
+                      }),
+                    )
+                  ) : (
+                    <div className="text-2xl font-bold text-zinc-400">
+                      즐겨찾기한 사람이 없습니다.
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
 
             <div className="mt-4 rounded-2xl bg-white/70 p-3">
-  <button
-    type="button"
-    onClick={() => setRecentPeopleOpen((prev) => !prev)}
-    className="flex w-full items-center justify-between text-left text-2xl font-bold text-[#6b3f24]"
-  >
-    <span>최근 본 사람</span>
-    <span>{recentPeopleOpen ? "▲" : "▼"}</span>
-  </button>
+              <div className="flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => setRecentPeopleOpen((prev) => !prev)}
+                  className="flex flex-1 items-center justify-between text-left text-2xl font-bold text-[#6b3f24]"
+                >
+                  <span>최근 본 사람</span>
+                  <span>{recentPeopleOpen ? "▲" : "▼"}</span>
+                </button>
 
-  {recentPeopleOpen && (
-    <div className="mt-3 flex flex-wrap gap-2">
-      {recentPeople.length > 0 ? (
-        recentPeople.map((person) =>
-          renderPeopleButton(person, onSelect, {
-            favoriteButton: true,
-            removeRecentButton: true,
-          }),
-        )
-      ) : (
-        <div className="text-2xl font-bold text-zinc-400">
-          최근 본 사람이 없습니다.
-        </div>
-      )}
-    </div>
-  )}
-</div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (confirm("최근 본 사람 목록을 모두 삭제하시겠습니까?")) {
+                      setRecentPeople([]);
+                    }
+                  }}
+                  className="ml-3 rounded-lg px-3 py-2 text-xl font-bold text-red-700 transition hover:bg-red-50"
+                >
+                  전체삭제
+                </button>
+              </div>
+
+              {recentPeopleOpen && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {recentPeople.length > 0 ? (
+                    recentPeople.map((person) =>
+                      renderPeopleButton(person, onSelect, {
+                        favoriteButton: true,
+                        removeRecentButton: true,
+                      }),
+                    )
+                  ) : (
+                    <div className="text-2xl font-bold text-zinc-400">
+                      최근 본 사람이 없습니다.
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </>
         )}
       </div>
@@ -876,8 +929,9 @@ const [recentPeopleOpen, setRecentPeopleOpen] = useState(true);
               new Paragraph({
                 children: [
                   new TextRun({
-                    text: `생년월일: ${form.birthDate} ${form.birthTimeUnknown ? "시간 미상" : form.birthTime
-                      }`,
+                    text: `생년월일: ${form.birthDate} ${
+                      form.birthTimeUnknown ? "시간 미상" : form.birthTime
+                    }`,
                     size: WORD_FONT.body,
                   }),
                 ],
@@ -1006,24 +1060,24 @@ const [recentPeopleOpen, setRecentPeopleOpen] = useState(true);
 
               ...(result
                 ? result.split("\n").map(
-                  (line) =>
-                    new Paragraph({
-                      children: [
-                        new TextRun({
-                          text: line,
-                          size: WORD_FONT.body,
-                        }),
-                      ],
-                      spacing: {
-                        after: 120,
-                      },
-                    }),
-                )
+                    (line) =>
+                      new Paragraph({
+                        children: [
+                          new TextRun({
+                            text: line,
+                            size: WORD_FONT.body,
+                          }),
+                        ],
+                        spacing: {
+                          after: 120,
+                        },
+                      }),
+                  )
                 : [
-                  new Paragraph({
-                    text: "사주 풀이 결과가 없습니다.",
-                  }),
-                ]),
+                    new Paragraph({
+                      text: "사주 풀이 결과가 없습니다.",
+                    }),
+                  ]),
             ],
           },
         ],
@@ -1449,11 +1503,15 @@ const [recentPeopleOpen, setRecentPeopleOpen] = useState(true);
     return (
       <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-6">
         <div className="rounded-2xl border border-[#ead8c4] bg-[#fffaf3] p-4 text-center">
-          <div className={`${FONT.specialLabel} ${WEIGHT.specialLabel} ${COLOR.specialLabel}`}>
+          <div
+            className={`${FONT.specialLabel} ${WEIGHT.specialLabel} ${COLOR.specialLabel}`}
+          >
             공망
           </div>
 
-          <div className={`mt-2 ${FONT.specialValue} ${WEIGHT.specialValue} ${COLOR.specialValue}`}>
+          <div
+            className={`mt-2 ${FONT.specialValue} ${WEIGHT.specialValue} ${COLOR.specialValue}`}
+          >
             {getDayGongmang(targetSaju)}
           </div>
         </div>
@@ -1463,11 +1521,15 @@ const [recentPeopleOpen, setRecentPeopleOpen] = useState(true);
             key={gwiyin.label}
             className="rounded-2xl border border-[#ead8c4] bg-[#fffaf3] p-4 text-center"
           >
-            <div className={`${FONT.specialLabel} ${WEIGHT.specialLabel} ${COLOR.specialLabel}`}>
+            <div
+              className={`${FONT.specialLabel} ${WEIGHT.specialLabel} ${COLOR.specialLabel}`}
+            >
               {gwiyin.label}
             </div>
 
-            <div className={`mt-2 ${FONT.specialValue} ${WEIGHT.specialValue} ${COLOR.specialValue}`}>
+            <div
+              className={`mt-2 ${FONT.specialValue} ${WEIGHT.specialValue} ${COLOR.specialValue}`}
+            >
               {gwiyin.value}
             </div>
           </div>
@@ -1476,48 +1538,81 @@ const [recentPeopleOpen, setRecentPeopleOpen] = useState(true);
     );
   };
 
-
   const renderElementInfo = (targetSaju: any) => {
     if (!targetSaju) return null;
 
     return (
       <div className="rounded-2xl bg-zinc-100 p-4">
-        <h4 className={`${FONT.elementTitle} ${WEIGHT.elementTitle} ${COLOR.elementTitle}`}>
+        <h4
+          className={`${FONT.elementTitle} ${WEIGHT.elementTitle} ${COLOR.elementTitle}`}
+        >
           오행 분포
         </h4>
 
-        <div className={`mt-3 grid grid-cols-5 gap-2 text-center ${FONT.elementValue}`}>
+        <div
+          className={`mt-3 grid grid-cols-5 gap-2 text-center ${FONT.elementValue}`}
+        >
           <div>
-            <div className={`${FONT.elementTitle} ${WEIGHT.elementTitle} ${COLOR.elementTitle}`}>木</div>
-            <div className={`${FONT.elementValue} ${WEIGHT.elementValue} ${COLOR.elementValue}`}>
+            <div
+              className={`${FONT.elementTitle} ${WEIGHT.elementTitle} ${COLOR.elementTitle}`}
+            >
+              木
+            </div>
+            <div
+              className={`${FONT.elementValue} ${WEIGHT.elementValue} ${COLOR.elementValue}`}
+            >
               {targetSaju?.elementCount?.wood ?? 0}
             </div>
           </div>
 
           <div>
-            <div className={`${FONT.elementTitle} ${WEIGHT.elementTitle} ${COLOR.elementTitle}`}>火</div>
-            <div className={`${FONT.elementValue} ${WEIGHT.elementValue} ${COLOR.elementValue}`}>
+            <div
+              className={`${FONT.elementTitle} ${WEIGHT.elementTitle} ${COLOR.elementTitle}`}
+            >
+              火
+            </div>
+            <div
+              className={`${FONT.elementValue} ${WEIGHT.elementValue} ${COLOR.elementValue}`}
+            >
               {targetSaju?.elementCount?.fire ?? 0}
             </div>
           </div>
 
           <div>
-            <div className={`${FONT.elementTitle} ${WEIGHT.elementTitle} ${COLOR.elementTitle}`}>土</div>
-            <div className={`${FONT.elementValue} ${WEIGHT.elementValue} ${COLOR.elementValue}`}>
+            <div
+              className={`${FONT.elementTitle} ${WEIGHT.elementTitle} ${COLOR.elementTitle}`}
+            >
+              土
+            </div>
+            <div
+              className={`${FONT.elementValue} ${WEIGHT.elementValue} ${COLOR.elementValue}`}
+            >
               {targetSaju?.elementCount?.earth ?? 0}
             </div>
           </div>
 
           <div>
-            <div className={`${FONT.elementTitle} ${WEIGHT.elementTitle} ${COLOR.elementTitle}`}>金</div>
-            <div className={`${FONT.elementValue} ${WEIGHT.elementValue} ${COLOR.elementValue}`}>
+            <div
+              className={`${FONT.elementTitle} ${WEIGHT.elementTitle} ${COLOR.elementTitle}`}
+            >
+              金
+            </div>
+            <div
+              className={`${FONT.elementValue} ${WEIGHT.elementValue} ${COLOR.elementValue}`}
+            >
               {targetSaju?.elementCount?.metal ?? 0}
             </div>
           </div>
 
           <div>
-            <div className={`${FONT.elementTitle} ${WEIGHT.elementTitle} ${COLOR.elementTitle}`}>水</div>
-            <div className={`${FONT.elementValue} ${WEIGHT.elementValue} ${COLOR.elementValue}`}>
+            <div
+              className={`${FONT.elementTitle} ${WEIGHT.elementTitle} ${COLOR.elementTitle}`}
+            >
+              水
+            </div>
+            <div
+              className={`${FONT.elementValue} ${WEIGHT.elementValue} ${COLOR.elementValue}`}
+            >
               {targetSaju?.elementCount?.water ?? 0}
             </div>
           </div>
@@ -1526,84 +1621,93 @@ const [recentPeopleOpen, setRecentPeopleOpen] = useState(true);
     );
   };
 
- const renderSajuOverview = (
-  targetSaju: any,
-  items: any[],
-  cardKey: string,
-) => {
-  if (!targetSaju) return null;
+  const renderSajuOverview = (
+    targetSaju: any,
+    items: any[],
+    cardKey: string,
+  ) => {
+    if (!targetSaju) return null;
 
-  const isCompatibilityMode = mode === "compatibility";
+    const isCompatibilityMode = mode === "compatibility";
 
-  if (isCompatibilityMode) {
+    if (isCompatibilityMode) {
+      return (
+        <div className="mt-4 flex flex-col gap-4">
+          <div className="grid grid-cols-4 gap-3 text-center font-bold text-black">
+            {items.map((item) => renderPillarCard(item, cardKey))}
+          </div>
+
+          {renderElementInfo(targetSaju)}
+
+          <div className="rounded-2xl border border-[#ead8c4] bg-[#fffaf3] p-4">
+            <div className="grid grid-cols-5 gap-3 text-center">
+              {[
+                { label: "공망", value: getDayGongmang(targetSaju) },
+                ...getGwiyinList(targetSaju),
+              ].map((item) => (
+                <div key={item.label}>
+                  <div
+                    className={`${FONT.specialLabel} ${WEIGHT.specialLabel} ${COLOR.specialLabel}`}
+                  >
+                    {item.label}
+                  </div>
+
+                  <div
+                    className={`mt-2 ${FONT.specialValue} ${WEIGHT.specialValue} ${COLOR.specialValue}`}
+                  >
+                    {item.value}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     return (
-      <div className="mt-4 flex flex-col gap-4">
-        <div className="grid grid-cols-4 gap-3 text-center font-bold text-black">
-          {items.map((item) => renderPillarCard(item, cardKey))}
+      <div className="mt-4 grid grid-cols-12 gap-4">
+        <div className="col-span-9 flex flex-col gap-4">
+          <div className="grid grid-cols-4 gap-3 text-center font-bold text-black">
+            {items.map((item) => renderPillarCard(item, cardKey))}
+          </div>
+
+          {renderElementInfo(targetSaju)}
         </div>
 
-        {renderElementInfo(targetSaju)}
-
-        <div className="rounded-2xl border border-[#ead8c4] bg-[#fffaf3] p-4">
-          <div className="grid grid-cols-5 gap-3 text-center">
-            {[
-              { label: "공망", value: getDayGongmang(targetSaju) },
-              ...getGwiyinList(targetSaju),
-            ].map((item) => (
-              <div key={item.label}>
-                <div className={`${FONT.specialLabel} ${WEIGHT.specialLabel} ${COLOR.specialLabel}`}>
-                  {item.label}
-                </div>
-
-                <div className={`mt-2 ${FONT.specialValue} ${WEIGHT.specialValue} ${COLOR.specialValue}`}>
-                  {item.value}
-                </div>
+        <div className="col-span-3">
+          <div className="rounded-2xl border border-[#ead8c4] bg-[#fffaf3] p-4">
+            <div
+              className={`${FONT.specialLabel} ${WEIGHT.specialLabel} ${COLOR.specialLabel} space-y-2`}
+            >
+              <div className="flex items-center justify-between gap-3 border-b border-[#ead8c4] px-1 pb-2">
+                <span>공망</span>
+                <span
+                  className={`${FONT.specialValue} ${WEIGHT.specialValue} ${COLOR.specialValue}`}
+                >
+                  {getDayGongmang(targetSaju)}
+                </span>
               </div>
-            ))}
+
+              {getGwiyinList(targetSaju).map((gwiyin) => (
+                <div
+                  key={gwiyin.label}
+                  className="flex items-center justify-between gap-3 border-b border-[#ead8c4] px-1 pb-2"
+                >
+                  <span>{gwiyin.label}</span>
+                  <span
+                    className={`${FONT.specialValue} ${WEIGHT.specialValue} ${COLOR.specialValue}`}
+                  >
+                    {gwiyin.value}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
     );
-  }
-
-  return (
-    <div className="mt-4 grid grid-cols-12 gap-4">
-      <div className="col-span-9 flex flex-col gap-4">
-        <div className="grid grid-cols-4 gap-3 text-center font-bold text-black">
-          {items.map((item) => renderPillarCard(item, cardKey))}
-        </div>
-
-        {renderElementInfo(targetSaju)}
-      </div>
-
-      <div className="col-span-3">
-        <div className="rounded-2xl border border-[#ead8c4] bg-[#fffaf3] p-4">
-          <div className={`${FONT.specialLabel} ${WEIGHT.specialLabel} ${COLOR.specialLabel} space-y-2`}>
-            <div className="flex items-center justify-between gap-3 border-b border-[#ead8c4] px-1 pb-2">
-              <span>공망</span>
-              <span className={`${FONT.specialValue} ${WEIGHT.specialValue} ${COLOR.specialValue}`}>
-                {getDayGongmang(targetSaju)}
-              </span>
-            </div>
-
-            {getGwiyinList(targetSaju).map((gwiyin) => (
-              <div
-                key={gwiyin.label}
-                className="flex items-center justify-between gap-3 border-b border-[#ead8c4] px-1 pb-2"
-              >
-                <span>{gwiyin.label}</span>
-                <span className={`${FONT.specialValue} ${WEIGHT.specialValue} ${COLOR.specialValue}`}>
-                  {gwiyin.value}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
+  };
 
   const STEM_INFO: any = {
     갑: { element: "목", yinYang: "양" },
@@ -1657,8 +1761,6 @@ const [recentPeopleOpen, setRecentPeopleOpen] = useState(true);
     return hiddenStems.map((stem: string) => STEM_HANJA[stem] ?? "").join("");
   };
 
-
-
   const getBirthDateTimeForJuGwonShin = (targetSaju: any) => {
     const birthDate = String(targetSaju?.solarBirthDate || "");
     const birthTime = String(targetSaju?.birthTimeForJuGwonShin || "12:00");
@@ -1671,21 +1773,21 @@ const [recentPeopleOpen, setRecentPeopleOpen] = useState(true);
     return new Date(year, month - 1, day, hour, minute, 0, 0);
   };
 
-const getLatestJeolipDate = (birthDateTime: Date, monthBranch: string) => {
-  const normalizedMonthBranch = normalizeBranch(monthBranch);
-  const birthYear = birthDateTime.getFullYear();
+  const getLatestJeolipDate = (birthDateTime: Date, monthBranch: string) => {
+    const normalizedMonthBranch = normalizeBranch(monthBranch);
+    const birthYear = birthDateTime.getFullYear();
 
-  const candidates = [birthYear - 1, birthYear, birthYear + 1]
-    .flatMap((year) => getSolarTermsOfYear(year))
-    .filter((term) => {
-      return MONTH_BRANCH_BY_SOLAR_TERM[term.name] === normalizedMonthBranch;
-    })
-    .map((term) => term.date)
-    .filter((date) => date.getTime() <= birthDateTime.getTime())
-    .sort((a, b) => b.getTime() - a.getTime());
+    const candidates = [birthYear - 1, birthYear, birthYear + 1]
+      .flatMap((year) => getSolarTermsOfYear(year))
+      .filter((term) => {
+        return MONTH_BRANCH_BY_SOLAR_TERM[term.name] === normalizedMonthBranch;
+      })
+      .map((term) => term.date)
+      .filter((date) => date.getTime() <= birthDateTime.getTime())
+      .sort((a, b) => b.getTime() - a.getTime());
 
-  return candidates[0] || null;
-};
+    return candidates[0] || null;
+  };
 
   const getDaysAfterJeolip = (targetSaju: any) => {
     const birthDateTime = getBirthDateTimeForJuGwonShin(targetSaju);
@@ -1698,8 +1800,7 @@ const getLatestJeolipDate = (birthDateTime: Date, monthBranch: string) => {
     if (!jeolipDate) return null;
 
     return Math.floor(
-      (birthDateTime.getTime() - jeolipDate.getTime()) /
-        (1000 * 60 * 60 * 24),
+      (birthDateTime.getTime() - jeolipDate.getTime()) / (1000 * 60 * 60 * 24),
     );
   };
 
@@ -2114,14 +2215,14 @@ const getLatestJeolipDate = (birthDateTime: Date, monthBranch: string) => {
   const getBaseBranchForShinsal = (targetSaju: any) => {
     const dayBranch = normalizeBranch(
       targetSaju?.day?.branch ||
-      String(targetSaju?.day?.ganji || "").slice(1, 2),
+        String(targetSaju?.day?.ganji || "").slice(1, 2),
     );
 
     if (dayBranch) return dayBranch;
 
     return normalizeBranch(
       targetSaju?.year?.branch ||
-      String(targetSaju?.year?.ganji || "").slice(1, 2),
+        String(targetSaju?.year?.ganji || "").slice(1, 2),
     );
   };
 
@@ -2239,195 +2340,218 @@ const getLatestJeolipDate = (birthDateTime: Date, monthBranch: string) => {
 
     return "";
   };
-const DAY_STEMS = ["갑", "을", "병", "정", "무", "기", "경", "신", "임", "계"];
-const DAY_BRANCHES = [
-  "자",
-  "축",
-  "인",
-  "묘",
-  "진",
-  "사",
-  "오",
-  "미",
-  "신",
-  "유",
-  "술",
-  "해",
-];
+  const DAY_STEMS = [
+    "갑",
+    "을",
+    "병",
+    "정",
+    "무",
+    "기",
+    "경",
+    "신",
+    "임",
+    "계",
+  ];
+  const DAY_BRANCHES = [
+    "자",
+    "축",
+    "인",
+    "묘",
+    "진",
+    "사",
+    "오",
+    "미",
+    "신",
+    "유",
+    "술",
+    "해",
+  ];
 
-const getDayGanji = (date: Date) => {
-  const baseDate = new Date(1936, 1, 12);
+  const getDayGanji = (date: Date) => {
+    const baseDate = new Date(1936, 1, 12);
 
-  const diffDays = Math.floor(
-    (date.getTime() - baseDate.getTime()) / (1000 * 60 * 60 * 24),
-  );
-
-  const stem = DAY_STEMS[((diffDays % 10) + 10) % 10];
-  const branch = DAY_BRANCHES[((diffDays % 12) + 12) % 12];
-
-  return {
-    stem,
-    branch,
-  };
-};
-const SOLAR_TERM_NAMES = [
-  "소한", "대한",
-  "입춘", "우수",
-  "경칩", "춘분",
-  "청명", "곡우",
-  "입하", "소만",
-  "망종", "하지",
-  "소서", "대서",
-  "입추", "처서",
-  "백로", "추분",
-  "한로", "상강",
-  "입동", "소설",
-  "대설", "동지",
-];
-const MONTH_BRANCH_BY_SOLAR_TERM: Record<string, string> = {
-  소한: "축",
-  입춘: "인",
-  경칩: "묘",
-  청명: "진",
-  입하: "사",
-  망종: "오",
-  소서: "미",
-  입추: "신",
-  백로: "유",
-  한로: "술",
-  입동: "해",
-  대설: "자",
-};
-const degToRad = (deg: number) => (deg * Math.PI) / 180;
-
-const normalizeDegree = (deg: number) => {
-  return ((deg % 360) + 360) % 360;
-};
-
-const normalizeDegree180 = (deg: number) => {
-  const normalized = normalizeDegree(deg);
-  return normalized > 180 ? normalized - 360 : normalized;
-};
-
-const dateToJulianDay = (date: Date) => {
-  return date.getTime() / 86400000 + 2440587.5;
-};
-
-const getSunApparentLongitude = (date: Date) => {
-  const jd = dateToJulianDay(date);
-  const t = (jd - 2451545.0) / 36525;
-
-  const meanLongitude = normalizeDegree(
-    280.46646 + 36000.76983 * t + 0.0003032 * t * t,
-  );
-
-  const meanAnomaly = normalizeDegree(
-    357.52911 + 35999.05029 * t - 0.0001537 * t * t,
-  );
-
-  const equationOfCenter =
-    (1.914602 - 0.004817 * t - 0.000014 * t * t) *
-      Math.sin(degToRad(meanAnomaly)) +
-    (0.019993 - 0.000101 * t) * Math.sin(degToRad(2 * meanAnomaly)) +
-    0.000289 * Math.sin(degToRad(3 * meanAnomaly));
-
-  const trueLongitude = meanLongitude + equationOfCenter;
-  const omega = 125.04 - 1934.136 * t;
-  const apparentLongitude =
-    trueLongitude - 0.00569 - 0.00478 * Math.sin(degToRad(omega));
-
-  return normalizeDegree(apparentLongitude);
-};
-
-const getApproxSolarTermDate = (year: number, termIndex: number) => {
-  const y = year - 1900;
-
-  const minutes =
-    525948.76 * y +
-    6.2 +
-    15.2184 * 24 * 60 * termIndex -
-    1.9 * Math.sin(degToRad(0.262 * y));
-
-  const base = new Date(1900, 0, 6, 2, 5);
-  return new Date(base.getTime() + minutes * 60 * 1000);
-};
-
-const getSolarTermTargetLongitude = (termIndex: number) => {
-  return normalizeDegree(285 + 15 * termIndex);
-};
-
-const getSolarTermDate = (year: number, termIndex: number) => {
-  const targetLongitude = getSolarTermTargetLongitude(termIndex);
-  const approxDate = getApproxSolarTermDate(year, termIndex);
-
-  let left = new Date(approxDate.getTime() - 10 * 24 * 60 * 60 * 1000);
-  let right = new Date(approxDate.getTime() + 10 * 24 * 60 * 60 * 1000);
-
-  for (let index = 0; index < 80; index += 1) {
-    const mid = new Date((left.getTime() + right.getTime()) / 2);
-    const diff = normalizeDegree180(
-      getSunApparentLongitude(mid) - targetLongitude,
+    const diffDays = Math.floor(
+      (date.getTime() - baseDate.getTime()) / (1000 * 60 * 60 * 24),
     );
 
-    if (diff < 0) {
-      left = mid;
-    } else {
-      right = mid;
-    }
-  }
-
-  return right;
-};
-
-const getSolarTermsOfYear = (year: number) => {
-  return SOLAR_TERM_NAMES.map((name, index) => ({
-    name,
-    date: getSolarTermDate(year, index),
-  }));
-};
-
-const formatTermTime = (date: Date) => {
-  return `${String(date.getHours()).padStart(2, "0")}:${String(
-    date.getMinutes(),
-  ).padStart(2, "0")}`;
-};
-
-const getSolarTermsForDate = (date: Date) => {
-  const year = date.getFullYear();
-
-  return getSolarTermsOfYear(year).filter((term) => {
-    return (
-      term.date.getFullYear() === date.getFullYear() &&
-      term.date.getMonth() === date.getMonth() &&
-      term.date.getDate() === date.getDate()
-    );
-  });
-};
-
-const buildDailyCalendar = (date: Date) => {
-  const year = date.getFullYear();
-  const month = date.getMonth();
-
-  const firstDay = new Date(year, month, 1);
-  const lastDay = new Date(year, month + 1, 0);
-
-  const startWeekDay = firstDay.getDay();
-  const totalDays = lastDay.getDate();
-
-  const blanks = Array.from({ length: startWeekDay }, () => null);
-
-  const days = Array.from({ length: totalDays }, (_, index) => {
-    const currentDate = new Date(year, month, index + 1);
+    const stem = DAY_STEMS[((diffDays % 10) + 10) % 10];
+    const branch = DAY_BRANCHES[((diffDays % 12) + 12) % 12];
 
     return {
-  day: index + 1,
-  ganji: getDayGanji(currentDate),
-  solarTerms: getSolarTermsForDate(currentDate),
-};
-  });
+      stem,
+      branch,
+    };
+  };
+  const SOLAR_TERM_NAMES = [
+    "소한",
+    "대한",
+    "입춘",
+    "우수",
+    "경칩",
+    "춘분",
+    "청명",
+    "곡우",
+    "입하",
+    "소만",
+    "망종",
+    "하지",
+    "소서",
+    "대서",
+    "입추",
+    "처서",
+    "백로",
+    "추분",
+    "한로",
+    "상강",
+    "입동",
+    "소설",
+    "대설",
+    "동지",
+  ];
+  const MONTH_BRANCH_BY_SOLAR_TERM: Record<string, string> = {
+    소한: "축",
+    입춘: "인",
+    경칩: "묘",
+    청명: "진",
+    입하: "사",
+    망종: "오",
+    소서: "미",
+    입추: "신",
+    백로: "유",
+    한로: "술",
+    입동: "해",
+    대설: "자",
+  };
+  const degToRad = (deg: number) => (deg * Math.PI) / 180;
 
-  return [...blanks, ...days];
-};
+  const normalizeDegree = (deg: number) => {
+    return ((deg % 360) + 360) % 360;
+  };
+
+  const normalizeDegree180 = (deg: number) => {
+    const normalized = normalizeDegree(deg);
+    return normalized > 180 ? normalized - 360 : normalized;
+  };
+
+  const dateToJulianDay = (date: Date) => {
+    return date.getTime() / 86400000 + 2440587.5;
+  };
+
+  const getSunApparentLongitude = (date: Date) => {
+    const jd = dateToJulianDay(date);
+    const t = (jd - 2451545.0) / 36525;
+
+    const meanLongitude = normalizeDegree(
+      280.46646 + 36000.76983 * t + 0.0003032 * t * t,
+    );
+
+    const meanAnomaly = normalizeDegree(
+      357.52911 + 35999.05029 * t - 0.0001537 * t * t,
+    );
+
+    const equationOfCenter =
+      (1.914602 - 0.004817 * t - 0.000014 * t * t) *
+        Math.sin(degToRad(meanAnomaly)) +
+      (0.019993 - 0.000101 * t) * Math.sin(degToRad(2 * meanAnomaly)) +
+      0.000289 * Math.sin(degToRad(3 * meanAnomaly));
+
+    const trueLongitude = meanLongitude + equationOfCenter;
+    const omega = 125.04 - 1934.136 * t;
+    const apparentLongitude =
+      trueLongitude - 0.00569 - 0.00478 * Math.sin(degToRad(omega));
+
+    return normalizeDegree(apparentLongitude);
+  };
+
+  const getApproxSolarTermDate = (year: number, termIndex: number) => {
+    const y = year - 1900;
+
+    const minutes =
+      525948.76 * y +
+      6.2 +
+      15.2184 * 24 * 60 * termIndex -
+      1.9 * Math.sin(degToRad(0.262 * y));
+
+    const base = new Date(1900, 0, 6, 2, 5);
+    return new Date(base.getTime() + minutes * 60 * 1000);
+  };
+
+  const getSolarTermTargetLongitude = (termIndex: number) => {
+    return normalizeDegree(285 + 15 * termIndex);
+  };
+
+  const getSolarTermDate = (year: number, termIndex: number) => {
+    const targetLongitude = getSolarTermTargetLongitude(termIndex);
+    const approxDate = getApproxSolarTermDate(year, termIndex);
+
+    let left = new Date(approxDate.getTime() - 10 * 24 * 60 * 60 * 1000);
+    let right = new Date(approxDate.getTime() + 10 * 24 * 60 * 60 * 1000);
+
+    for (let index = 0; index < 80; index += 1) {
+      const mid = new Date((left.getTime() + right.getTime()) / 2);
+      const diff = normalizeDegree180(
+        getSunApparentLongitude(mid) - targetLongitude,
+      );
+
+      if (diff < 0) {
+        left = mid;
+      } else {
+        right = mid;
+      }
+    }
+
+    return right;
+  };
+
+  const getSolarTermsOfYear = (year: number) => {
+    return SOLAR_TERM_NAMES.map((name, index) => ({
+      name,
+      date: getSolarTermDate(year, index),
+    }));
+  };
+
+  const formatTermTime = (date: Date) => {
+    return `${String(date.getHours()).padStart(2, "0")}:${String(
+      date.getMinutes(),
+    ).padStart(2, "0")}`;
+  };
+
+  const getSolarTermsForDate = (date: Date) => {
+    const year = date.getFullYear();
+
+    return getSolarTermsOfYear(year).filter((term) => {
+      return (
+        term.date.getFullYear() === date.getFullYear() &&
+        term.date.getMonth() === date.getMonth() &&
+        term.date.getDate() === date.getDate()
+      );
+    });
+  };
+
+  const buildDailyCalendar = (date: Date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+
+    const startWeekDay = firstDay.getDay();
+    const totalDays = lastDay.getDate();
+
+    const blanks = Array.from({ length: startWeekDay }, () => null);
+
+    const days = Array.from({ length: totalDays }, (_, index) => {
+      const currentDate = new Date(year, month, index + 1);
+
+      return {
+        day: index + 1,
+        ganji: getDayGanji(currentDate),
+        solarTerms: getSolarTermsForDate(currentDate),
+      };
+    });
+
+    return [...blanks, ...days];
+  };
   const getGanjiByYear = (year: number) => {
     const stem = STEMS[(((year - 4) % 10) + 10) % 10];
     const branch = BRANCHES[(((year - 4) % 12) + 12) % 12];
@@ -2589,9 +2713,15 @@ const buildDailyCalendar = (date: Date) => {
     if (!item.data) {
       return (
         <div key={item.label} className="rounded-xl bg-zinc-100 p-3">
-          <div className={`${FONT.pillarLabel} ${WEIGHT.pillarLabel} ${COLOR.pillarLabel}`}>{item.label}</div>
+          <div
+            className={`${FONT.pillarLabel} ${WEIGHT.pillarLabel} ${COLOR.pillarLabel}`}
+          >
+            {item.label}
+          </div>
 
-          <div className={`mt-8 flex min-h-[150px] items-center justify-center rounded-xl border border-dashed border-zinc-300 bg-white/60 ${FONT.timeUnknown} ${WEIGHT.timeUnknown} ${COLOR.timeUnknown}`}>
+          <div
+            className={`mt-8 flex min-h-[150px] items-center justify-center rounded-xl border border-dashed border-zinc-300 bg-white/60 ${FONT.timeUnknown} ${WEIGHT.timeUnknown} ${COLOR.timeUnknown}`}
+          >
             시간 미상
           </div>
         </div>
@@ -2600,8 +2730,11 @@ const buildDailyCalendar = (date: Date) => {
 
     return (
       <div key={item.label} className="rounded-xl bg-zinc-100 p-3">
-        <div className={`${FONT.pillarLabel} ${WEIGHT.pillarLabel} ${COLOR.pillarLabel}`}>
-          {item.label}</div>
+        <div
+          className={`${FONT.pillarLabel} ${WEIGHT.pillarLabel} ${COLOR.pillarLabel}`}
+        >
+          {item.label}
+        </div>
 
         <div className="mt-2 flex flex-col items-center">
           <div
@@ -2628,21 +2761,29 @@ const buildDailyCalendar = (date: Date) => {
 
           {getJuGwonShinForItem(item) && (
             <div className="mt-1">
-              <span className={`${FONT.jeolgiLabel} ${WEIGHT.jeolgiLabel} ${COLOR.jeolgiLabel}`}>
+              <span
+                className={`${FONT.jeolgiLabel} ${WEIGHT.jeolgiLabel} ${COLOR.jeolgiLabel}`}
+              >
                 主
               </span>{" "}
-              <span className={`${FONT.jeolgiValue} ${WEIGHT.jeolgiValue} ${COLOR.jeolgiValue}`}>
+              <span
+                className={`${FONT.jeolgiValue} ${WEIGHT.jeolgiValue} ${COLOR.jeolgiValue}`}
+              >
                 {getJuGwonShinForItem(item)}
               </span>
             </div>
           )}
 
-          <div className={`mt-3 ${FONT.pillarKor} ${WEIGHT.pillarKor} ${COLOR.pillarKor}`}>
+          <div
+            className={`mt-3 ${FONT.pillarKor} ${WEIGHT.pillarKor} ${COLOR.pillarKor}`}
+          >
             {item.data.stemKor}
             {item.data.branchKor}
           </div>
 
-          <div className={`mt-1 rounded-lg bg-white/70 px-2 py-1 ${FONT.hiddenStem} ${WEIGHT.hiddenStem} ${COLOR.hiddenStem}`}>
+          <div
+            className={`mt-1 rounded-lg bg-white/70 px-2 py-1 ${FONT.hiddenStem} ${WEIGHT.hiddenStem} ${COLOR.hiddenStem}`}
+          >
             {getHiddenStemsText(item.data.branch)}
           </div>
         </div>
@@ -2654,41 +2795,45 @@ const buildDailyCalendar = (date: Date) => {
         <div className={`${FONT.tenGod} ${WEIGHT.tenGod} ${COLOR.tenGod}`}>
           {item.tenGodBranch}
         </div>
-        <div className={`mt-2 ${FONT.twelveState} ${WEIGHT.twelveState} ${COLOR.twelveState}`}>
+        <div
+          className={`mt-2 ${FONT.twelveState} ${WEIGHT.twelveState} ${COLOR.twelveState}`}
+        >
           {item.twelveStage}
         </div>
 
         {item.branchRelations?.length > 0 && showCompatibilityRelations && (
-            <div className="mt-2 flex flex-wrap justify-center gap-1">
-              {item.branchRelations.map((relation: string) => (
+          <div className="mt-2 flex flex-wrap justify-center gap-1">
+            {item.branchRelations.map((relation: string) => (
+              <span
+                key={relation}
+                className={`rounded-full border border-[#ead8c4] bg-[#fffaf3] px-2 py-0.5 ${FONT.relation} ${WEIGHT.relation} ${COLOR.relation}`}
+              >
+                {relation}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {item.shinsals?.length > 0 && showCompatibilityRelations && (
+          <div className="mt-2 border-t border-[#ead8c4] pt-2">
+            <div
+              className={`mb-1 text-center ${FONT.shinsalTitle} ${WEIGHT.shinsalTitle} ${COLOR.shinsalTitle}`}
+            >
+              신살
+            </div>
+
+            <div className="flex flex-wrap justify-center gap-1">
+              {item.shinsals.map((shinsal: string) => (
                 <span
-                  key={relation}
-                  className={`rounded-full border border-[#ead8c4] bg-[#fffaf3] px-2 py-0.5 ${FONT.relation} ${WEIGHT.relation} ${COLOR.relation}`}
+                  key={shinsal}
+                  className={`rounded-full border border-[#d7c4ad] bg-white px-2 py-0.5 ${FONT.shinsal} ${WEIGHT.shinsal} ${COLOR.shinsal}`}
                 >
-                  {relation}
+                  {shinsal}
                 </span>
               ))}
             </div>
-          )}
-
-        {item.shinsals?.length > 0 && showCompatibilityRelations && (
-            <div className="mt-2 border-t border-[#ead8c4] pt-2">
-              <div className={`mb-1 text-center ${FONT.shinsalTitle} ${WEIGHT.shinsalTitle} ${COLOR.shinsalTitle}`}>
-                신살
-              </div>
-
-              <div className="flex flex-wrap justify-center gap-1">
-                {item.shinsals.map((shinsal: string) => (
-                  <span
-                    key={shinsal}
-                    className={`rounded-full border border-[#d7c4ad] bg-white px-2 py-0.5 ${FONT.shinsal} ${WEIGHT.shinsal} ${COLOR.shinsal}`}
-                  >
-                    {shinsal}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
+          </div>
+        )}
       </div>
     );
   };
@@ -2720,7 +2865,11 @@ const buildDailyCalendar = (date: Date) => {
 
     return (
       <div className="mt-6 rounded-2xl bg-white p-4 shadow-sm">
-        <h3 className={`${FONT.daewoonTitle} ${WEIGHT.daewoonTitle} ${COLOR.daewoonTitle}`}>대운</h3>
+        <h3
+          className={`${FONT.daewoonTitle} ${WEIGHT.daewoonTitle} ${COLOR.daewoonTitle}`}
+        >
+          대운
+        </h3>
 
         <div className="mt-4 grid grid-cols-10 gap-3">
           {targetSaju.daewoon.map((item: any) => {
@@ -2741,14 +2890,17 @@ const buildDailyCalendar = (date: Date) => {
                     [cardKey]: null,
                   }));
                 }}
-                className={`rounded-xl p-3 text-center transition ${selected
-                  ? "bg-[#6b3f24] text-white shadow-md"
-                  : "bg-zinc-100 text-black hover:bg-zinc-200"
-                  }`}
+                className={`rounded-xl p-3 text-center transition ${
+                  selected
+                    ? "bg-[#6b3f24] text-white shadow-md"
+                    : "bg-zinc-100 text-black hover:bg-zinc-200"
+                }`}
               >
                 <div
                   className={
-                    selected ? `${FONT.daewoonAge} ${WEIGHT.daewoonAge} ${COLOR.daewoonAgeSelected}` : `${FONT.daewoonAge} ${WEIGHT.daewoonAge} ${COLOR.daewoonAge}`
+                    selected
+                      ? `${FONT.daewoonAge} ${WEIGHT.daewoonAge} ${COLOR.daewoonAgeSelected}`
+                      : `${FONT.daewoonAge} ${WEIGHT.daewoonAge} ${COLOR.daewoonAge}`
                   }
                 >
                   {item.startAgeText}
@@ -2802,16 +2954,20 @@ const buildDailyCalendar = (date: Date) => {
 
         {selectedDaewoon && (
           <div className="mt-5 rounded-2xl bg-zinc-100 p-4">
-            <h4 className={`${FONT.yearLuckTitle} ${WEIGHT.yearLuckTitle} ${COLOR.yearLuckTitle}`}>선택한 대운의 년운</h4>
+            <h4
+              className={`${FONT.yearLuckTitle} ${WEIGHT.yearLuckTitle} ${COLOR.yearLuckTitle}`}
+            >
+              선택한 대운의 년운
+            </h4>
 
             <div
-  className={
-    mode === "compatibility"
-      ? "mt-4 flex gap-3 overflow-x-auto pb-3"
-      : "mt-4 grid grid-cols-2 gap-3 sm:grid-cols-10"
-  }
->
-  {yearLuckList.map((yearLuck: any) => {
+              className={
+                mode === "compatibility"
+                  ? "mt-4 flex gap-3 overflow-x-auto pb-3"
+                  : "mt-4 grid grid-cols-2 gap-3 sm:grid-cols-10"
+              }
+            >
+              {yearLuckList.map((yearLuck: any) => {
                 const yearLuckKey = `${cardKey}-year-${yearLuck.year}`;
                 const selected = selectedYearLuckKey[cardKey] === yearLuckKey;
 
@@ -2826,11 +2982,12 @@ const buildDailyCalendar = (date: Date) => {
                       }))
                     }
                     className={`${
-  mode === "compatibility" ? "min-w-[100px]" : ""
-} rounded-xl p-3 text-center shadow-sm transition ${selected
-                      ? "bg-[#6b3f24] text-white shadow-md"
-                      : "bg-white text-black hover:bg-zinc-50"
-                      }`}
+                      mode === "compatibility" ? "min-w-[100px]" : ""
+                    } rounded-xl p-3 text-center shadow-sm transition ${
+                      selected
+                        ? "bg-[#6b3f24] text-white shadow-md"
+                        : "bg-white text-black hover:bg-zinc-50"
+                    }`}
                   >
                     <div
                       className={
@@ -2890,27 +3047,31 @@ const buildDailyCalendar = (date: Date) => {
 
             {selectedYearLuck && (
               <div className="mt-5 rounded-2xl bg-white p-4">
-                <h4 className={`${FONT.monthLuckTitle} ${WEIGHT.monthLuckTitle} ${COLOR.monthLuckTitle}`}>
+                <h4
+                  className={`${FONT.monthLuckTitle} ${WEIGHT.monthLuckTitle} ${COLOR.monthLuckTitle}`}
+                >
                   {selectedYearLuck.year}년 월운
                 </h4>
 
                 <div
-  className={
-    mode === "compatibility"
-      ? "mt-4 flex gap-3 overflow-x-auto pb-3"
-      : "mt-4 grid grid-cols-2 gap-3 sm:grid-cols-12"
-  }
->
-  {monthLuckList.map((monthLuck: any) => (
+                  className={
+                    mode === "compatibility"
+                      ? "mt-4 flex gap-3 overflow-x-auto pb-3"
+                      : "mt-4 grid grid-cols-2 gap-3 sm:grid-cols-12"
+                  }
+                >
+                  {monthLuckList.map((monthLuck: any) => (
                     <div
                       key={`${monthLuck.year}-${monthLuck.month}`}
                       className={
-  mode === "compatibility"
-    ? "min-w-[100px] rounded-xl bg-zinc-100 p-3 text-center shadow-sm"
-    : "rounded-xl bg-zinc-100 p-3 text-center shadow-sm"
-}
+                        mode === "compatibility"
+                          ? "min-w-[100px] rounded-xl bg-zinc-100 p-3 text-center shadow-sm"
+                          : "rounded-xl bg-zinc-100 p-3 text-center shadow-sm"
+                      }
                     >
-                      <div className={`${FONT.monthLuckMonth} ${WEIGHT.monthLuckMonth} ${COLOR.monthLuckMonth}`}>
+                      <div
+                        className={`${FONT.monthLuckMonth} ${WEIGHT.monthLuckMonth} ${COLOR.monthLuckMonth}`}
+                      >
                         {monthLuck.month}월
                       </div>
 
@@ -2937,11 +3098,15 @@ const buildDailyCalendar = (date: Date) => {
                           {BRANCH_HANJA[monthLuck.ganji.branch]}
                         </div>
 
-                        <div className={`${FONT.monthLuckTenGod} ${WEIGHT.monthLuckTenGod} ${COLOR.monthLuckTenGod}`}>
+                        <div
+                          className={`${FONT.monthLuckTenGod} ${WEIGHT.monthLuckTenGod} ${COLOR.monthLuckTenGod}`}
+                        >
                           {monthLuck.stemTenGod}
                         </div>
 
-                        <div className={`${FONT.monthLuckTenGod} ${WEIGHT.monthLuckTenGod} ${COLOR.monthLuckTenGod}`}>
+                        <div
+                          className={`${FONT.monthLuckTenGod} ${WEIGHT.monthLuckTenGod} ${COLOR.monthLuckTenGod}`}
+                        >
                           {monthLuck.branchTenGod}
                         </div>
                       </div>
@@ -2967,7 +3132,11 @@ const buildDailyCalendar = (date: Date) => {
 
     return (
       <div className="mt-4 rounded-2xl bg-[#ffffff] p-4 text-[#000000] shadow-sm">
-        <h3 className={`${FONT.cardTitle} ${WEIGHT.cardTitle} ${COLOR.cardTitle}`}>사주팔자</h3>
+        <h3
+          className={`${FONT.cardTitle} ${WEIGHT.cardTitle} ${COLOR.cardTitle}`}
+        >
+          사주팔자
+        </h3>
 
         {renderSajuOverview(targetSaju, items, cardKey)}
 
@@ -2979,7 +3148,9 @@ const buildDailyCalendar = (date: Date) => {
   return (
     <main className="min-h-screen bg-[#f7efe3] px-5 py-10 text-[#2b1d12]">
       <div className="mx-auto w-[1400px] min-w-[1400px] rounded-3xl bg-white p-6 shadow-xl">
-        <h1 className={`text-center ${FONT.pageTitle} ${WEIGHT.pageTitle} ${COLOR.pageTitle}`}>
+        <h1
+          className={`text-center ${FONT.pageTitle} ${WEIGHT.pageTitle} ${COLOR.pageTitle}`}
+        >
           {mode === "saju"
             ? "사주 분석"
             : mode === "compatibility"
@@ -2987,7 +3158,6 @@ const buildDailyCalendar = (date: Date) => {
               : "점성술 분석"}
         </h1>
 
-        
         <div className="mt-6 grid grid-cols-3 gap-2 rounded-2xl bg-[#f7efe3] p-1">
           <button
             type="button"
@@ -2996,10 +3166,11 @@ const buildDailyCalendar = (date: Date) => {
               setResult("");
               setShowSaju(false);
             }}
-            className={`rounded-xl py-3 ${FONT.modeButtonText} ${WEIGHT.modeButtonText} ${COLOR.modeButtonText} transition ${mode === "saju"
-              ? "bg-[#6b3f24] text-white shadow"
-              : "text-[#6b3f24]"
-              }`}
+            className={`rounded-xl py-3 ${FONT.modeButtonText} ${WEIGHT.modeButtonText} ${COLOR.modeButtonText} transition ${
+              mode === "saju"
+                ? "bg-[#6b3f24] text-white shadow"
+                : "text-[#6b3f24]"
+            }`}
           >
             사주 모드
           </button>
@@ -3011,10 +3182,11 @@ const buildDailyCalendar = (date: Date) => {
               setResult("");
               setShowSaju(false);
             }}
-            className={`rounded-xl py-3 ${FONT.modeButtonText} ${WEIGHT.modeButtonText} ${COLOR.modeButtonText} transition ${mode === "compatibility"
-              ? "bg-[#6b3f24] text-white shadow"
-              : "text-[#6b3f24]"
-              }`}
+            className={`rounded-xl py-3 ${FONT.modeButtonText} ${WEIGHT.modeButtonText} ${COLOR.modeButtonText} transition ${
+              mode === "compatibility"
+                ? "bg-[#6b3f24] text-white shadow"
+                : "text-[#6b3f24]"
+            }`}
           >
             궁합 모드
           </button>
@@ -3026,10 +3198,11 @@ const buildDailyCalendar = (date: Date) => {
               setResult("");
               setShowSaju(false);
             }}
-            className={`rounded-xl py-3 ${FONT.modeButtonText} ${WEIGHT.modeButtonText} ${COLOR.modeButtonText} transition ${mode === "zodiac"
-              ? "bg-[#6b3f24] text-white shadow"
-              : "text-[#6b3f24]"
-              }`}
+            className={`rounded-xl py-3 ${FONT.modeButtonText} ${WEIGHT.modeButtonText} ${COLOR.modeButtonText} transition ${
+              mode === "zodiac"
+                ? "bg-[#6b3f24] text-white shadow"
+                : "text-[#6b3f24]"
+            }`}
           >
             별자리 모드
           </button>
@@ -3072,23 +3245,25 @@ const buildDailyCalendar = (date: Date) => {
                   className={`flex-1 rounded-xl border p-3 ${FONT.inputText}`}
                   value={form.birthDate}
                   onChange={(e) => {
-  setForm({
-    ...form,
-    birthDate: e.target.value,
-  });
+                    setForm({
+                      ...form,
+                      birthDate: e.target.value,
+                    });
 
-  setSajuResult(null);
-  setResult("");
-}}
-onBlur={(e) => {
-  setForm({
-    ...form,
-    birthDate: normalizeDateOnBlur(e.target.value),
-  });
-}}
+                    setSajuResult(null);
+                    setResult("");
+                  }}
+                  onBlur={(e) => {
+                    setForm({
+                      ...form,
+                      birthDate: normalizeDateOnBlur(e.target.value),
+                    });
+                  }}
                 />
 
-                <label className={`flex items-center gap-1 ${FONT.formLabel} font-bold`}>
+                <label
+                  className={`flex items-center gap-1 ${FONT.formLabel} font-bold`}
+                >
                   <input
                     type="checkbox"
                     checked={form.calendarType === "solar"}
@@ -3103,7 +3278,9 @@ onBlur={(e) => {
                   양력
                 </label>
 
-                <label className={`flex items-center gap-1 ${FONT.formLabel} font-bold`}>
+                <label
+                  className={`flex items-center gap-1 ${FONT.formLabel} font-bold`}
+                >
                   <input
                     type="checkbox"
                     checked={form.calendarType === "lunar"}
@@ -3118,7 +3295,9 @@ onBlur={(e) => {
                 </label>
 
                 {form.calendarType === "lunar" && (
-                  <label className={`flex items-center gap-1 ${FONT.formLabel} font-bold text-[#6b3f24]`}>
+                  <label
+                    className={`flex items-center gap-1 ${FONT.formLabel} font-bold text-[#6b3f24]`}
+                  >
                     <input
                       type="checkbox"
                       checked={form.isLeapMonth}
@@ -3152,7 +3331,9 @@ onBlur={(e) => {
                 }}
               />
 
-              <label className={`flex items-center gap-2 rounded-xl border border-[#ead8c4] bg-[#fffaf3] px-4 py-3 ${FONT.formLabel} font-bold text-[#6b3f24]`}>
+              <label
+                className={`flex items-center gap-2 rounded-xl border border-[#ead8c4] bg-[#fffaf3] px-4 py-3 ${FONT.formLabel} font-bold text-[#6b3f24]`}
+              >
                 <input
                   type="checkbox"
                   checked={form.birthTimeUnknown}
@@ -3169,7 +3350,8 @@ onBlur={(e) => {
                 출생 시간을 모릅니다
               </label>
 
-              {mode === "saju" && renderPeopleStoragePanel(loadRecentPersonToSaju)}
+              {mode === "saju" &&
+                renderPeopleStoragePanel(loadRecentPersonToSaju)}
 
               {mode === "zodiac" && (
                 <input
@@ -3195,7 +3377,9 @@ onBlur={(e) => {
                   key={key}
                   className="rounded-3xl border border-[#ead8c4] bg-[#fffaf3] p-5 shadow-inner"
                 >
-                  <h2 className={`mb-4 text-center ${FONT.sectionTitle} ${WEIGHT.sectionTitle} ${COLOR.sectionTitle}`}>
+                  <h2
+                    className={`mb-4 text-center ${FONT.sectionTitle} ${WEIGHT.sectionTitle} ${COLOR.sectionTitle}`}
+                  >
                     {key === "left" ? "본인" : "상대"}
                   </h2>
 
@@ -3249,36 +3433,40 @@ onBlur={(e) => {
                         className={`flex-1 rounded-xl border p-3 ${FONT.inputText}`}
                         value={compatibilityForm[key].birthDate}
                         onChange={(e) => {
-  setCompatibilityForm({
-    ...compatibilityForm,
-    [key]: {
-      ...compatibilityForm[key],
-      birthDate: e.target.value,
-    },
-  });
+                          setCompatibilityForm({
+                            ...compatibilityForm,
+                            [key]: {
+                              ...compatibilityForm[key],
+                              birthDate: e.target.value,
+                            },
+                          });
 
-  setCompatibilityResult({
-    left: null,
-    right: null,
-  });
+                          setCompatibilityResult({
+                            left: null,
+                            right: null,
+                          });
 
-  setResult("");
-}}
-onBlur={(e) => {
-  setCompatibilityForm({
-    ...compatibilityForm,
-    [key]: {
-      ...compatibilityForm[key],
-      birthDate: normalizeDateOnBlur(e.target.value),
-    },
-  });
-}}
+                          setResult("");
+                        }}
+                        onBlur={(e) => {
+                          setCompatibilityForm({
+                            ...compatibilityForm,
+                            [key]: {
+                              ...compatibilityForm[key],
+                              birthDate: normalizeDateOnBlur(e.target.value),
+                            },
+                          });
+                        }}
                       />
 
-                      <label className={`flex items-center gap-1 ${FONT.formLabel} font-bold`}>
+                      <label
+                        className={`flex items-center gap-1 ${FONT.formLabel} font-bold`}
+                      >
                         <input
                           type="checkbox"
-                          checked={compatibilityForm[key].calendarType === "solar"}
+                          checked={
+                            compatibilityForm[key].calendarType === "solar"
+                          }
                           onChange={() =>
                             setCompatibilityForm({
                               ...compatibilityForm,
@@ -3293,10 +3481,14 @@ onBlur={(e) => {
                         양력
                       </label>
 
-                      <label className={`flex items-center gap-1 ${FONT.formLabel} font-bold`}>
+                      <label
+                        className={`flex items-center gap-1 ${FONT.formLabel} font-bold`}
+                      >
                         <input
                           type="checkbox"
-                          checked={compatibilityForm[key].calendarType === "lunar"}
+                          checked={
+                            compatibilityForm[key].calendarType === "lunar"
+                          }
                           onChange={() =>
                             setCompatibilityForm({
                               ...compatibilityForm,
@@ -3311,7 +3503,9 @@ onBlur={(e) => {
                       </label>
 
                       {compatibilityForm[key].calendarType === "lunar" && (
-                        <label className={`flex items-center gap-1 ${FONT.formLabel} font-bold text-[#6b3f24]`}>
+                        <label
+                          className={`flex items-center gap-1 ${FONT.formLabel} font-bold text-[#6b3f24]`}
+                        >
                           <input
                             type="checkbox"
                             checked={compatibilityForm[key].isLeapMonth}
@@ -3328,7 +3522,6 @@ onBlur={(e) => {
                           윤달
                         </label>
                       )}
-
                     </div>
 
                     <input
@@ -3356,7 +3549,9 @@ onBlur={(e) => {
                       }}
                     />
 
-                    <label className={`flex items-center gap-2 rounded-xl border border-[#ead8c4] bg-white px-4 py-3 ${FONT.formLabel} font-bold text-[#6b3f24]`}>
+                    <label
+                      className={`flex items-center gap-2 rounded-xl border border-[#ead8c4] bg-white px-4 py-3 ${FONT.formLabel} font-bold text-[#6b3f24]`}
+                    >
                       <input
                         type="checkbox"
                         checked={compatibilityForm[key].birthTimeUnknown}
@@ -3399,12 +3594,12 @@ onBlur={(e) => {
                 {showSaju ? "만세력 닫기" : "만세력 보기"}
               </button>
               <button
-  type="button"
-  onClick={() => setShowDailyCalendar(true)}
-  className={`w-full rounded-xl border border-[#6b3f24]/40 bg-[#fff7ed] py-4 ${FONT.buttonText} font-bold text-[#6b3f24] shadow-sm transition hover:bg-[#f3e1cf]`}
->
-  일진달력 보기
-</button>
+                type="button"
+                onClick={() => setShowDailyCalendar(true)}
+                className={`w-full rounded-xl border border-[#6b3f24]/40 bg-[#fff7ed] py-4 ${FONT.buttonText} font-bold text-[#6b3f24] shadow-sm transition hover:bg-[#f3e1cf]`}
+              >
+                일진달력 보기
+              </button>
 
               {/*<button
                 type="button"
@@ -3459,7 +3654,11 @@ onBlur={(e) => {
 
           {mode === "saju" && showSaju && (
             <section className="mt-6 rounded-3xl border border-[#ead8c4] bg-[#fffaf3] p-5 shadow-inner">
-              <h2 className={`${FONT.sectionTitle} ${WEIGHT.sectionTitle} ${COLOR.sectionTitle}`}>만세력 계산</h2>
+              <h2
+                className={`${FONT.sectionTitle} ${WEIGHT.sectionTitle} ${COLOR.sectionTitle}`}
+              >
+                만세력 계산
+              </h2>
 
               <p className={`mt-2 ${FONT.body} ${WEIGHT.body} ${COLOR.body}`}>
                 위에 입력한 생년월일시를 기준으로 사주팔자와 오행 분포를
@@ -3492,7 +3691,11 @@ onBlur={(e) => {
                   </button>
 
                   <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <h3 className={`${FONT.cardTitle} ${WEIGHT.cardTitle} ${COLOR.cardTitle}`}>사주팔자</h3>
+                    <h3
+                      className={`${FONT.cardTitle} ${WEIGHT.cardTitle} ${COLOR.cardTitle}`}
+                    >
+                      사주팔자
+                    </h3>
 
                     <button
                       type="button"
@@ -3509,13 +3712,23 @@ onBlur={(e) => {
 
                   {renderSajuOverview(sajuResult, sajuItems, "main")}
 
-                  {renderLuckPanel(sajuResult, "main", normalizeDateForCalc(form.birthDate))}
+                  {renderLuckPanel(
+                    sajuResult,
+                    "main",
+                    normalizeDateForCalc(form.birthDate),
+                  )}
 
                   {result && (
                     <div className="mt-5 rounded-2xl bg-zinc-100 p-4">
-                      <h4 className={`${FONT.panelTitle} ${WEIGHT.panelTitle} ${COLOR.panelTitle}`}>사주 해석</h4>
+                      <h4
+                        className={`${FONT.panelTitle} ${WEIGHT.panelTitle} ${COLOR.panelTitle}`}
+                      >
+                        사주 해석
+                      </h4>
 
-                      <div className={`mt-3 whitespace-pre-wrap leading-7 ${FONT.analysisBody} ${WEIGHT.analysisBody} ${COLOR.analysisBody}`}>
+                      <div
+                        className={`mt-3 whitespace-pre-wrap leading-7 ${FONT.analysisBody} ${WEIGHT.analysisBody} ${COLOR.analysisBody}`}
+                      >
                         {result}
                       </div>
                     </div>
@@ -3529,7 +3742,11 @@ onBlur={(e) => {
             (compatibilityResult.left || compatibilityResult.right) && (
               <section className="mt-6 rounded-3xl border border-[#ead8c4] bg-[#fffaf3] p-5 shadow-inner">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <h2 className={`${FONT.sectionTitle} ${WEIGHT.sectionTitle} ${COLOR.sectionTitle}`}>두 사람 만세력</h2>
+                  <h2
+                    className={`${FONT.sectionTitle} ${WEIGHT.sectionTitle} ${COLOR.sectionTitle}`}
+                  >
+                    두 사람 만세력
+                  </h2>
 
                   <button
                     type="button"
@@ -3546,18 +3763,22 @@ onBlur={(e) => {
 
                 <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
                   <div>
-                    <h3 className={`text-center ${FONT.cardTitle} ${WEIGHT.cardTitle} ${COLOR.cardTitle}`}>
+                    <h3
+                      className={`text-center ${FONT.cardTitle} ${WEIGHT.cardTitle} ${COLOR.cardTitle}`}
+                    >
                       {compatibilityForm.left.name || "본인"}
                     </h3>
                     {renderSajuCard(
-  compatibilityResult.left,
-  "compat-left",
-  normalizeDateForCalc(compatibilityForm.left.birthDate),
-)}
+                      compatibilityResult.left,
+                      "compat-left",
+                      normalizeDateForCalc(compatibilityForm.left.birthDate),
+                    )}
                   </div>
 
                   <div>
-                    <h3 className={`text-center ${FONT.cardTitle} ${WEIGHT.cardTitle} ${COLOR.cardTitle}`}>
+                    <h3
+                      className={`text-center ${FONT.cardTitle} ${WEIGHT.cardTitle} ${COLOR.cardTitle}`}
+                    >
                       {compatibilityForm.right.name || "상대"}
                     </h3>
                     {renderSajuCard(
@@ -3572,9 +3793,15 @@ onBlur={(e) => {
 
           {mode === "compatibility" && result && (
             <section className="mt-6 rounded-3xl border border-[#ead8c4] bg-[#fffaf3] p-5 shadow-inner">
-              <h2 className={`${FONT.sectionTitle} ${WEIGHT.sectionTitle} ${COLOR.sectionTitle}`}>궁합 해석</h2>
+              <h2
+                className={`${FONT.sectionTitle} ${WEIGHT.sectionTitle} ${COLOR.sectionTitle}`}
+              >
+                궁합 해석
+              </h2>
 
-              <div className={`mt-3 whitespace-pre-wrap leading-7 ${FONT.analysisBody} ${WEIGHT.analysisBody} ${COLOR.analysisBody}`}>
+              <div
+                className={`mt-3 whitespace-pre-wrap leading-7 ${FONT.analysisBody} ${WEIGHT.analysisBody} ${COLOR.analysisBody}`}
+              >
                 {result}
               </div>
             </section>
@@ -3582,9 +3809,15 @@ onBlur={(e) => {
 
           {mode === "zodiac" && result && (
             <section className="mt-6 rounded-3xl border border-[#ead8c4] bg-[#fffaf3] p-5 shadow-inner">
-              <h2 className={`${FONT.sectionTitle} ${WEIGHT.sectionTitle} ${COLOR.sectionTitle}`}>점성술 해석</h2>
+              <h2
+                className={`${FONT.sectionTitle} ${WEIGHT.sectionTitle} ${COLOR.sectionTitle}`}
+              >
+                점성술 해석
+              </h2>
 
-              <div className={`mt-3 whitespace-pre-wrap leading-7 ${FONT.analysisBody} ${WEIGHT.analysisBody} ${COLOR.analysisBody}`}>
+              <div
+                className={`mt-3 whitespace-pre-wrap leading-7 ${FONT.analysisBody} ${WEIGHT.analysisBody} ${COLOR.analysisBody}`}
+              >
                 {result}
               </div>
             </section>
@@ -3592,113 +3825,111 @@ onBlur={(e) => {
         </div>
       </div>
       {showDailyCalendar && (
-  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-6">
-    <div className="max-h-[90vh] w-[1200px] overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl">
-      <div className="mb-6 flex items-center justify-between">
-        <button
-          type="button"
-          onClick={() =>
-            setCalendarDate(
-              new Date(
-                calendarDate.getFullYear(),
-                calendarDate.getMonth() - 1,
-                1,
-              ),
-            )
-          }
-          className="rounded-xl bg-zinc-100 px-4 py-2 text-2xl font-bold"
-        >
-          이전달
-        </button>
-
-        <div className="text-4xl font-bold text-[#6b3f24]">
-          {calendarDate.getFullYear()}년{" "}
-          {calendarDate.getMonth() + 1}월 일진달력
-        </div>
-
-        <button
-          type="button"
-          onClick={() =>
-            setCalendarDate(
-              new Date(
-                calendarDate.getFullYear(),
-                calendarDate.getMonth() + 1,
-                1,
-              ),
-            )
-          }
-          className="rounded-xl bg-zinc-100 px-4 py-2 text-2xl font-bold"
-        >
-          다음달
-        </button>
-      </div>
-
-      <div className="mb-2 grid grid-cols-7 gap-2 text-center text-3xl font-bold">
-        {["일", "월", "화", "수", "목", "금", "토"].map((day) => (
-          <div key={day}>{day}</div>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-7 gap-2">
-        {buildDailyCalendar(calendarDate).map((item, index) =>
-          item === null ? (
-            <div key={index} className="h-[120px]" />
-          ) : (
-            <div
-              key={index}
-              className="rounded-2xl border bg-[#fffaf3] p-2 text-center"
-            >
-              <div className="text-2xl font-bold">{item.day}</div>
-              {item.solarTerms?.map((term: any) => (
-  <div
-    key={term.name}
-    className="mt-1 rounded-full bg-[#6b3f24] px-2 py-1 text-lg font-bold text-white"
-  >
-    {term.name} {formatTermTime(term.date)}
-  </div>
-))}
-
-              <div
-                className="mt-2 text-5xl font-bold"
-                style={{
-                  color: getElementColor(
-                    STEM_INFO[item.ganji.stem].element,
-                  ),
-                  WebkitTextStroke: "1px black",
-                }}
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-6">
+          <div className="max-h-[90vh] w-[1200px] overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl">
+            <div className="mb-6 flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() =>
+                  setCalendarDate(
+                    new Date(
+                      calendarDate.getFullYear(),
+                      calendarDate.getMonth() - 1,
+                      1,
+                    ),
+                  )
+                }
+                className="rounded-xl bg-zinc-100 px-4 py-2 text-2xl font-bold"
               >
-                {STEM_HANJA[item.ganji.stem]}
+                이전달
+              </button>
+
+              <div className="text-4xl font-bold text-[#6b3f24]">
+                {calendarDate.getFullYear()}년 {calendarDate.getMonth() + 1}월
+                일진달력
               </div>
 
-              <div
-                className="text-5xl font-bold"
-                style={{
-                  color: getElementColor(
-                    STEM_INFO[
-                      BRANCH_MAIN_STEM[item.ganji.branch]
-                    ].element,
-                  ),
-                  WebkitTextStroke: "1px black",
-                }}
+              <button
+                type="button"
+                onClick={() =>
+                  setCalendarDate(
+                    new Date(
+                      calendarDate.getFullYear(),
+                      calendarDate.getMonth() + 1,
+                      1,
+                    ),
+                  )
+                }
+                className="rounded-xl bg-zinc-100 px-4 py-2 text-2xl font-bold"
               >
-                {BRANCH_HANJA[item.ganji.branch]}
-              </div>
+                다음달
+              </button>
             </div>
-          ),
-        )}
-      </div>
 
-      <button
-        type="button"
-        onClick={() => setShowDailyCalendar(false)}
-        className="mt-6 w-full rounded-2xl bg-[#6b3f24] py-4 text-3xl font-bold text-white"
-      >
-        닫기
-      </button>
-    </div>
-  </div>
-)}
-     
+            <div className="mb-2 grid grid-cols-7 gap-2 text-center text-3xl font-bold">
+              {["일", "월", "화", "수", "목", "금", "토"].map((day) => (
+                <div key={day}>{day}</div>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-7 gap-2">
+              {buildDailyCalendar(calendarDate).map((item, index) =>
+                item === null ? (
+                  <div key={index} className="h-[120px]" />
+                ) : (
+                  <div
+                    key={index}
+                    className="rounded-2xl border bg-[#fffaf3] p-2 text-center"
+                  >
+                    <div className="text-2xl font-bold">{item.day}</div>
+                    {item.solarTerms?.map((term: any) => (
+                      <div
+                        key={term.name}
+                        className="mt-1 rounded-full bg-[#6b3f24] px-2 py-1 text-lg font-bold text-white"
+                      >
+                        {term.name} {formatTermTime(term.date)}
+                      </div>
+                    ))}
+
+                    <div
+                      className="mt-2 text-5xl font-bold"
+                      style={{
+                        color: getElementColor(
+                          STEM_INFO[item.ganji.stem].element,
+                        ),
+                        WebkitTextStroke: "1px black",
+                      }}
+                    >
+                      {STEM_HANJA[item.ganji.stem]}
+                    </div>
+
+                    <div
+                      className="text-5xl font-bold"
+                      style={{
+                        color: getElementColor(
+                          STEM_INFO[BRANCH_MAIN_STEM[item.ganji.branch]]
+                            .element,
+                        ),
+                        WebkitTextStroke: "1px black",
+                      }}
+                    >
+                      {BRANCH_HANJA[item.ganji.branch]}
+                    </div>
+                  </div>
+                ),
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowDailyCalendar(false)}
+              className="mt-6 w-full rounded-2xl bg-[#6b3f24] py-4 text-3xl font-bold text-white"
+            >
+              닫기
+            </button>
+          </div>
+        </div>
+      )}
 
       {!memoOpen && (
         <button
