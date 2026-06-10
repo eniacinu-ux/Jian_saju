@@ -2108,7 +2108,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
       type === "stem" ? normalizeStem(value) : normalizeBranch(value);
 
     if (selectedHanja.type === type && selectedHanja.value === normalizedValue) {
-      return "bg-[#2b1d12] ring-4 ring-[#2b1d12]/40 shadow-md";
+      return "ring-4 ring-[#2b1d12] ring-offset-2 ring-offset-white shadow-md";
     }
 
     if (isChungWithSelectedHanja(type, normalizedValue)) {
