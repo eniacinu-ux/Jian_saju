@@ -257,6 +257,11 @@ export default function Home() {
   const [memoOpen, setMemoOpen] = useState(false);
   const [memoText, setMemoText] = useState("");
   const [memoLoaded, setMemoLoaded] = useState(false);
+  const [selectedHanja, setSelectedHanja] = useState<{
+    type: "stem" | "branch";
+    value: string;
+  } | null>(null);
+
 
   const formatDateInput = (value: string) => {
     const onlyNumber = value.replace(/\D/g, "").slice(0, 8);
@@ -1116,7 +1121,42 @@ export default function Home() {
         return "#ffffff";
     }
   };
+const HANJA_OUTLINE_SIZE = 2.0;
 
+const HANJA_STYLE = (color: string) => {
+  if (color === "#000000") {
+    return {
+      color: "#000000",
+    };
+  }
+
+  const s = HANJA_OUTLINE_SIZE;
+
+  return {
+    color,
+    textShadow: `
+      ${-s}px ${-s}px 0 #000,
+       ${s}px ${-s}px 0 #000,
+      ${-s}px  ${s}px 0 #000,
+       ${s}px  ${s}px 0 #000
+    `,
+  };
+};
+
+const ELEMENT_HANJA_STYLE = (color: string) => {
+  const s = HANJA_OUTLINE_SIZE;
+  const outlineColor = color === "#000000" ? "#ffffff" : "#000000";
+
+  return {
+    color,
+    textShadow: `
+      ${-s}px ${-s}px 0 ${outlineColor},
+       ${s}px ${-s}px 0 ${outlineColor},
+      ${-s}px  ${s}px 0 ${outlineColor},
+       ${s}px  ${s}px 0 ${outlineColor}
+    `,
+  };
+};
   const STEMS = ["갑", "을", "병", "정", "무", "기", "경", "신", "임", "계"];
   const BRANCHES = [
     "자",
@@ -1546,7 +1586,7 @@ export default function Home() {
         <h4
           className={`${FONT.elementTitle} ${WEIGHT.elementTitle} ${COLOR.elementTitle}`}
         >
-          오행 분포
+
         </h4>
 
         <div
@@ -1554,12 +1594,14 @@ export default function Home() {
         >
           <div>
             <div
-              className={`${FONT.elementTitle} ${WEIGHT.elementTitle} ${COLOR.elementTitle}`}
+              className={`${FONT.elementTitle} ${WEIGHT.elementTitle}`}
+              style={ELEMENT_HANJA_STYLE(getElementColor("목"))}
             >
               木
             </div>
             <div
-              className={`${FONT.elementValue} ${WEIGHT.elementValue} ${COLOR.elementValue}`}
+              className={`${FONT.elementValue} ${WEIGHT.elementValue}`}
+              style={ELEMENT_HANJA_STYLE(getElementColor("목"))}
             >
               {targetSaju?.elementCount?.wood ?? 0}
             </div>
@@ -1567,12 +1609,14 @@ export default function Home() {
 
           <div>
             <div
-              className={`${FONT.elementTitle} ${WEIGHT.elementTitle} ${COLOR.elementTitle}`}
+              className={`${FONT.elementTitle} ${WEIGHT.elementTitle}`}
+              style={ELEMENT_HANJA_STYLE(getElementColor("화"))}
             >
               火
             </div>
             <div
-              className={`${FONT.elementValue} ${WEIGHT.elementValue} ${COLOR.elementValue}`}
+              className={`${FONT.elementValue} ${WEIGHT.elementValue}`}
+              style={ELEMENT_HANJA_STYLE(getElementColor("화"))}
             >
               {targetSaju?.elementCount?.fire ?? 0}
             </div>
@@ -1580,12 +1624,14 @@ export default function Home() {
 
           <div>
             <div
-              className={`${FONT.elementTitle} ${WEIGHT.elementTitle} ${COLOR.elementTitle}`}
+              className={`${FONT.elementTitle} ${WEIGHT.elementTitle}`}
+              style={ELEMENT_HANJA_STYLE(getElementColor("토"))}
             >
               土
             </div>
             <div
-              className={`${FONT.elementValue} ${WEIGHT.elementValue} ${COLOR.elementValue}`}
+              className={`${FONT.elementValue} ${WEIGHT.elementValue}`}
+              style={ELEMENT_HANJA_STYLE(getElementColor("토"))}
             >
               {targetSaju?.elementCount?.earth ?? 0}
             </div>
@@ -1593,12 +1639,14 @@ export default function Home() {
 
           <div>
             <div
-              className={`${FONT.elementTitle} ${WEIGHT.elementTitle} ${COLOR.elementTitle}`}
+              className={`${FONT.elementTitle} ${WEIGHT.elementTitle}`}
+              style={ELEMENT_HANJA_STYLE(getElementColor("금"))}
             >
               金
             </div>
             <div
-              className={`${FONT.elementValue} ${WEIGHT.elementValue} ${COLOR.elementValue}`}
+              className={`${FONT.elementValue} ${WEIGHT.elementValue}`}
+              style={ELEMENT_HANJA_STYLE(getElementColor("금"))}
             >
               {targetSaju?.elementCount?.metal ?? 0}
             </div>
@@ -1606,12 +1654,14 @@ export default function Home() {
 
           <div>
             <div
-              className={`${FONT.elementTitle} ${WEIGHT.elementTitle} ${COLOR.elementTitle}`}
+              className={`${FONT.elementTitle} ${WEIGHT.elementTitle}`}
+              style={ELEMENT_HANJA_STYLE(getElementColor("수"))}
             >
               水
             </div>
             <div
-              className={`${FONT.elementValue} ${WEIGHT.elementValue} ${COLOR.elementValue}`}
+              className={`${FONT.elementValue} ${WEIGHT.elementValue}`}
+              style={ELEMENT_HANJA_STYLE(getElementColor("수"))}
             >
               {targetSaju?.elementCount?.water ?? 0}
             </div>
@@ -1946,6 +1996,168 @@ export default function Home() {
       ["진", "해"],
       ["사", "술"],
     ],
+  };
+
+  const STEM_HAP_PAIRS = [
+    ["갑", "기"],
+    ["을", "경"],
+    ["병", "신"],
+    ["정", "임"],
+    ["무", "계"],
+  ];
+
+  const STEM_CHUNG_PAIRS = [
+    ["갑", "경"],
+    ["을", "신"],
+    ["병", "임"],
+    ["정", "계"],
+  ];
+
+  const makeHanjaPairKey = (a: string, b: string) =>
+    [a, b].sort().join("-");
+
+  const handleHanjaClick = (type: "stem" | "branch", value: string) => {
+    const normalizedValue =
+      type === "stem" ? normalizeStem(value) : normalizeBranch(value);
+
+    setSelectedHanja((prev) => {
+      if (prev?.type === type && prev.value === normalizedValue) return null;
+
+      return {
+        type,
+        value: normalizedValue,
+      };
+    });
+  };
+
+  const isHapWithSelectedHanja = (
+    type: "stem" | "branch",
+    value: string,
+  ) => {
+    if (!selectedHanja || selectedHanja.type !== type) return false;
+
+    const normalizedValue =
+      type === "stem" ? normalizeStem(value) : normalizeBranch(value);
+
+    if (normalizedValue === selectedHanja.value) return false;
+
+    const pairKey = makeHanjaPairKey(selectedHanja.value, normalizedValue);
+
+    if (type === "stem") {
+      return STEM_HAP_PAIRS.some(
+        ([a, b]) => makeHanjaPairKey(a, b) === pairKey,
+      );
+    }
+
+    const isYukhap = BRANCH_RELATION_RULES.yukhap.some(
+      ([a, b]: string[]) => makeHanjaPairKey(a, b) === pairKey,
+    );
+
+    const isAmhap = BRANCH_RELATION_RULES.amhap.some(
+      ([a, b]: string[]) => makeHanjaPairKey(a, b) === pairKey,
+    );
+
+    const isSamhap = BRANCH_RELATION_RULES.samhap.some((rule: any) => {
+      return (
+        rule.branches.includes(selectedHanja.value) &&
+        rule.branches.includes(normalizedValue)
+      );
+    });
+
+    const isBanghap = BRANCH_RELATION_RULES.banghap.some((rule: any) => {
+      return (
+        rule.branches.includes(selectedHanja.value) &&
+        rule.branches.includes(normalizedValue)
+      );
+    });
+
+    return isYukhap || isAmhap || isSamhap || isBanghap;
+  };
+
+  const isChungWithSelectedHanja = (
+    type: "stem" | "branch",
+    value: string,
+  ) => {
+    if (!selectedHanja || selectedHanja.type !== type) return false;
+
+    const normalizedValue =
+      type === "stem" ? normalizeStem(value) : normalizeBranch(value);
+
+    if (normalizedValue === selectedHanja.value) return false;
+
+    const pairKey = makeHanjaPairKey(selectedHanja.value, normalizedValue);
+
+    if (type === "stem") {
+      return STEM_CHUNG_PAIRS.some(
+        ([a, b]) => makeHanjaPairKey(a, b) === pairKey,
+      );
+    }
+
+    return BRANCH_RELATION_RULES.chung.some(
+      ([a, b]: string[]) => makeHanjaPairKey(a, b) === pairKey,
+    );
+  };
+
+  const getHanjaRelationClass = (
+    type: "stem" | "branch",
+    value: string,
+  ) => {
+    if (!selectedHanja) return "";
+
+    const normalizedValue =
+      type === "stem" ? normalizeStem(value) : normalizeBranch(value);
+
+    if (selectedHanja.type === type && selectedHanja.value === normalizedValue) {
+      return "bg-[#2b1d12] ring-4 ring-[#2b1d12]/40 shadow-md";
+    }
+
+    if (isChungWithSelectedHanja(type, normalizedValue)) {
+      return "bg-red-200 ring-4 ring-red-500/40 shadow-md";
+    }
+
+    if (isHapWithSelectedHanja(type, normalizedValue)) {
+      return "bg-sky-200 ring-4 ring-sky-500/40 shadow-md";
+    }
+
+    return "";
+  };
+
+  const renderHanjaButton = ({
+    type,
+    value,
+    element,
+    className,
+    children,
+  }: any) => {
+    const normalizedValue =
+      type === "stem" ? normalizeStem(value) : normalizeBranch(value);
+
+    return (
+      <span
+        role="button"
+        tabIndex={0}
+        onClick={(event) => {
+          event.stopPropagation();
+          handleHanjaClick(type, normalizedValue);
+        }}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            event.stopPropagation();
+            handleHanjaClick(type, normalizedValue);
+          }
+        }}
+        className={`inline-block cursor-pointer rounded-xl px-3 py-1 transition ${getHanjaRelationClass(
+          type,
+          normalizedValue,
+        )}`}
+        title="클릭하면 충/합 관계를 표시합니다"
+      >
+        <span className={className} style={HANJA_STYLE(getElementColor(element))}>
+          {children}
+        </span>
+      </span>
+    );
   };
 
   const makeBranchPairKey = (a: string, b: string) =>
@@ -2737,27 +2949,21 @@ export default function Home() {
         </div>
 
         <div className="mt-2 flex flex-col items-center">
-          <div
-            className={`${FONT.pillarMainHanja} ${WEIGHT.pillarMainHanja} leading-none`}
-            style={{
-              color: getElementColor(item.data.stemElement),
-              WebkitTextStroke: "1.5px black",
-              textShadow: "0 0 2px black, 0 0 4px black",
-            }}
-          >
-            {item.data.stem}
-          </div>
+          {renderHanjaButton({
+            type: "stem",
+            value: item.data.stem,
+            element: item.data.stemElement,
+            className: `${FONT.pillarMainHanja} ${WEIGHT.pillarMainHanja} leading-none`,
+            children: item.data.stem,
+          })}
 
-          <div
-            className={`mt-2 ${FONT.pillarMainHanja} ${WEIGHT.pillarMainHanja} leading-none`}
-            style={{
-              color: getElementColor(item.data.branchElement),
-              WebkitTextStroke: "1.5px black",
-              textShadow: "0 0 2px black, 0 0 4px black",
-            }}
-          >
-            {item.data.branch}
-          </div>
+          {renderHanjaButton({
+            type: "branch",
+            value: item.data.branch,
+            element: item.data.branchElement,
+            className: `mt-2 ${FONT.pillarMainHanja} ${WEIGHT.pillarMainHanja} leading-none`,
+            children: item.data.branch,
+          })}
 
           {getJuGwonShinForItem(item) && (
             <div className="mt-1">
@@ -2907,25 +3113,21 @@ export default function Home() {
                 </div>
 
                 <div className="mt-2 flex flex-col items-center">
-                  <div
-                    className={`${FONT.daewoonHanja} font-bold`}
-                    style={{
-                      color: getElementColor(item.ganji.stemElement),
-                      WebkitTextStroke: "1px black",
-                    }}
-                  >
-                    {item.ganji.stem}
-                  </div>
+                  {renderHanjaButton({
+                    type: "stem",
+                    value: item.ganji.stem,
+                    element: item.ganji.stemElement,
+                    className: `${FONT.daewoonHanja} font-bold`,
+                    children: item.ganji.stem,
+                  })}
 
-                  <div
-                    className={`${FONT.daewoonHanja} font-bold`}
-                    style={{
-                      color: getElementColor(item.ganji.branchElement),
-                      WebkitTextStroke: "1px black",
-                    }}
-                  >
-                    {item.ganji.branch}
-                  </div>
+                  {renderHanjaButton({
+                    type: "branch",
+                    value: item.ganji.branch,
+                    element: item.ganji.branchElement,
+                    className: `${FONT.daewoonHanja} font-bold`,
+                    children: item.ganji.branch,
+                  })}
                 </div>
 
                 <div
@@ -3000,25 +3202,21 @@ export default function Home() {
                     </div>
 
                     <div className="mt-2 flex flex-col items-center leading-tight">
-                      <div
-                        className={`${FONT.yearLuckHanja} font-bold leading-none`}
-                        style={{
-                          color: getElementColor(yearLuck.ganji.stemElement),
-                          WebkitTextStroke: "1.5px black",
-                        }}
-                      >
-                        {STEM_HANJA[yearLuck.ganji.stem]}
-                      </div>
+                      {renderHanjaButton({
+                        type: "stem",
+                        value: yearLuck.ganji.stem,
+                        element: yearLuck.ganji.stemElement,
+                        className: `${FONT.yearLuckHanja} font-bold leading-none`,
+                        children: STEM_HANJA[yearLuck.ganji.stem],
+                      })}
 
-                      <div
-                        className={`mt-1 ${FONT.yearLuckHanja} font-bold leading-none`}
-                        style={{
-                          color: getElementColor(yearLuck.ganji.branchElement),
-                          WebkitTextStroke: "1.5px black",
-                        }}
-                      >
-                        {BRANCH_HANJA[yearLuck.ganji.branch]}
-                      </div>
+                      {renderHanjaButton({
+                        type: "branch",
+                        value: yearLuck.ganji.branch,
+                        element: yearLuck.ganji.branchElement,
+                        className: `mt-1 ${FONT.yearLuckHanja} font-bold leading-none`,
+                        children: BRANCH_HANJA[yearLuck.ganji.branch],
+                      })}
 
                       <div
                         className={
@@ -3076,27 +3274,21 @@ export default function Home() {
                       </div>
 
                       <div className="mt-2 flex flex-col items-center leading-tight">
-                        <div
-                          className={`${FONT.monthLuckHanja} font-bold leading-none`}
-                          style={{
-                            color: getElementColor(monthLuck.ganji.stemElement),
-                            WebkitTextStroke: "1.5px black",
-                          }}
-                        >
-                          {STEM_HANJA[monthLuck.ganji.stem]}
-                        </div>
+                        {renderHanjaButton({
+                          type: "stem",
+                          value: monthLuck.ganji.stem,
+                          element: monthLuck.ganji.stemElement,
+                          className: `${FONT.monthLuckHanja} font-bold leading-none`,
+                          children: STEM_HANJA[monthLuck.ganji.stem],
+                        })}
 
-                        <div
-                          className={`mt-1 ${FONT.monthLuckHanja} font-bold leading-none`}
-                          style={{
-                            color: getElementColor(
-                              monthLuck.ganji.branchElement,
-                            ),
-                            WebkitTextStroke: "1.5px black",
-                          }}
-                        >
-                          {BRANCH_HANJA[monthLuck.ganji.branch]}
-                        </div>
+                        {renderHanjaButton({
+                          type: "branch",
+                          value: monthLuck.ganji.branch,
+                          element: monthLuck.ganji.branchElement,
+                          className: `mt-1 ${FONT.monthLuckHanja} font-bold leading-none`,
+                          children: BRANCH_HANJA[monthLuck.ganji.branch],
+                        })}
 
                         <div
                           className={`${FONT.monthLuckTenGod} ${WEIGHT.monthLuckTenGod} ${COLOR.monthLuckTenGod}`}
@@ -3891,30 +4083,21 @@ export default function Home() {
                       </div>
                     ))}
 
-                    <div
-                      className="mt-2 text-5xl font-bold"
-                      style={{
-                        color: getElementColor(
-                          STEM_INFO[item.ganji.stem].element,
-                        ),
-                        WebkitTextStroke: "1px black",
-                      }}
-                    >
-                      {STEM_HANJA[item.ganji.stem]}
-                    </div>
+                    {renderHanjaButton({
+                      type: "stem",
+                      value: item.ganji.stem,
+                      element: STEM_INFO[item.ganji.stem].element,
+                      className: "mt-2 text-5xl font-bold",
+                      children: STEM_HANJA[item.ganji.stem],
+                    })}
 
-                    <div
-                      className="text-5xl font-bold"
-                      style={{
-                        color: getElementColor(
-                          STEM_INFO[BRANCH_MAIN_STEM[item.ganji.branch]]
-                            .element,
-                        ),
-                        WebkitTextStroke: "1px black",
-                      }}
-                    >
-                      {BRANCH_HANJA[item.ganji.branch]}
-                    </div>
+                    {renderHanjaButton({
+                      type: "branch",
+                      value: item.ganji.branch,
+                      element: STEM_INFO[BRANCH_MAIN_STEM[item.ganji.branch]].element,
+                      className: "text-5xl font-bold",
+                      children: BRANCH_HANJA[item.ganji.branch],
+                    })}
                   </div>
                 ),
               )}
