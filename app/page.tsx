@@ -2,17 +2,10 @@
 
 import KoreanLunarCalendar from "korean-lunar-calendar";
 import { useEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { saveAs } from "file-saver";
-import {
-  Document,
-  Packer,
-  Paragraph,
-  Table,
-  TableCell,
-  TableRow,
-  TextRun,
-  WidthType,
-} from "docx";
+import { toPng } from "html-to-image";
+import JSZip from "jszip";
 
 import { calculateSaju } from "./lib/sajuCalculator";
 
@@ -184,17 +177,14 @@ export default function Home() {
     buttonText: "font-bold",
   };
 
-  const WORD_FONT = {
-    title: 36,
-    sectionTitle: 28,
-    body: 24,
-  };
   const [lunarToSolarDate, setLunarToSolarDate] = useState("");
   const [lunarToSolarIsLeapMonth, setLunarToSolarIsLeapMonth] = useState(false);
   const [lunarToSolarResult, setLunarToSolarResult] = useState("");
 
   const [solarToLunarDate, setSolarToLunarDate] = useState("");
   const resultRef = useRef<HTMLDivElement>(null);
+  const overviewCaptureRef = useRef<HTMLDivElement>(null);
+  const luckCaptureRef = useRef<HTMLDivElement>(null);
 
   const [mode, setMode] = useState<"saju" | "compatibility" | "zodiac">("saju");
 
@@ -899,204 +889,127 @@ export default function Home() {
     }
   }
 
-  const downloadWord = async () => {
-    if (!sajuResult) {
+  const waitForRender = () =>
+    new Promise<void>((resolve) => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setTimeout(() => resolve(), 20);
+        });
+      });
+    });
+
+  const safeFileName = (value: string) =>
+    String(value || "사주")
+      .replace(/[\\/:*?"<>|]/g, "_")
+      .trim();
+
+  const downloadCaptureZip = async () => {
+    if (!sajuResult || !overviewCaptureRef.current) {
       alert("먼저 만세력을 계산해 주세요.");
       return;
     }
 
+    const style = document.createElement("style");
+    style.innerHTML = `
+      [data-capture-target],
+      [data-capture-target] * {
+        transition: none !important;
+        animation: none !important;
+      }
+    `;
+    document.head.appendChild(style);
+
+    const previousDaewoonKey = selectedDaewoonKey.main ?? null;
+    const previousYearLuckKey = selectedYearLuckKey.main ?? null;
+
     try {
-      const doc = new Document({
-        sections: [
-          {
-            children: [
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: "사주 분석 결과",
-                    bold: true,
-                    size: WORD_FONT.title,
-                  }),
-                ],
-              }),
+      const zip = new JSZip();
+      const name = safeFileName(form.name || "이름없음");
+      const birth = safeFileName(
+        normalizeDateForCalc(form.birthDate).replaceAll("-", ""),
+      );
 
-              new Paragraph({ text: "" }),
+      flushSync(() => {
+        setSelectedDaewoonKey((prev) => ({
+          ...prev,
+          main: null,
+        }));
 
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: `이름: ${form.name}`,
-                    size: WORD_FONT.body,
-                  }),
-                ],
-              }),
-
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: `생년월일: ${form.birthDate} ${
-                      form.birthTimeUnknown ? "시간 미상" : form.birthTime
-                    }`,
-                    size: WORD_FONT.body,
-                  }),
-                ],
-              }),
-
-              new Paragraph({ text: "" }),
-
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: "만세력",
-                    bold: true,
-                    size: WORD_FONT.sectionTitle,
-                  }),
-                ],
-              }),
-
-              new Paragraph({ text: "" }),
-
-              new Table({
-                width: {
-                  size: 100,
-                  type: WidthType.PERCENTAGE,
-                },
-                rows: [
-                  new TableRow({
-                    children: [
-                      new TableCell({
-                        children: [new Paragraph("시주")],
-                      }),
-                      new TableCell({
-                        children: [new Paragraph("일주")],
-                      }),
-                      new TableCell({
-                        children: [new Paragraph("월주")],
-                      }),
-                      new TableCell({
-                        children: [new Paragraph("년주")],
-                      }),
-                    ],
-                  }),
-
-                  new TableRow({
-                    children: [
-                      new TableCell({
-                        children: [
-                          new Paragraph(
-                            sajuResult.hour
-                              ? `${sajuResult.hour.ganji} (${sajuResult.hour.ganjiKor})`
-                              : "시간 미상",
-                          ),
-                        ],
-                      }),
-
-                      new TableCell({
-                        children: [
-                          new Paragraph(
-                            `${sajuResult.day.ganji} (${sajuResult.day.ganjiKor})`,
-                          ),
-                        ],
-                      }),
-
-                      new TableCell({
-                        children: [
-                          new Paragraph(
-                            `${sajuResult.month.ganji} (${sajuResult.month.ganjiKor})`,
-                          ),
-                        ],
-                      }),
-
-                      new TableCell({
-                        children: [
-                          new Paragraph(
-                            `${sajuResult.year.ganji} (${sajuResult.year.ganjiKor})`,
-                          ),
-                        ],
-                      }),
-                    ],
-                  }),
-                ],
-              }),
-
-              new Paragraph({ text: "" }),
-
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: "오행 분포",
-                    bold: true,
-                    size: WORD_FONT.sectionTitle,
-                  }),
-                ],
-              }),
-
-              new Paragraph({
-                text:
-                  `목 ${sajuResult.elementCount.wood} / ` +
-                  `화 ${sajuResult.elementCount.fire} / ` +
-                  `토 ${sajuResult.elementCount.earth} / ` +
-                  `금 ${sajuResult.elementCount.metal} / ` +
-                  `수 ${sajuResult.elementCount.water}`,
-              }),
-
-              new Paragraph({
-                text: `공망(일주 기준): ${getDayGongmang(sajuResult)}`,
-              }),
-
-              ...getGwiyinList(sajuResult).map(
-                (gwiyin) =>
-                  new Paragraph({
-                    text: `${gwiyin.label}: ${gwiyin.value}`,
-                  }),
-              ),
-
-              new Paragraph({ text: "" }),
-
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: "사주 풀이",
-                    bold: true,
-                    size: WORD_FONT.sectionTitle,
-                  }),
-                ],
-              }),
-
-              ...(result
-                ? result.split("\n").map(
-                    (line) =>
-                      new Paragraph({
-                        children: [
-                          new TextRun({
-                            text: line,
-                            size: WORD_FONT.body,
-                          }),
-                        ],
-                        spacing: {
-                          after: 120,
-                        },
-                      }),
-                  )
-                : [
-                    new Paragraph({
-                      text: "사주 풀이 결과가 없습니다.",
-                    }),
-                  ]),
-            ],
-          },
-        ],
+        setSelectedYearLuckKey((prev) => ({
+          ...prev,
+          main: null,
+        }));
       });
 
-      const blob = await Packer.toBlob(doc);
+      await waitForRender();
 
-      const safeName = form.name || "이름없음";
-      const safeBirth = form.birthDate.replaceAll("-", "");
+      const baseDataUrl = await toPng(overviewCaptureRef.current, {
+        cacheBust: true,
+        pixelRatio: 2,
+        backgroundColor: "#ffffff",
+      });
 
-      saveAs(blob, `${safeName}_${safeBirth}.docx`);
+      zip.file(
+        `${name}_${birth}_00_기본_사주팔자_오행_귀인.png`,
+        baseDataUrl.split(",")[1],
+        { base64: true },
+      );
+
+      for (const item of sajuResult.daewoon) {
+        const daewoonKey = `main-daewoon-${item.index}`;
+
+        flushSync(() => {
+          setSelectedDaewoonKey((prev) => ({
+            ...prev,
+            main: daewoonKey,
+          }));
+
+          setSelectedYearLuckKey((prev) => ({
+            ...prev,
+            main: null,
+          }));
+        });
+
+        await waitForRender();
+
+        if (!luckCaptureRef.current) continue;
+
+        const dataUrl = await toPng(luckCaptureRef.current, {
+          cacheBust: true,
+          pixelRatio: 2,
+          backgroundColor: "#ffffff",
+        });
+
+        zip.file(
+          `${name}_${birth}_${String(item.index + 1).padStart(
+            2,
+            "0",
+          )}_대운_${safeFileName(item.startAgeText)}_년운.png`,
+          dataUrl.split(",")[1],
+          { base64: true },
+        );
+      }
+
+      const blob = await zip.generateAsync({ type: "blob" });
+
+      saveAs(blob, `${name}_${birth}_사주_대운년운_캡쳐.zip`);
     } catch (error) {
       console.error(error);
-      alert("워드 파일 생성 중 오류가 발생했습니다.");
+      alert("캡쳐 ZIP 저장 중 오류가 발생했습니다.");
+    } finally {
+      style.remove();
+
+      flushSync(() => {
+        setSelectedDaewoonKey((prev) => ({
+          ...prev,
+          main: previousDaewoonKey,
+        }));
+
+        setSelectedYearLuckKey((prev) => ({
+          ...prev,
+          main: previousYearLuckKey,
+        }));
+      });
     }
   };
 
@@ -3876,39 +3789,45 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                 >
                   <button
                     type="button"
-                    onClick={downloadWord}
+                    onClick={downloadCaptureZip}
                     className={`mt-4 w-full rounded-xl bg-black px-5 py-3 ${FONT.buttonText} ${WEIGHT.buttonText} ${COLOR.buttonText} shadow-md`}
                   >
                     저장하기
                   </button>
 
-                  <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <h3
-                      className={`${FONT.cardTitle} ${WEIGHT.cardTitle} ${COLOR.cardTitle}`}
-                    >
-                      사주팔자
-                    </h3>
+                  <div>
+                    <div ref={overviewCaptureRef} data-capture-target>
+                      <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <h3
+                          className={`${FONT.cardTitle} ${WEIGHT.cardTitle} ${COLOR.cardTitle}`}
+                        >
+                          사주팔자
+                        </h3>
 
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setShowCompatibilityRelations((prev) => !prev)
-                      }
-                      className={`rounded-full border border-[#6b3f24]/40 bg-white px-4 py-2 ${FONT.buttonText} ${WEIGHT.buttonText} text-[#6b3f24] shadow-sm transition hover:bg-[#f3e1cf]`}
-                    >
-                      {showCompatibilityRelations
-                        ? "지지 관계·신살 전체 접기 ▲"
-                        : "지지 관계·신살 전체 열기 ▼"}
-                    </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setShowCompatibilityRelations((prev) => !prev)
+                          }
+                          className={`rounded-full border border-[#6b3f24]/40 bg-white px-4 py-2 ${FONT.buttonText} ${WEIGHT.buttonText} text-[#6b3f24] shadow-sm transition hover:bg-[#f3e1cf]`}
+                        >
+                          {showCompatibilityRelations
+                            ? "지지 관계·신살 전체 접기 ▲"
+                            : "지지 관계·신살 전체 열기 ▼"}
+                        </button>
+                      </div>
+
+                      {renderSajuOverview(sajuResult, sajuItems, "main")}
+                    </div>
+
+                    <div ref={luckCaptureRef} data-capture-target>
+                      {renderLuckPanel(
+                        sajuResult,
+                        "main",
+                        normalizeDateForCalc(form.birthDate),
+                      )}
+                    </div>
                   </div>
-
-                  {renderSajuOverview(sajuResult, sajuItems, "main")}
-
-                  {renderLuckPanel(
-                    sajuResult,
-                    "main",
-                    normalizeDateForCalc(form.birthDate),
-                  )}
 
                   {result && (
                     <div className="mt-5 rounded-2xl bg-zinc-100 p-4">
