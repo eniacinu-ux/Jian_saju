@@ -490,7 +490,7 @@ export default function Home() {
     { name: "남태식", gender: "남성", birthDate: "1981-01-31", birthTime: "13:30", birthTimeUnknown: false, calendarType: "solar", isLeapMonth: false },
     { name: "스파크", gender: "남성", birthDate: "1986-12-25", birthTime: "11:53", birthTimeUnknown: false, calendarType: "solar", isLeapMonth: false },
     { name: "장민혁(쥬토피앙)", gender: "남성", birthDate: "1991-10-22", birthTime: "01:00", birthTimeUnknown: false, calendarType: "solar", isLeapMonth: false },
-    { name: "임딩", gender: "여성", birthDate: "2002-08-13", birthTime: "11:59", birthTimeUnknown: false, calendarType: "solar", isLeapMonth: false },
+    { name: "잉딩", gender: "여성", birthDate: "2002-08-13", birthTime: "11:59", birthTimeUnknown: false, calendarType: "solar", isLeapMonth: false },
     { name: "성민(민2)", gender: "남성", birthDate: "1993-03-28", birthTime: "04:30", birthTimeUnknown: false, calendarType: "solar", isLeapMonth: false },
     { name: "킹스맨", gender: "남성", birthDate: "1986-03-23", birthTime: "20:30", birthTimeUnknown: false, calendarType: "solar", isLeapMonth: false },
     { name: "뉴탄즈", gender: "남성", birthDate: "1993-08-04", birthTime: "23:00", birthTimeUnknown: false, calendarType: "solar", isLeapMonth: false },
