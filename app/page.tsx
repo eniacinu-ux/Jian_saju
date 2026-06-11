@@ -6,6 +6,16 @@ import { flushSync } from "react-dom";
 import { saveAs } from "file-saver";
 import { toPng } from "html-to-image";
 import JSZip from "jszip";
+import {
+  Document,
+  Packer,
+  Paragraph,
+  Table,
+  TableCell,
+  TableRow,
+  TextRun,
+  WidthType,
+} from "docx";
 
 import { calculateSaju } from "./lib/sajuCalculator";
 
@@ -175,6 +185,12 @@ export default function Home() {
 
     modeButtonText: "font-bold",
     buttonText: "font-bold",
+  };
+
+  const WORD_FONT = {
+    title: 36,
+    sectionTitle: 28,
+    body: 24,
   };
 
   const [lunarToSolarDate, setLunarToSolarDate] = useState("");
@@ -893,7 +909,7 @@ export default function Home() {
     new Promise<void>((resolve) => {
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-          setTimeout(() => resolve(), 20);
+          setTimeout(() => resolve(), 100);
         });
       });
     });
@@ -902,6 +918,184 @@ export default function Home() {
     String(value || "사주")
       .replace(/[\\/:*?"<>|]/g, "_")
       .trim();
+
+  const createWordBlob = async () => {
+    const doc = new Document({
+      sections: [
+        {
+          children: [
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: "사주 분석 결과",
+                  bold: true,
+                  size: WORD_FONT.title,
+                }),
+              ],
+            }),
+
+            new Paragraph({ text: "" }),
+
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: `이름: ${form.name || "이름없음"}`,
+                  size: WORD_FONT.body,
+                }),
+              ],
+            }),
+
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: `생년월일: ${normalizeDateForCalc(form.birthDate)} ${
+                    form.birthTimeUnknown ? "시간 미상" : form.birthTime
+                  }`,
+                  size: WORD_FONT.body,
+                }),
+              ],
+            }),
+
+            new Paragraph({ text: "" }),
+
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: "만세력",
+                  bold: true,
+                  size: WORD_FONT.sectionTitle,
+                }),
+              ],
+            }),
+
+            new Paragraph({ text: "" }),
+
+            new Table({
+              width: {
+                size: 100,
+                type: WidthType.PERCENTAGE,
+              },
+              rows: [
+                new TableRow({
+                  children: [
+                    new TableCell({ children: [new Paragraph("시주")] }),
+                    new TableCell({ children: [new Paragraph("일주")] }),
+                    new TableCell({ children: [new Paragraph("월주")] }),
+                    new TableCell({ children: [new Paragraph("년주")] }),
+                  ],
+                }),
+
+                new TableRow({
+                  children: [
+                    new TableCell({
+                      children: [
+                        new Paragraph(
+                          sajuResult.hour
+                            ? `${sajuResult.hour.ganji} (${sajuResult.hour.ganjiKor})`
+                            : "시간 미상",
+                        ),
+                      ],
+                    }),
+
+                    new TableCell({
+                      children: [
+                        new Paragraph(
+                          `${sajuResult.day.ganji} (${sajuResult.day.ganjiKor})`,
+                        ),
+                      ],
+                    }),
+
+                    new TableCell({
+                      children: [
+                        new Paragraph(
+                          `${sajuResult.month.ganji} (${sajuResult.month.ganjiKor})`,
+                        ),
+                      ],
+                    }),
+
+                    new TableCell({
+                      children: [
+                        new Paragraph(
+                          `${sajuResult.year.ganji} (${sajuResult.year.ganjiKor})`,
+                        ),
+                      ],
+                    }),
+                  ],
+                }),
+              ],
+            }),
+
+            new Paragraph({ text: "" }),
+
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: "오행 분포",
+                  bold: true,
+                  size: WORD_FONT.sectionTitle,
+                }),
+              ],
+            }),
+
+            new Paragraph({
+              text:
+                `목 ${sajuResult.elementCount.wood} / ` +
+                `화 ${sajuResult.elementCount.fire} / ` +
+                `토 ${sajuResult.elementCount.earth} / ` +
+                `금 ${sajuResult.elementCount.metal} / ` +
+                `수 ${sajuResult.elementCount.water}`,
+            }),
+
+            new Paragraph({
+              text: `공망(일주 기준): ${getDayGongmang(sajuResult)}`,
+            }),
+
+            ...getGwiyinList(sajuResult).map(
+              (gwiyin) =>
+                new Paragraph({
+                  text: `${gwiyin.label}: ${gwiyin.value}`,
+                }),
+            ),
+
+            new Paragraph({ text: "" }),
+
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: "사주 풀이",
+                  bold: true,
+                  size: WORD_FONT.sectionTitle,
+                }),
+              ],
+            }),
+
+            ...(result
+              ? result.split("\n").map(
+                  (line) =>
+                    new Paragraph({
+                      children: [
+                        new TextRun({
+                          text: line,
+                          size: WORD_FONT.body,
+                        }),
+                      ],
+                      spacing: {
+                        after: 120,
+                      },
+                    }),
+                )
+              : [
+                  new Paragraph({
+                    text: "사주 풀이 결과가 없습니다.",
+                  }),
+                ]),
+          ],
+        },
+      ],
+    });
+
+    return Packer.toBlob(doc);
+  };
 
   const downloadCaptureZip = async () => {
     if (!sajuResult || !overviewCaptureRef.current) {
@@ -928,6 +1122,9 @@ export default function Home() {
       const birth = safeFileName(
         normalizeDateForCalc(form.birthDate).replaceAll("-", ""),
       );
+
+      const wordBlob = await createWordBlob();
+      zip.file(`${name}_${birth}_사주분석.docx`, wordBlob);
 
       flushSync(() => {
         setSelectedDaewoonKey((prev) => ({
@@ -992,7 +1189,7 @@ export default function Home() {
 
       const blob = await zip.generateAsync({ type: "blob" });
 
-      saveAs(blob, `${name}_${birth}_사주_대운년운_캡쳐.zip`);
+      saveAs(blob, `${name}_${birth}_사주_대운년운_워드포함.zip`);
     } catch (error) {
       console.error(error);
       alert("캡쳐 ZIP 저장 중 오류가 발생했습니다.");
