@@ -324,21 +324,91 @@ const MONTH_START_SOLAR_TERM_TO_BRANCH_INDEX: Record<string, number> = {
   대설: 0,
 };
 
-function getSolarTermDate(
-  year: number,
-  termIndex: number
-): Date {
+function degToRad(deg: number): number {
+  return (deg * Math.PI) / 180;
+}
+
+function normalizeDegree(deg: number): number {
+  return ((deg % 360) + 360) % 360;
+}
+
+function normalizeDegree180(deg: number): number {
+  const normalized = normalizeDegree(deg);
+  return normalized > 180 ? normalized - 360 : normalized;
+}
+
+function dateToJulianDay(date: Date): number {
+  return date.getTime() / 86400000 + 2440587.5;
+}
+
+function getSunApparentLongitude(date: Date): number {
+  const jd = dateToJulianDay(date);
+  const t = (jd - 2451545.0) / 36525;
+
+  const meanLongitude = normalizeDegree(
+    280.46646 + 36000.76983 * t + 0.0003032 * t * t
+  );
+
+  const meanAnomaly = normalizeDegree(
+    357.52911 + 35999.05029 * t - 0.0001537 * t * t
+  );
+
+  const equationOfCenter =
+    (1.914602 - 0.004817 * t - 0.000014 * t * t) *
+      Math.sin(degToRad(meanAnomaly)) +
+    (0.019993 - 0.000101 * t) * Math.sin(degToRad(2 * meanAnomaly)) +
+    0.000289 * Math.sin(degToRad(3 * meanAnomaly));
+
+  const trueLongitude = meanLongitude + equationOfCenter;
+  const omega = 125.04 - 1934.136 * t;
+  const apparentLongitude =
+    trueLongitude - 0.00569 - 0.00478 * Math.sin(degToRad(omega));
+
+  return normalizeDegree(apparentLongitude);
+}
+
+function getApproxSolarTermDate(year: number, termIndex: number): Date {
   const y = year - 1900;
 
   const minutes =
     525948.76 * y +
     6.2 +
     15.2184 * 24 * 60 * termIndex -
-    1.9 * Math.sin((0.262 * y * Math.PI) / 180);
+    1.9 * Math.sin(degToRad(0.262 * y));
 
   const base = new Date(1900, 0, 6, 2, 5, 0, 0);
 
   return new Date(base.getTime() + minutes * 60 * 1000);
+}
+
+function getSolarTermTargetLongitude(termIndex: number): number {
+  return normalizeDegree(285 + 15 * termIndex);
+}
+
+function getSolarTermDate(
+  year: number,
+  termIndex: number
+): Date {
+  const targetLongitude = getSolarTermTargetLongitude(termIndex);
+  const approxDate = getApproxSolarTermDate(year, termIndex);
+
+  let left = new Date(approxDate.getTime() - 10 * 24 * 60 * 60 * 1000);
+  let right = new Date(approxDate.getTime() + 10 * 24 * 60 * 60 * 1000);
+
+  for (let index = 0; index < 80; index += 1) {
+    const mid = new Date((left.getTime() + right.getTime()) / 2);
+    const diff = normalizeDegree180(
+      getSunApparentLongitude(mid) - targetLongitude
+    );
+
+    if (diff < 0) {
+      left = mid;
+    } else {
+      right = mid;
+    }
+  }
+
+  return right;
 }
 
 function getSolarTermsOfYear(
