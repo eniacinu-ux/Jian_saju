@@ -269,6 +269,462 @@ export default function Home() {
   } | null>(null);
 
 
+  const penCanvasRef = useRef<HTMLCanvasElement>(null);
+  const penCanvasSizeRef = useRef({ width: 0, height: 0, dpr: 1 });
+  const penDrawingRef = useRef(false);
+  const penCurrentPointerIdRef = useRef<number | null>(null);
+  type PenPoint = { x: number; y: number };
+type PenStroke = {
+  mode: "draw" | "erase";
+  points: PenPoint[];
+};
+
+const penCurrentStrokeRef = useRef<PenStroke | null>(null);
+const penStrokesRef = useRef<PenStroke[]>([]);
+const penModeRef = useRef(true);
+  const [penMode, setPenMode] = useState(true);
+  const [penCanvasMounted, setPenCanvasMounted] = useState(false);
+
+  // 와콤 펜 접촉 직후 브라우저가 mouse/click 이벤트를 추가로 발생시키는 것을 막기 위한 값
+  const penClickSuppressUntilRef = useRef(0);
+  const penLastScreenPointRef = useRef<{ x: number; y: number } | null>(null);
+const isEraserButtonPressed = (event: PointerEvent) => {
+  return event.buttons === 2 || event.buttons === 32;
+};
+  const PEN_COLOR = "#dc2626";
+  const PEN_WIDTH = 8;
+
+  const getPenCanvasContext = () => {
+    const canvas = penCanvasRef.current;
+    if (!canvas) return null;
+
+    const context = canvas.getContext("2d");
+    if (!context) return null;
+
+    context.lineCap = "round";
+    context.lineJoin = "round";
+    context.strokeStyle = PEN_COLOR;
+    context.lineWidth = PEN_WIDTH;
+
+    return context;
+  };
+
+const drawPenStroke = (
+  context: CanvasRenderingContext2D,
+  stroke: {
+    mode: "draw" | "erase";
+    points: { x: number; y: number }[];
+  },
+) => {
+  if (stroke.points.length < 2) return;
+
+  context.save();
+
+  if (stroke.mode === "erase") {
+    context.globalCompositeOperation = "destination-out";
+    context.lineWidth = PEN_WIDTH * 4;
+  } else {
+    context.globalCompositeOperation = "source-over";
+    context.strokeStyle = PEN_COLOR;
+    context.lineWidth = PEN_WIDTH;
+  }
+
+  context.beginPath();
+  context.moveTo(stroke.points[0].x, stroke.points[0].y);
+
+  for (let index = 1; index < stroke.points.length; index += 1) {
+    context.lineTo(
+      stroke.points[index].x,
+      stroke.points[index].y,
+    );
+  }
+
+  context.stroke();
+  context.restore();
+};
+
+  const redrawPenCanvas = () => {
+    const canvas = penCanvasRef.current;
+    const context = getPenCanvasContext();
+    if (!canvas || !context) return;
+
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    penStrokesRef.current.forEach((stroke) => drawPenStroke(context, stroke));
+  };
+
+  const resizePenCanvas = () => {
+    const canvas = penCanvasRef.current;
+    if (!canvas || typeof window === "undefined") return;
+
+    // DPR을 1로 제한해야 대형 페이지에서 캔버스 메모리 폭증을 막을 수 있음
+    const dpr = 1;
+    const width = Math.max(
+      document.documentElement.scrollWidth,
+      document.body.scrollWidth,
+      window.innerWidth,
+    );
+    const height = Math.max(
+      document.documentElement.scrollHeight,
+      document.body.scrollHeight,
+      window.innerHeight,
+    );
+
+    const previousSize = penCanvasSizeRef.current;
+    const sameSize =
+      previousSize.width === width &&
+      previousSize.height === height &&
+      previousSize.dpr === dpr;
+
+    if (!sameSize) {
+      canvas.style.width = `${width}px`;
+      canvas.style.height = `${height}px`;
+      canvas.width = Math.ceil(width * dpr);
+      canvas.height = Math.ceil(height * dpr);
+      penCanvasSizeRef.current = { width, height, dpr };
+    }
+
+    const context = canvas.getContext("2d");
+    if (!context) return;
+
+    context.setTransform(dpr, 0, 0, dpr, 0, 0);
+    context.lineCap = "round";
+    context.lineJoin = "round";
+    context.strokeStyle = PEN_COLOR;
+    context.lineWidth = PEN_WIDTH;
+
+    context.clearRect(0, 0, width, height);
+    penStrokesRef.current.forEach((stroke) => drawPenStroke(context, stroke));
+  };
+
+  const getPenPoint = (event: PointerEvent) => {
+    return {
+      x: event.clientX + window.scrollX,
+      y: event.clientY + window.scrollY,
+    };
+  };
+
+  const stopPenEvent = (event: PointerEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+  };
+
+  const markPenClickSuppress = (event: PointerEvent) => {
+    penClickSuppressUntilRef.current = performance.now() + 900;
+    penLastScreenPointRef.current = {
+      x: event.clientX,
+      y: event.clientY,
+    };
+  };
+
+  const shouldSuppressMouseEventAfterPen = (event: MouseEvent) => {
+    if (performance.now() > penClickSuppressUntilRef.current) return false;
+
+    const lastPoint = penLastScreenPointRef.current;
+    if (!lastPoint) return true;
+
+    const dx = event.clientX - lastPoint.x;
+    const dy = event.clientY - lastPoint.y;
+
+    return dx * dx + dy * dy <= 80 * 80;
+  };
+
+  const stopMouseEventAfterPen = (event: MouseEvent) => {
+    if (!shouldSuppressMouseEventAfterPen(event)) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+  };
+
+  const clearPenCanvas = () => {
+    penStrokesRef.current = [];
+    penCurrentStrokeRef.current = null;
+    penDrawingRef.current = false;
+    penCurrentPointerIdRef.current = null;
+
+    if (penModeRef.current) {
+      requestAnimationFrame(redrawPenCanvas);
+      return;
+    }
+
+    penCanvasSizeRef.current = { width: 0, height: 0, dpr: 1 };
+    setPenCanvasMounted(false);
+  };
+
+  const undoPenStroke = () => {
+    penStrokesRef.current = penStrokesRef.current.slice(0, -1);
+    penCurrentStrokeRef.current = null;
+    penDrawingRef.current = false;
+    penCurrentPointerIdRef.current = null;
+
+    if (penStrokesRef.current.length === 0 && !penModeRef.current) {
+      penCanvasSizeRef.current = { width: 0, height: 0, dpr: 1 };
+      setPenCanvasMounted(false);
+      return;
+    }
+
+    requestAnimationFrame(redrawPenCanvas);
+  };
+
+  useEffect(() => {
+    penModeRef.current = penMode;
+  }, [penMode]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const ensureCanvasReady = () => {
+      setPenCanvasMounted(true);
+      requestAnimationFrame(() => {
+        resizePenCanvas();
+      });
+    };
+
+    const capturePenPointer = (pointerId: number) => {
+      const canvas = penCanvasRef.current;
+      if (!canvas) return;
+
+      try {
+        canvas.setPointerCapture(pointerId);
+      } catch {
+        // 일부 브라우저/와콤 조합에서는 캡처가 실패할 수 있음
+      }
+    };
+
+    const releasePenPointer = (pointerId: number | null) => {
+      const canvas = penCanvasRef.current;
+      if (!canvas || pointerId === null) return;
+
+      try {
+        if (canvas.hasPointerCapture(pointerId)) {
+          canvas.releasePointerCapture(pointerId);
+        }
+      } catch {
+        // 무시
+      }
+    };
+
+    const handlePointerDown = (event: PointerEvent) => {
+      // 시작할 때만 펜인지 확인한다.
+      // 이동 중 pointerType/pointerId가 흔들리는 와콤 드라이버가 있어서 move에서는 검사하지 않는다.
+      if (!penModeRef.current || event.pointerType !== "pen") return;
+
+      markPenClickSuppress(event);
+      stopPenEvent(event);
+      ensureCanvasReady();
+
+      penDrawingRef.current = true;
+      penCurrentPointerIdRef.current = event.pointerId;
+      penCurrentStrokeRef.current = {
+        mode: isEraserButtonPressed(event) ? "erase" : "draw",
+        points: [getPenPoint(event)],
+      };
+
+      requestAnimationFrame(() => capturePenPointer(event.pointerId));
+    };
+
+    const handlePointerMove = (event: PointerEvent) => {
+      if (!penModeRef.current || !penDrawingRef.current) return;
+
+      markPenClickSuppress(event);
+      stopPenEvent(event);
+
+      const context = getPenCanvasContext();
+      if (!context) {
+        requestAnimationFrame(resizePenCanvas);
+        return;
+      }
+
+      const stroke = penCurrentStrokeRef.current;
+      if (!stroke) return;
+
+      const nextPoint = getPenPoint(event);
+      const prevPoint = stroke.points[stroke.points.length - 1];
+
+      if (!prevPoint) {
+        stroke.points.push(nextPoint);
+        return;
+      }
+
+      // 좌표가 완전히 같은 이벤트는 건너뜀
+      if (prevPoint.x === nextPoint.x && prevPoint.y === nextPoint.y) return;
+
+      stroke.points.push(nextPoint);
+
+      context.save();
+
+      if (stroke.mode === "erase") {
+        context.globalCompositeOperation = "destination-out";
+        context.lineWidth = PEN_WIDTH * 4; // 지우개 굵기
+      } else {
+        context.globalCompositeOperation = "source-over";
+        context.strokeStyle = PEN_COLOR;
+        context.lineWidth = PEN_WIDTH;
+      }
+
+      context.beginPath();
+      context.moveTo(prevPoint.x, prevPoint.y);
+      context.lineTo(nextPoint.x, nextPoint.y);
+      context.stroke();
+
+      context.restore();
+    };
+
+    const finishStroke = (event?: PointerEvent) => {
+      if (!penDrawingRef.current) return;
+
+      if (event) {
+        markPenClickSuppress(event);
+        stopPenEvent(event);
+      }
+
+      const stroke = penCurrentStrokeRef.current;
+      if (stroke && stroke.points.length > 1) {
+        penStrokesRef.current = [...penStrokesRef.current, stroke];
+      }
+
+      releasePenPointer(penCurrentPointerIdRef.current);
+
+      penCurrentStrokeRef.current = null;
+      penDrawingRef.current = false;
+      penCurrentPointerIdRef.current = null;
+    };
+
+    const handlePointerCancel = (event: PointerEvent) => {
+      // 와콤에서 pointercancel이 잦게 발생하면 선이 중간에 끊긴다.
+      // 그래서 cancel은 선 종료로 보지 않고, 브라우저 기본 동작만 막는다.
+      if (!penDrawingRef.current) return;
+      stopPenEvent(event);
+    };
+
+    const handleBlur = () => {
+      finishStroke();
+    };
+
+    window.addEventListener("pointerdown", handlePointerDown, true);
+    window.addEventListener("pointermove", handlePointerMove, true);
+    window.addEventListener("pointerup", finishStroke, true);
+    window.addEventListener("pointercancel", handlePointerCancel, true);
+    window.addEventListener("mousedown", stopMouseEventAfterPen, true);
+    window.addEventListener("mouseup", stopMouseEventAfterPen, true);
+    window.addEventListener("click", stopMouseEventAfterPen, true);
+    window.addEventListener("dblclick", stopMouseEventAfterPen, true);
+    window.addEventListener("contextmenu", stopMouseEventAfterPen, true);
+    window.addEventListener("blur", handleBlur);
+
+    return () => {
+      window.removeEventListener("pointerdown", handlePointerDown, true);
+      window.removeEventListener("pointermove", handlePointerMove, true);
+      window.removeEventListener("pointerup", finishStroke, true);
+      window.removeEventListener("pointercancel", handlePointerCancel, true);
+      window.removeEventListener("mousedown", stopMouseEventAfterPen, true);
+      window.removeEventListener("mouseup", stopMouseEventAfterPen, true);
+      window.removeEventListener("click", stopMouseEventAfterPen, true);
+      window.removeEventListener("dblclick", stopMouseEventAfterPen, true);
+      window.removeEventListener("contextmenu", stopMouseEventAfterPen, true);
+      window.removeEventListener("blur", handleBlur);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const html = document.documentElement;
+    const body = document.body;
+
+    const previousHtmlTouchAction = html.style.touchAction;
+    const previousBodyTouchAction = body.style.touchAction;
+    const previousHtmlUserSelect = html.style.userSelect;
+    const previousBodyUserSelect = body.style.userSelect;
+
+    if (penMode) {
+      html.style.touchAction = "none";
+      body.style.touchAction = "none";
+      html.style.userSelect = "none";
+      body.style.userSelect = "none";
+    }
+
+    return () => {
+      html.style.touchAction = previousHtmlTouchAction;
+      body.style.touchAction = previousBodyTouchAction;
+      html.style.userSelect = previousHtmlUserSelect;
+      body.style.userSelect = previousBodyUserSelect;
+    };
+  }, [penMode]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const key = event.key.toLowerCase();
+
+      if (event.ctrlKey && event.shiftKey && key === "p") {
+        event.preventDefault();
+        setPenMode((prev) => {
+          const next = !prev;
+          if (next) setPenCanvasMounted(true);
+          return next;
+        });
+        return;
+      }
+
+      if (event.ctrlKey && event.shiftKey && key === "z") {
+        event.preventDefault();
+        undoPenStroke();
+        return;
+      }
+
+      if (event.ctrlKey && event.shiftKey && key === "x") {
+        event.preventDefault();
+        clearPenCanvas();
+        return;
+      }
+
+      if (event.key === "Escape") {
+        setPenMode(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !penCanvasMounted) return;
+
+    const handleResize = () => resizePenCanvas();
+
+    requestAnimationFrame(resizePenCanvas);
+    window.addEventListener("resize", handleResize);
+
+    return () => window.removeEventListener("resize", handleResize);
+  }, [penCanvasMounted]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !penCanvasMounted) return;
+
+    const timer = window.setTimeout(() => {
+      resizePenCanvas();
+    }, 150);
+
+    return () => window.clearTimeout(timer);
+  }, [
+    penCanvasMounted,
+    mode,
+    showSaju,
+    showDailyCalendar,
+    memoOpen,
+    sajuResult,
+    compatibilityResult,
+    result,
+    selectedDaewoonKey,
+    selectedYearLuckKey,
+    showCompatibilityRelations,
+  ]);
+
+
   const formatDateInput = (value: string) => {
     const onlyNumber = value.replace(/\D/g, "").slice(0, 8);
 
@@ -3448,6 +3904,24 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
   };
 
   return (
+    <>
+      {penCanvasMounted && (
+        <canvas
+          ref={penCanvasRef}
+          className="absolute left-0 top-0 z-[9998]"
+          style={{
+            pointerEvents: "none",
+            touchAction: "none",
+          }}
+        />
+      )}
+
+      {/* {penMode && (
+        <div className="fixed right-6 top-6 z-[10000] rounded-full bg-red-600 px-5 py-3 text-2xl font-bold text-white shadow-2xl">
+          🔴 PEN MODE
+        </div>
+      )} */}
+
     <main className="min-h-screen bg-[#f7efe3] px-5 py-10 text-[#2b1d12]">
       <div className="mx-auto w-[1400px] min-w-[1400px] rounded-3xl bg-white p-6 shadow-xl">
         <h1
@@ -4267,5 +4741,6 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
         </div>
       )}
     </main>
+    </>
   );
 }
