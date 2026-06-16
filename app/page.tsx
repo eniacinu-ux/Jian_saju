@@ -269,30 +269,42 @@ export default function Home() {
   } | null>(null);
 
 
+  type PenPoint = { x: number; y: number };
+  type PenStroke = {
+    mode: "draw" | "erase";
+    points: PenPoint[];
+  };
+
   const penCanvasRef = useRef<HTMLCanvasElement>(null);
   const penCanvasSizeRef = useRef({ width: 0, height: 0, dpr: 1 });
   const penDrawingRef = useRef(false);
+  const penErasingRef = useRef(false);
+  const penEraseHasContactRef = useRef(false);
   const penCurrentPointerIdRef = useRef<number | null>(null);
-  type PenPoint = { x: number; y: number };
-type PenStroke = {
-  mode: "draw" | "erase";
-  points: PenPoint[];
-};
-
-const penCurrentStrokeRef = useRef<PenStroke | null>(null);
-const penStrokesRef = useRef<PenStroke[]>([]);
-const penModeRef = useRef(true);
+  const penCurrentStrokeRef = useRef<PenStroke | null>(null);
+  const penStrokesRef = useRef<PenStroke[]>([]);
+  const penModeRef = useRef(true);
   const [penMode, setPenMode] = useState(true);
   const [penCanvasMounted, setPenCanvasMounted] = useState(false);
 
   // 와콤 펜 접촉 직후 브라우저가 mouse/click 이벤트를 추가로 발생시키는 것을 막기 위한 값
   const penClickSuppressUntilRef = useRef(0);
   const penLastScreenPointRef = useRef<{ x: number; y: number } | null>(null);
-const isEraserButtonPressed = (event: PointerEvent) => {
-  return event.buttons === 2 || event.buttons === 32;
-};
+
   const PEN_COLOR = "#dc2626";
+  const PEN_ALPHA = 0.55;
   const PEN_WIDTH = 8;
+  const ERASER_WIDTH = PEN_WIDTH * 4;
+
+  const isEraserButtonPressed = (event: PointerEvent) => {
+    return (event.buttons & 2) === 2 || (event.buttons & 32) === 32;
+  };
+
+  const isPenTipContact = (event: PointerEvent) => {
+    // Hover 상태에서 사이드 버튼만 누르면 보통 buttons가 2 또는 32로만 들어온다.
+    // 실제 펜촉 접촉은 primary bit(1)가 같이 들어오거나 pressure가 0보다 커지는 경우만 인정한다.
+    return (event.buttons & 1) === 1 || event.pressure > 0;
+  };
 
   const getPenCanvasContext = () => {
     const canvas = penCanvasRef.current;
@@ -305,51 +317,52 @@ const isEraserButtonPressed = (event: PointerEvent) => {
     context.lineJoin = "round";
     context.strokeStyle = PEN_COLOR;
     context.lineWidth = PEN_WIDTH;
+    context.globalAlpha = 1;
+    context.globalCompositeOperation = "source-over";
 
     return context;
   };
 
-const drawPenStroke = (
-  context: CanvasRenderingContext2D,
-  stroke: {
-    mode: "draw" | "erase";
-    points: { x: number; y: number }[];
-  },
-) => {
-  if (stroke.points.length < 2) return;
+  const drawPenStroke = (context: CanvasRenderingContext2D, stroke: PenStroke) => {
+    if (stroke.points.length < 2) return;
 
-  context.save();
+    context.save();
 
-  if (stroke.mode === "erase") {
-    context.globalCompositeOperation = "destination-out";
-    context.lineWidth = PEN_WIDTH * 4;
-  } else {
-    context.globalCompositeOperation = "source-over";
-    context.strokeStyle = PEN_COLOR;
-    context.lineWidth = PEN_WIDTH;
-  }
+    if (stroke.mode === "erase") {
+      context.globalCompositeOperation = "destination-out";
+      context.globalAlpha = 1;
+      context.lineWidth = ERASER_WIDTH;
+    } else {
+      context.globalCompositeOperation = "source-over";
+      context.globalAlpha = PEN_ALPHA;
+      context.strokeStyle = PEN_COLOR;
+      context.lineWidth = PEN_WIDTH;
+    }
 
-  context.beginPath();
-  context.moveTo(stroke.points[0].x, stroke.points[0].y);
+    context.lineCap = "round";
+    context.lineJoin = "round";
+    context.beginPath();
+    context.moveTo(stroke.points[0].x, stroke.points[0].y);
 
-  for (let index = 1; index < stroke.points.length; index += 1) {
-    context.lineTo(
-      stroke.points[index].x,
-      stroke.points[index].y,
-    );
-  }
+    for (let index = 1; index < stroke.points.length; index += 1) {
+      context.lineTo(stroke.points[index].x, stroke.points[index].y);
+    }
 
-  context.stroke();
-  context.restore();
-};
+    context.stroke();
+    context.restore();
+  };
 
-  const redrawPenCanvas = () => {
+  const redrawPenCanvas = (includeCurrentStroke = false) => {
     const canvas = penCanvasRef.current;
     const context = getPenCanvasContext();
     if (!canvas || !context) return;
 
     context.clearRect(0, 0, canvas.width, canvas.height);
     penStrokesRef.current.forEach((stroke) => drawPenStroke(context, stroke));
+
+    if (includeCurrentStroke && penCurrentStrokeRef.current) {
+      drawPenStroke(context, penCurrentStrokeRef.current);
+    }
   };
 
   const resizePenCanvas = () => {
@@ -391,9 +404,14 @@ const drawPenStroke = (
     context.lineJoin = "round";
     context.strokeStyle = PEN_COLOR;
     context.lineWidth = PEN_WIDTH;
+    context.globalAlpha = 1;
+    context.globalCompositeOperation = "source-over";
 
     context.clearRect(0, 0, width, height);
     penStrokesRef.current.forEach((stroke) => drawPenStroke(context, stroke));
+    if (penDrawingRef.current && penCurrentStrokeRef.current) {
+      drawPenStroke(context, penCurrentStrokeRef.current);
+    }
   };
 
   const getPenPoint = (event: PointerEvent) => {
@@ -437,34 +455,89 @@ const drawPenStroke = (
     event.stopImmediatePropagation();
   };
 
+  const distancePointToSegment = (
+    px: number,
+    py: number,
+    x1: number,
+    y1: number,
+    x2: number,
+    y2: number,
+  ) => {
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+
+    if (dx === 0 && dy === 0) {
+      return Math.hypot(px - x1, py - y1);
+    }
+
+    const t = ((px - x1) * dx + (py - y1) * dy) / (dx * dx + dy * dy);
+    const clampedT = Math.max(0, Math.min(1, t));
+    const closestX = x1 + clampedT * dx;
+    const closestY = y1 + clampedT * dy;
+
+    return Math.hypot(px - closestX, py - closestY);
+  };
+
+  const isStrokeHitByPoint = (stroke: PenStroke, point: PenPoint) => {
+    const hitRadius = ERASER_WIDTH / 2;
+
+    if (stroke.points.length === 1) {
+      const onlyPoint = stroke.points[0];
+      return Math.hypot(point.x - onlyPoint.x, point.y - onlyPoint.y) <= hitRadius;
+    }
+
+    for (let index = 1; index < stroke.points.length; index += 1) {
+      const previousPoint = stroke.points[index - 1];
+      const currentPoint = stroke.points[index];
+      const distance = distancePointToSegment(
+        point.x,
+        point.y,
+        previousPoint.x,
+        previousPoint.y,
+        currentPoint.x,
+        currentPoint.y,
+      );
+
+      if (distance <= hitRadius) return true;
+    }
+
+    return false;
+  };
+
+  const eraseStrokeAtPoint = (point: PenPoint) => {
+    for (let strokeIndex = penStrokesRef.current.length - 1; strokeIndex >= 0; strokeIndex -= 1) {
+      const stroke = penStrokesRef.current[strokeIndex];
+
+      if (!isStrokeHitByPoint(stroke, point)) continue;
+
+      penStrokesRef.current = penStrokesRef.current.filter((_, index) => index !== strokeIndex);
+      requestAnimationFrame(() => redrawPenCanvas(false));
+      return true;
+    }
+
+    return false;
+  };
+
   const clearPenCanvas = () => {
     penStrokesRef.current = [];
     penCurrentStrokeRef.current = null;
     penDrawingRef.current = false;
+    penErasingRef.current = false;
+    penEraseHasContactRef.current = false;
     penCurrentPointerIdRef.current = null;
 
-    if (penModeRef.current) {
-      requestAnimationFrame(redrawPenCanvas);
-      return;
-    }
-
-    penCanvasSizeRef.current = { width: 0, height: 0, dpr: 1 };
-    setPenCanvasMounted(false);
+    requestAnimationFrame(() => redrawPenCanvas(false));
   };
 
   const undoPenStroke = () => {
     penStrokesRef.current = penStrokesRef.current.slice(0, -1);
     penCurrentStrokeRef.current = null;
     penDrawingRef.current = false;
+    penErasingRef.current = false;
+    penEraseHasContactRef.current = false;
     penCurrentPointerIdRef.current = null;
 
-    if (penStrokesRef.current.length === 0 && !penModeRef.current) {
-      penCanvasSizeRef.current = { width: 0, height: 0, dpr: 1 };
-      setPenCanvasMounted(false);
-      return;
-    }
-
-    requestAnimationFrame(redrawPenCanvas);
+    requestAnimationFrame(() => redrawPenCanvas(false));
   };
 
   useEffect(() => {
@@ -514,12 +587,24 @@ const drawPenStroke = (
       stopPenEvent(event);
       ensureCanvasReady();
 
+      const nextPoint = getPenPoint(event);
+      const isErasing = isEraserButtonPressed(event);
+
       penDrawingRef.current = true;
+      penErasingRef.current = isErasing;
+      penEraseHasContactRef.current = !isErasing;
       penCurrentPointerIdRef.current = event.pointerId;
-      penCurrentStrokeRef.current = {
-        mode: isEraserButtonPressed(event) ? "erase" : "draw",
-        points: [getPenPoint(event)],
-      };
+
+      if (isErasing) {
+        // 와콤 사이드 버튼은 hover 상태에서도 pointerdown/right-click 이벤트가 발생할 수 있다.
+        // 그래서 pointerdown 순간에는 삭제하지 않고, 실제 드래그(pointermove)가 들어올 때만 획을 삭제한다.
+        penCurrentStrokeRef.current = null;
+      } else {
+        penCurrentStrokeRef.current = {
+          mode: "draw",
+          points: [nextPoint],
+        };
+      }
 
       requestAnimationFrame(() => capturePenPointer(event.pointerId));
     };
@@ -530,20 +615,23 @@ const drawPenStroke = (
       markPenClickSuppress(event);
       stopPenEvent(event);
 
-      const context = getPenCanvasContext();
-      if (!context) {
-        requestAnimationFrame(resizePenCanvas);
+      const nextPoint = getPenPoint(event);
+
+      if (penErasingRef.current) {
+        if (!isPenTipContact(event)) return;
+        penEraseHasContactRef.current = true;
+        eraseStrokeAtPoint(nextPoint);
         return;
       }
 
       const stroke = penCurrentStrokeRef.current;
       if (!stroke) return;
 
-      const nextPoint = getPenPoint(event);
       const prevPoint = stroke.points[stroke.points.length - 1];
 
       if (!prevPoint) {
         stroke.points.push(nextPoint);
+        requestAnimationFrame(() => redrawPenCanvas(true));
         return;
       }
 
@@ -552,23 +640,9 @@ const drawPenStroke = (
 
       stroke.points.push(nextPoint);
 
-      context.save();
-
-      if (stroke.mode === "erase") {
-        context.globalCompositeOperation = "destination-out";
-        context.lineWidth = PEN_WIDTH * 4; // 지우개 굵기
-      } else {
-        context.globalCompositeOperation = "source-over";
-        context.strokeStyle = PEN_COLOR;
-        context.lineWidth = PEN_WIDTH;
-      }
-
-      context.beginPath();
-      context.moveTo(prevPoint.x, prevPoint.y);
-      context.lineTo(nextPoint.x, nextPoint.y);
-      context.stroke();
-
-      context.restore();
+      // 반투명 선이 이동 중에 겹쳐서 진해지는 문제를 막기 위해
+      // 매 move마다 누적해서 그리지 않고, 저장된 stroke를 한 번씩만 다시 그림
+      requestAnimationFrame(() => redrawPenCanvas(true));
     };
 
     const finishStroke = (event?: PointerEvent) => {
@@ -580,7 +654,7 @@ const drawPenStroke = (
       }
 
       const stroke = penCurrentStrokeRef.current;
-      if (stroke && stroke.points.length > 1) {
+      if (!penErasingRef.current && stroke && stroke.points.length > 1) {
         penStrokesRef.current = [...penStrokesRef.current, stroke];
       }
 
@@ -588,7 +662,10 @@ const drawPenStroke = (
 
       penCurrentStrokeRef.current = null;
       penDrawingRef.current = false;
+      penErasingRef.current = false;
+      penEraseHasContactRef.current = false;
       penCurrentPointerIdRef.current = null;
+      requestAnimationFrame(() => redrawPenCanvas(false));
     };
 
     const handlePointerCancel = (event: PointerEvent) => {
@@ -659,16 +736,6 @@ const drawPenStroke = (
     const handleKeyDown = (event: KeyboardEvent) => {
       const key = event.key.toLowerCase();
 
-      if (event.ctrlKey && event.shiftKey && key === "p") {
-        event.preventDefault();
-        setPenMode((prev) => {
-          const next = !prev;
-          if (next) setPenCanvasMounted(true);
-          return next;
-        });
-        return;
-      }
-
       if (event.ctrlKey && event.shiftKey && key === "z") {
         event.preventDefault();
         undoPenStroke();
@@ -679,10 +746,6 @@ const drawPenStroke = (
         event.preventDefault();
         clearPenCanvas();
         return;
-      }
-
-      if (event.key === "Escape") {
-        setPenMode(false);
       }
     };
 
@@ -723,6 +786,7 @@ const drawPenStroke = (
     selectedYearLuckKey,
     showCompatibilityRelations,
   ]);
+
 
 
   const formatDateInput = (value: string) => {
