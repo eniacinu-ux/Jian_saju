@@ -1535,6 +1535,14 @@ export default function Home() {
     const calculated = calculateOneSaju(form);
     if (!calculated) return;
 
+    const shouldOpenTimer = window.confirm("만세력 계산 전에 타이머를 세팅하시겠습니까?");
+
+    if (shouldOpenTimer) {
+      setTimerOpen(true);
+      setTimerFinished(false);
+      setTimerBlink(false);
+    }
+
     saveRecentPerson(form);
     setSajuResult(calculated);
   };
@@ -4723,14 +4731,6 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                   data-pdf-target
                   className="mt-6 rounded-2xl bg-[#ffffff] p-4 text-[#000000] shadow-sm"
                 >
-                  <button
-                    type="button"
-                    onClick={downloadCaptureZip}
-                    className={`mt-4 w-full rounded-xl bg-black px-5 py-3 ${FONT.buttonText} ${WEIGHT.buttonText} ${COLOR.buttonText} shadow-md`}
-                  >
-                    저장하기
-                  </button>
-
                   <div>
                     <div ref={overviewCaptureRef} data-capture-target>
                       <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -4780,6 +4780,14 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                       </div>
                     </div>
                   )}
+
+                  <button
+                    type="button"
+                    onClick={downloadCaptureZip}
+                    className={`mt-6 w-full rounded-xl bg-black px-5 py-3 ${FONT.buttonText} ${WEIGHT.buttonText} ${COLOR.buttonText} shadow-md`}
+                  >
+                    저장하기
+                  </button>
                 </div>
               )}
             </section>
