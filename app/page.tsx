@@ -263,10 +263,20 @@ export default function Home() {
   const [memoOpen, setMemoOpen] = useState(false);
   const [memoText, setMemoText] = useState("");
   const [memoLoaded, setMemoLoaded] = useState(false);
+  const [timerOpen, setTimerOpen] = useState(true);
+  const [timerInputMinutes, setTimerInputMinutes] = useState("10");
+  const [timerRemainingSeconds, setTimerRemainingSeconds] = useState(10 * 60);
+  const [timerRunning, setTimerRunning] = useState(false);
+  const [timerPosition, setTimerPosition] = useState({ x: 1020, y: 24 });
+  const [draggingTimer, setDraggingTimer] = useState(false);
+  const [timerFinished, setTimerFinished] = useState(false);
+  const [timerBlink, setTimerBlink] = useState(false);
   const [selectedHanja, setSelectedHanja] = useState<{
     type: "stem" | "branch";
     value: string;
   } | null>(null);
+
+  const timerDragOffsetRef = useRef({ x: 0, y: 0 });
 
 
   type PenPoint = { x: number; y: number };
@@ -835,6 +845,99 @@ export default function Home() {
     return onlyNumber;
   };
 
+  const formatTimerTime = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+
+    if (hours > 0) {
+      return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(
+        2,
+        "0",
+      )}:${String(secs).padStart(2, "0")}`;
+    }
+
+    return `${String(minutes).padStart(2, "0")}:${String(secs).padStart(
+      2,
+      "0",
+    )}`;
+  };
+
+  const getTimerInputSeconds = () => {
+    const minutes = Number(timerInputMinutes);
+
+    if (!Number.isFinite(minutes) || minutes <= 0) return 0;
+
+    return Math.round(minutes * 60);
+  };
+
+  const applyTimerPreset = (minutes: number) => {
+    setTimerFinished(false);
+    setTimerBlink(false);
+    setTimerRunning(false);
+    setTimerInputMinutes(String(minutes));
+    setTimerRemainingSeconds(minutes * 60);
+  };
+
+  const startCountdownTimer = () => {
+    const inputSeconds = getTimerInputSeconds();
+
+    if (timerRemainingSeconds <= 0) {
+      if (inputSeconds <= 0) return;
+
+      setTimerRemainingSeconds(inputSeconds);
+    }
+
+    setTimerFinished(false);
+    setTimerBlink(false);
+    setTimerRunning(true);
+  };
+
+  const resetCountdownTimer = () => {
+    setTimerFinished(false);
+    setTimerBlink(false);
+    setTimerRunning(false);
+    setTimerRemainingSeconds(getTimerInputSeconds());
+  };
+
+  const playTimerAlarm = () => {
+    if (typeof window === "undefined") return;
+
+    const AudioContextClass =
+      window.AudioContext || (window as any).webkitAudioContext;
+
+    if (!AudioContextClass) {
+      alert("타이머 시간이 끝났습니다.");
+      return;
+    }
+
+    const audioContext = new AudioContextClass();
+    const now = audioContext.currentTime;
+
+    // 알람음 3번 울리기
+    [0, 1, 2, 3, 4].forEach((offset) => {
+      const oscillator = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+
+      oscillator.type = "sine";
+      oscillator.frequency.setValueAtTime(880, now + offset);
+
+      gain.gain.setValueAtTime(0.001, now + offset);
+      gain.gain.exponentialRampToValueAtTime(0.35, now + offset + 0.04);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + offset + 0.45);
+
+      oscillator.connect(gain);
+      gain.connect(audioContext.destination);
+
+      oscillator.start(now + offset);
+      oscillator.stop(now + offset + 0.5);
+    });
+
+    window.setTimeout(() => {
+      audioContext.close().catch(() => {});
+    }, 5200);
+  };
+
   const convertSolarToLunar = (solarDate: string) => {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(solarDate)) return "";
 
@@ -1093,6 +1196,104 @@ export default function Home() {
 
     window.localStorage.setItem("sajuMemoText", memoText);
   }, [memoText, memoLoaded]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    try {
+      const savedTimerPosition = window.localStorage.getItem("sajuTimerPosition");
+
+      if (savedTimerPosition) {
+        const parsed = JSON.parse(savedTimerPosition);
+
+        if (
+          typeof parsed?.x === "number" &&
+          typeof parsed?.y === "number"
+        ) {
+          setTimerPosition(parsed);
+          return;
+        }
+      }
+
+      setTimerPosition({
+        x: Math.max(16, window.innerWidth - 350),
+        y: 24,
+      });
+    } catch {
+      setTimerPosition({
+        x: Math.max(16, window.innerWidth - 350),
+        y: 24,
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    window.localStorage.setItem(
+      "sajuTimerPosition",
+      JSON.stringify(timerPosition),
+    );
+  }, [timerPosition]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handleMouseMove = (event: MouseEvent) => {
+      if (!draggingTimer) return;
+
+      setTimerPosition({
+        x: event.clientX - timerDragOffsetRef.current.x,
+        y: event.clientY - timerDragOffsetRef.current.y,
+      });
+    };
+
+    const handleMouseUp = () => {
+      setDraggingTimer(false);
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [draggingTimer]);
+
+  useEffect(() => {
+    if (!timerRunning) return;
+
+    const interval = window.setInterval(() => {
+      setTimerRemainingSeconds((prev) => {
+        if (prev <= 1) {
+          window.clearInterval(interval);
+          setTimerRunning(false);
+          setTimerFinished(true);
+          playTimerAlarm();
+
+          return 0;
+        }
+
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => window.clearInterval(interval);
+  }, [timerRunning]);
+
+  useEffect(() => {
+    if (!timerFinished) {
+      setTimerBlink(false);
+      return;
+    }
+
+    const interval = window.setInterval(() => {
+      setTimerBlink((prev) => !prev);
+    }, 500);
+
+    return () => window.clearInterval(interval);
+  }, [timerFinished]);
 
   const saveRecentPerson = (person: any) => {
     if (!person?.birthDate) return;
@@ -4768,18 +4969,158 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
         </div>
       )}
 
+      {!timerOpen && (
+        <button
+          type="button"
+          onClick={() => {
+            setTimerOpen(true);
+            setTimerFinished(false);
+            setTimerBlink(false);
+          }}
+          className={`fixed right-6 top-24 z-[60] rounded-l-2xl rounded-r-md px-4 py-4 text-2xl font-bold text-white shadow-2xl transition ${
+            timerFinished
+              ? timerBlink
+                ? "bg-red-600"
+                : "bg-black"
+              : "bg-black hover:bg-zinc-800"
+          }`}
+        >
+          <div>타이머 열기</div>
+          <div
+            className={`mt-2 text-4xl ${
+              timerRemainingSeconds <= 60 ? "text-red-400" : "text-white"
+            }`}
+          >
+            {formatTimerTime(timerRemainingSeconds)}
+          </div>
+        </button>
+      )}
+
+      {timerOpen && (
+        <div
+          className="fixed z-[60] w-[340px] rounded-3xl border border-[#ead8c4] bg-[#fffaf3] p-4 shadow-2xl"
+          style={{
+            left: timerPosition.x,
+            top: timerPosition.y,
+          }}
+        >
+          <div
+            className="mb-3 flex cursor-move items-center justify-between rounded-xl bg-[#f3e1cf] p-2"
+            onMouseDown={(event) => {
+              setDraggingTimer(true);
+
+              timerDragOffsetRef.current = {
+                x: event.clientX - timerPosition.x,
+                y: event.clientY - timerPosition.y,
+              };
+            }}
+          >
+            <h2 className="text-3xl font-bold text-[#6b3f24]">상담 타이머</h2>
+
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                setTimerOpen(false);
+              }}
+              onMouseDown={(event) => event.stopPropagation()}
+              className="rounded-xl bg-white px-3 py-2 text-xl font-bold text-[#6b3f24] shadow-sm"
+            >
+              닫기
+            </button>
+          </div>
+
+          <div className="rounded-2xl bg-white py-6 text-center text-6xl font-bold text-black shadow-inner">
+            {formatTimerTime(timerRemainingSeconds)}
+          </div>
+
+          <div className="mt-4 grid grid-cols-3 gap-2">
+            {[5, 10, 30].map((minutes) => (
+              <button
+                type="button"
+                key={minutes}
+                onClick={() => applyTimerPreset(minutes)}
+                className="rounded-xl bg-white py-3 text-2xl font-bold text-[#6b3f24] shadow-sm transition hover:bg-[#f3e1cf]"
+              >
+                {minutes}분
+              </button>
+            ))}
+          </div>
+
+          <div className="mt-3 flex items-center gap-2">
+            <input
+              type="number"
+              min="1"
+              step="1"
+              value={timerInputMinutes}
+              onChange={(event) => {
+                const nextValue = event.target.value;
+
+                setTimerFinished(false);
+                setTimerBlink(false);
+                setTimerInputMinutes(nextValue);
+
+                if (!timerRunning) {
+                  const nextMinutes = Number(nextValue);
+
+                  setTimerRemainingSeconds(
+                    Number.isFinite(nextMinutes) && nextMinutes > 0
+                      ? Math.round(nextMinutes * 60)
+                      : 0,
+                  );
+                }
+              }}
+              className="min-w-0 flex-1 rounded-xl border border-[#ead8c4] bg-white p-3 text-2xl font-bold text-black outline-none"
+            />
+
+            <span className="text-2xl font-bold text-[#6b3f24]">분</span>
+          </div>
+
+          <div className="mt-4 grid grid-cols-3 gap-2">
+            <button
+              type="button"
+              onClick={startCountdownTimer}
+              disabled={timerRemainingSeconds <= 0 && getTimerInputSeconds() <= 0}
+              className="rounded-xl bg-[#6b3f24] py-3 text-2xl font-bold text-white shadow-sm disabled:opacity-40"
+            >
+              시작
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setTimerRunning(false)}
+              className="rounded-xl bg-zinc-700 py-3 text-2xl font-bold text-white shadow-sm"
+            >
+              정지
+            </button>
+
+            <button
+              type="button"
+              onClick={resetCountdownTimer}
+              className="rounded-xl bg-red-700 py-3 text-2xl font-bold text-white shadow-sm"
+            >
+              초기화
+            </button>
+          </div>
+
+          <div className="mt-3 text-center text-xl font-bold text-[#6b3f24]">
+            위쪽 제목줄을 잡고 드래그
+          </div>
+        </div>
+      )}
+
       {!memoOpen && (
         <button
           type="button"
           onClick={() => setMemoOpen(true)}
-          className="fixed right-6 top-1/2 z-[60] -translate-y-1/2 rounded-l-2xl rounded-r-md bg-[#6b3f24] px-4 py-6 text-2xl font-bold text-white shadow-2xl transition hover:bg-[#4a2f1c]"
+          className="fixed right-6 top-[240px] z-[60] rounded-l-2xl rounded-r-md bg-[#6b3f24] px-4 py-6 text-2xl font-bold text-white shadow-2xl transition hover:bg-[#4a2f1c]"
         >
           메모 열기
         </button>
       )}
 
       {memoOpen && (
-        <div className="fixed right-24 top-24 z-[60] flex h-[70vh] w-[420px] flex-col rounded-3xl border border-[#ead8c4] bg-[#fffaf3] p-4 shadow-2xl">
+        <div className="fixed right-6 top-[240px] z-[60] flex h-[calc(100vh-270px)] w-[420px] flex-col rounded-3xl border border-[#ead8c4] bg-[#fffaf3] p-4 shadow-2xl">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-3xl font-bold text-[#6b3f24]">상담 메모장</h2>
 
