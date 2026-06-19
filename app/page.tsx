@@ -3391,6 +3391,10 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
 
     return "";
   };
+  const formatLuckTenGod = (tenGod: string) => {
+    return tenGod === "일간" ? "비견" : tenGod;
+  };
+
   const DAY_STEMS = [
     "갑",
     "을",
@@ -3714,6 +3718,12 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
       };
     });
   };
+  const formatOriginalStemTenGod = (label: string, tenGod: string) => {
+    if (label === "일주") return "일간";
+
+    return tenGod === "일간" ? "비견" : tenGod;
+  };
+
   const buildSajuItems = (targetSaju: any) => {
     if (!targetSaju) return [];
 
@@ -3723,7 +3733,10 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
           label: "시주",
           data: targetSaju.hour,
           targetSaju,
-          tenGodStem: targetSaju.tenGods?.hourStem ?? "",
+          tenGodStem: formatOriginalStemTenGod(
+            "시주",
+            targetSaju.tenGods?.hourStem ?? "",
+          ),
           tenGodBranch: targetSaju.tenGods?.hourBranch ?? "",
           twelveStage: targetSaju.twelveStages?.hour ?? "",
         },
@@ -3731,7 +3744,10 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
           label: "일주",
           data: targetSaju.day,
           targetSaju,
-          tenGodStem: targetSaju.tenGods.dayStem,
+          tenGodStem: formatOriginalStemTenGod(
+            "일주",
+            targetSaju.tenGods.dayStem,
+          ),
           tenGodBranch: targetSaju.tenGods.dayBranch,
           twelveStage: targetSaju.twelveStages.day,
         },
@@ -3739,7 +3755,10 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
           label: "월주",
           data: targetSaju.month,
           targetSaju,
-          tenGodStem: targetSaju.tenGods.monthStem,
+          tenGodStem: formatOriginalStemTenGod(
+            "월주",
+            targetSaju.tenGods.monthStem,
+          ),
           tenGodBranch: targetSaju.tenGods.monthBranch,
           twelveStage: targetSaju.twelveStages.month,
         },
@@ -3747,7 +3766,10 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
           label: "년주",
           data: targetSaju.year,
           targetSaju,
-          tenGodStem: targetSaju.tenGods.yearStem,
+          tenGodStem: formatOriginalStemTenGod(
+            "년주",
+            targetSaju.tenGods.yearStem,
+          ),
           tenGodBranch: targetSaju.tenGods.yearBranch,
           twelveStage: targetSaju.twelveStages.year,
         },
@@ -3976,7 +3998,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                       : `mt-2 ${FONT.daewoonTenGod} ${WEIGHT.daewoonTenGod} ${COLOR.daewoonTenGod}`
                   }
                 >
-                  {item.stemTenGod}
+                  {formatLuckTenGod(item.stemTenGod)}
                 </div>
 
                 <div
@@ -3986,7 +4008,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                       : `${FONT.daewoonTenGod} ${WEIGHT.daewoonTenGod} ${COLOR.daewoonTenGod}`
                   }
                 >
-                  {item.branchTenGod}
+                  {formatLuckTenGod(item.branchTenGod)}
                 </div>
               </button>
             );
@@ -4064,7 +4086,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                             : `${FONT.yearLuckTenGod} ${WEIGHT.yearLuckTenGod} ${COLOR.yearLuckTenGod}`
                         }
                       >
-                        {yearLuck.stemTenGod}
+                        {formatLuckTenGod(yearLuck.stemTenGod)}
                       </div>
 
                       <div
@@ -4074,7 +4096,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                             : `${FONT.yearLuckTenGod} ${WEIGHT.yearLuckTenGod} ${COLOR.yearLuckTenGod}`
                         }
                       >
-                        {yearLuck.branchTenGod}
+                        {formatLuckTenGod(yearLuck.branchTenGod)}
                       </div>
                     </div>
                   </button>
@@ -4132,13 +4154,13 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                         <div
                           className={`${FONT.monthLuckTenGod} ${WEIGHT.monthLuckTenGod} ${COLOR.monthLuckTenGod}`}
                         >
-                          {monthLuck.stemTenGod}
+                          {formatLuckTenGod(monthLuck.stemTenGod)}
                         </div>
 
                         <div
                           className={`${FONT.monthLuckTenGod} ${WEIGHT.monthLuckTenGod} ${COLOR.monthLuckTenGod}`}
                         >
-                          {monthLuck.branchTenGod}
+                          {formatLuckTenGod(monthLuck.branchTenGod)}
                         </div>
                       </div>
                     </div>
