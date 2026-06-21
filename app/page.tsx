@@ -1310,6 +1310,16 @@ export default function Home() {
     });
   };
 
+  const hasRecentBirthDate = (person: any) => {
+    const birthDate = normalizeDateForCalc(person?.birthDate || "");
+
+    if (!birthDate) return false;
+
+    return recentPeople.some(
+      (item) => normalizeDateForCalc(item?.birthDate || "") === birthDate,
+    );
+  };
+
   const isFavoritePerson = (person: any) => {
     const key = makePersonKey(normalizeRecentPerson(person));
 
@@ -4725,6 +4735,12 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
 
           {mode === "saju" && showSaju && (
             <section className="mt-6 rounded-3xl border border-[#ead8c4] bg-[#fffaf3] p-5 shadow-inner">
+              {hasRecentBirthDate(form) && (
+                <div className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-3xl font-bold text-red-600">
+                  최근에 본 이력이 있는 생년월일 입니다
+                </div>
+              )}
+
               <h2
                 className={`${FONT.sectionTitle} ${WEIGHT.sectionTitle} ${COLOR.sectionTitle}`}
               >
