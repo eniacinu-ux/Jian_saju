@@ -5061,24 +5061,39 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
           </div>
 
          <div className="rounded-2xl bg-white p-4 shadow-inner">
-  <div className="flex items-center justify-center gap-4">
-    <div className="text-center text-6xl font-bold text-black">
+  <div className="flex items-center justify-center gap-3">
+    <div className="flex flex-col gap-2">
+      {[1, 5, 10].map((minute) => (
+        <button
+          key={`minus-${minute}`}
+          type="button"
+          onClick={() =>
+            setTimerRemainingSeconds((prev) =>
+              Math.max(0, prev - minute * 60),
+            )
+          }
+          className="rounded-lg bg-red-50 px-2 py-1 text-lg font-bold text-red-700 hover:bg-red-100"
+        >
+          -{minute}
+        </button>
+      ))}
+    </div>
+
+    <div className="min-w-[150px] text-center text-5xl font-bold text-black">
       {formatTimerTime(timerRemainingSeconds)}
     </div>
 
     <div className="flex flex-col gap-2">
       {[1, 5, 10].map((minute) => (
         <button
-          key={minute}
+          key={`plus-${minute}`}
           type="button"
-          onClick={() => {
-            setTimerRemainingSeconds(
-              (prev) => Math.max(0, prev + minute * 60)
-            );
-          }}
+          onClick={() =>
+            setTimerRemainingSeconds((prev) => prev + minute * 60)
+          }
           className="rounded-lg bg-zinc-100 px-2 py-1 text-lg font-bold text-[#6b3f24] hover:bg-[#f3e1cf]"
         >
-          +{minute}분
+          +{minute}
         </button>
       ))}
     </div>
