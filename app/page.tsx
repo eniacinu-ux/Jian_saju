@@ -280,6 +280,21 @@ export default function Home() {
 
   const timerDragOffsetRef = useRef({ x: 0, y: 0 });
 
+  const getDefaultTimerPosition = () => {
+    if (typeof window === "undefined") return { x: 1020, y: 24 };
+
+    return {
+      x: Math.max(16, window.innerWidth - 350),
+      y: 24,
+    };
+  };
+
+  const restoreTimerPosition = () => {
+    setTimerOpen(true);
+    setDraggingTimer(false);
+    setTimerPosition(getDefaultTimerPosition());
+  };
+
 
   type PenPoint = { x: number; y: number };
   type PenStroke = {
@@ -1217,15 +1232,9 @@ export default function Home() {
         }
       }
 
-      setTimerPosition({
-        x: Math.max(16, window.innerWidth - 350),
-        y: 24,
-      });
+      setTimerPosition(getDefaultTimerPosition());
     } catch {
-      setTimerPosition({
-        x: Math.max(16, window.innerWidth - 350),
-        y: 24,
-      });
+      setTimerPosition(getDefaultTimerPosition());
     }
   }, []);
 
@@ -1262,6 +1271,23 @@ export default function Home() {
       window.removeEventListener("mouseup", handleMouseUp);
     };
   }, [draggingTimer]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handleTimerRestoreShortcut = (event: KeyboardEvent) => {
+      if (event.ctrlKey && event.altKey && event.key.toLowerCase() === "t") {
+        event.preventDefault();
+        restoreTimerPosition();
+      }
+    };
+
+    window.addEventListener("keydown", handleTimerRestoreShortcut);
+
+    return () => {
+      window.removeEventListener("keydown", handleTimerRestoreShortcut);
+    };
+  }, []);
 
   useEffect(() => {
     if (!timerRunning) return;
@@ -5053,6 +5079,17 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
       )}
 
       {timerOpen && (
+        <button
+          type="button"
+          onClick={restoreTimerPosition}
+          className="fixed right-6 top-24 z-[61] rounded-l-2xl rounded-r-md bg-[#6b3f24] px-4 py-3 text-xl font-bold text-white shadow-2xl transition hover:bg-[#4a2f1c]"
+          title="단축키: Ctrl + Alt + T"
+        >
+          타이머 위치복구
+        </button>
+      )}
+
+      {timerOpen && (
         <div
           className="fixed z-[60] w-[340px] rounded-3xl border border-[#ead8c4] bg-[#fffaf3] p-4 shadow-2xl"
           style={{
@@ -5073,17 +5110,32 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
           >
             <h2 className="text-3xl font-bold text-[#6b3f24]">상담 타이머</h2>
 
-            <button
-              type="button"
-              onClick={(event) => {
-                event.stopPropagation();
-                setTimerOpen(false);
-              }}
-              onMouseDown={(event) => event.stopPropagation()}
-              className="rounded-xl bg-white px-3 py-2 text-xl font-bold text-[#6b3f24] shadow-sm"
-            >
-              닫기
-            </button>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  restoreTimerPosition();
+                }}
+                onMouseDown={(event) => event.stopPropagation()}
+                className="rounded-xl bg-white px-3 py-2 text-lg font-bold text-[#6b3f24] shadow-sm"
+                title="단축키: Ctrl + Alt + T"
+              >
+                위치
+              </button>
+
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setTimerOpen(false);
+                }}
+                onMouseDown={(event) => event.stopPropagation()}
+                className="rounded-xl bg-white px-3 py-2 text-xl font-bold text-[#6b3f24] shadow-sm"
+              >
+                닫기
+              </button>
+            </div>
           </div>
 
          <div className="rounded-2xl bg-white p-4 shadow-inner">
@@ -5196,7 +5248,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
           </div>
 
           <div className="mt-3 text-center text-xl font-bold text-[#6b3f24]">
-            위쪽 제목줄을 잡고 드래그
+            위쪽 제목줄을 잡고 드래그 · 위치복구 Ctrl+Alt+T
           </div>
         </div>
       )}
