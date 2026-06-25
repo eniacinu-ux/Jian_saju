@@ -247,6 +247,8 @@ export default function Home() {
   const [result, setResult] = useState("");
   const [loading, setLoading] = useState(false);
   const [showSaju, setShowSaju] = useState(false);
+  const [recentBirthDateNotice, setRecentBirthDateNotice] = useState(false);
+  const [recentBirthDateNoticeKey, setRecentBirthDateNoticeKey] = useState("");
   const [showDailyCalendar, setShowDailyCalendar] = useState(false);
   const [calendarDate, setCalendarDate] = useState(new Date());
   const [sajuResult, setSajuResult] = useState<any>(null);
@@ -1320,6 +1322,10 @@ export default function Home() {
     );
   };
 
+  const shouldShowRecentBirthDateNotice =
+    recentBirthDateNotice &&
+    recentBirthDateNoticeKey === normalizeDateForCalc(form.birthDate || "");
+
   const isFavoritePerson = (person: any) => {
     const key = makePersonKey(normalizeRecentPerson(person));
 
@@ -1552,6 +1558,10 @@ export default function Home() {
       setTimerFinished(false);
       setTimerBlink(false);
     }
+
+    const alreadyViewedBirthDate = hasRecentBirthDate(form);
+    setRecentBirthDateNotice(alreadyViewedBirthDate);
+    setRecentBirthDateNoticeKey(normalizeDateForCalc(form.birthDate || ""));
 
     saveRecentPerson(form);
     setSajuResult(calculated);
@@ -4735,7 +4745,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
 
           {mode === "saju" && showSaju && (
             <section className="mt-6 rounded-3xl border border-[#ead8c4] bg-[#fffaf3] p-5 shadow-inner">
-              {hasRecentBirthDate(form) && (
+              {shouldShowRecentBirthDateNotice && (
                 <div className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-3xl font-bold text-red-600">
                   최근에 본 이력이 있는 생년월일 입니다
                 </div>
