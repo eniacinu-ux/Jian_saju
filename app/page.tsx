@@ -79,7 +79,7 @@ export default function Home() {
     elementValue: "text-4xl",
 
     // 스크롤 고정 정보바
-    floatingInfo: "text-2xl",
+    floatingInfo: "text-3xl",
 
     // 버튼
     modeButtonText: "text-3xl",
@@ -211,7 +211,7 @@ export default function Home() {
     name: "",
     gender: "남성",
     birthDate: "",
-    birthTime: "00:10",
+    birthTime: "23:00",
     birthTimeUnknown: false,
     birthLocation: "",
     calendarType: "solar",
@@ -223,7 +223,7 @@ export default function Home() {
       name: "",
       gender: "남성",
       birthDate: "",
-      birthTime: "00:10",
+      birthTime: "23:00",
       birthTimeUnknown: false,
       calendarType: "solar",
       isLeapMonth: false,
@@ -232,7 +232,7 @@ export default function Home() {
       name: "",
       gender: "여성",
       birthDate: "",
-      birthTime: "00:10",
+      birthTime: "23:00",
       birthTimeUnknown: false,
       calendarType: "solar",
       isLeapMonth: false,
@@ -1173,7 +1173,7 @@ export default function Home() {
       person.name || "이름없음",
       person.gender || "남성",
       normalizeDateForCalc(person.birthDate || ""),
-      person.birthTimeUnknown ? "시간미상" : person.birthTime || "00:10",
+      person.birthTimeUnknown ? "시간미상" : person.birthTime || "23:00",
       person.calendarType || "solar",
       person.isLeapMonth ? "윤달" : "평달",
     ].join("|");
@@ -1184,7 +1184,7 @@ export default function Home() {
       name: person.name || "",
       gender: person.gender || "남성",
       birthDate: normalizeDateForCalc(person.birthDate || ""),
-      birthTime: person.birthTime || "00:10",
+      birthTime: person.birthTime || "23:00",
       birthTimeUnknown: person.birthTimeUnknown || false,
       calendarType: person.calendarType || "solar",
       isLeapMonth: person.isLeapMonth || false,
@@ -4491,10 +4491,10 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
           ) : (
             <div className={`flex items-center justify-center gap-5 whitespace-nowrap ${FONT.floatingInfo} font-bold text-[#2b1d12]`}>
               <span className="rounded-lg bg-[#fff4e8] px-3 py-1">
-                본인 · {compatibilityForm.left.name || "이름 미입력"} · {compatibilityForm.left.gender} · {compatibilityForm.left.calendarType === "solar" ? "양력" : compatibilityForm.left.isLeapMonth ? "음력 윤달" : "음력"} {compatibilityForm.left.birthDate || "생년월일 미입력"} {compatibilityForm.left.birthTimeUnknown ? "시간 미상" : compatibilityForm.left.birthTime || "시간 미입력"}
+                {compatibilityForm.left.name || "이름 미입력"} · {compatibilityForm.left.gender} · {compatibilityForm.left.calendarType === "solar" ? "양력" : compatibilityForm.left.isLeapMonth ? "음력 윤달" : "음력"} {compatibilityForm.left.birthDate || "생년월일 미입력"} {compatibilityForm.left.birthTimeUnknown ? "시간 미상" : compatibilityForm.left.birthTime || "시간 미입력"}
               </span>
               <span className="rounded-lg bg-[#f4efe9] px-3 py-1">
-                상대 · {compatibilityForm.right.name || "이름 미입력"} · {compatibilityForm.right.gender} · {compatibilityForm.right.calendarType === "solar" ? "양력" : compatibilityForm.right.isLeapMonth ? "음력 윤달" : "음력"} {compatibilityForm.right.birthDate || "생년월일 미입력"} {compatibilityForm.right.birthTimeUnknown ? "시간 미상" : compatibilityForm.right.birthTime || "시간 미입력"}
+                {compatibilityForm.right.name || "이름 미입력"} · {compatibilityForm.right.gender} · {compatibilityForm.right.calendarType === "solar" ? "양력" : compatibilityForm.right.isLeapMonth ? "음력 윤달" : "음력"} {compatibilityForm.right.birthDate || "생년월일 미입력"} {compatibilityForm.right.birthTimeUnknown ? "시간 미상" : compatibilityForm.right.birthTime || "시간 미입력"}
               </span>
             </div>
           )}
@@ -4533,7 +4533,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                 <input
                   type="text"
                   inputMode="numeric"
-                  placeholder="1988-02-02"
+                  placeholder="1993-08-04"
                   className={`w-[360px] shrink-0 rounded-xl border p-3 ${FONT.inputText}`}
                   value={form.birthDate}
                   onChange={(e) => {
@@ -4721,7 +4721,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                       <input
                         type="text"
                         inputMode="numeric"
-                        placeholder="1988-02-02"
+                        placeholder="1993-08-04"
                         className={`flex-1 rounded-xl border p-3 ${FONT.inputText}`}
                         value={compatibilityForm[key].birthDate}
                         onChange={(e) => {
@@ -4819,7 +4819,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                     <input
                       type="text"
                       inputMode="numeric"
-                      placeholder="00:10"
+                      placeholder="23:00"
                       className={`w-full rounded-xl border p-3 ${FONT.inputText} disabled:bg-zinc-100 disabled:text-zinc-400`}
                       value={compatibilityForm[key].birthTime}
                       disabled={compatibilityForm[key].birthTimeUnknown}
