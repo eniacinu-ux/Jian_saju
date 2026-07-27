@@ -78,6 +78,9 @@ export default function Home() {
     elementTitle: "text-4xl",
     elementValue: "text-4xl",
 
+    // 스크롤 고정 정보바
+    floatingInfo: "text-2xl",
+
     // 버튼
     modeButtonText: "text-3xl",
     buttonText: "text-3xl",
@@ -265,6 +268,9 @@ export default function Home() {
   const [memoOpen, setMemoOpen] = useState(false);
   const [memoText, setMemoText] = useState("");
   const [memoLoaded, setMemoLoaded] = useState(false);
+  const [memoPosition, setMemoPosition] = useState({ x: 1460, y: 240 });
+  const [draggingMemo, setDraggingMemo] = useState(false);
+  const [drawingBoardOpen, setDrawingBoardOpen] = useState(false);
   const [timerOpen, setTimerOpen] = useState(true);
   const [timerInputMinutes, setTimerInputMinutes] = useState("10");
   const [timerRemainingSeconds, setTimerRemainingSeconds] = useState(10 * 60);
@@ -279,6 +285,22 @@ export default function Home() {
   } | null>(null);
 
   const timerDragOffsetRef = useRef({ x: 0, y: 0 });
+  const memoDragOffsetRef = useRef({ x: 0, y: 0 });
+
+  const getDefaultMemoPosition = () => {
+    if (typeof window === "undefined") return { x: 1460, y: 240 };
+
+    return {
+      x: Math.max(16, window.innerWidth - 444),
+      y: 240,
+    };
+  };
+
+  const restoreMemoPosition = () => {
+    setMemoOpen(true);
+    setDraggingMemo(false);
+    setMemoPosition(getDefaultMemoPosition());
+  };
 
   const getDefaultTimerPosition = () => {
     if (typeof window === "undefined") return { x: 1020, y: 24 };
@@ -310,6 +332,8 @@ export default function Home() {
   const penCurrentPointerIdRef = useRef<number | null>(null);
   const penCurrentStrokeRef = useRef<PenStroke | null>(null);
   const penStrokesRef = useRef<PenStroke[]>([]);
+  const pagePenStrokesRef = useRef<PenStroke[]>([]);
+  const drawingBoardStrokesRef = useRef<PenStroke[]>([]);
   const penModeRef = useRef(true);
   const [penMode, setPenMode] = useState(true);
   const [penCanvasMounted, setPenCanvasMounted] = useState(false);
@@ -567,6 +591,38 @@ export default function Home() {
     requestAnimationFrame(() => redrawPenCanvas(false));
   };
 
+  const openDrawingBoard = () => {
+    pagePenStrokesRef.current = penStrokesRef.current;
+    penStrokesRef.current = drawingBoardStrokesRef.current;
+    penCurrentStrokeRef.current = null;
+    penDrawingRef.current = false;
+    penErasingRef.current = false;
+    penCurrentPointerIdRef.current = null;
+    setPenMode(true);
+    setPenCanvasMounted(true);
+    setDrawingBoardOpen(true);
+
+    requestAnimationFrame(() => {
+      resizePenCanvas();
+      redrawPenCanvas(false);
+    });
+  };
+
+  const closeDrawingBoard = () => {
+    drawingBoardStrokesRef.current = penStrokesRef.current;
+    penStrokesRef.current = pagePenStrokesRef.current;
+    penCurrentStrokeRef.current = null;
+    penDrawingRef.current = false;
+    penErasingRef.current = false;
+    penCurrentPointerIdRef.current = null;
+    setDrawingBoardOpen(false);
+
+    requestAnimationFrame(() => {
+      resizePenCanvas();
+      redrawPenCanvas(false);
+    });
+  };
+
   useEffect(() => {
     penModeRef.current = penMode;
   }, [penMode]);
@@ -758,6 +814,17 @@ export default function Home() {
   }, [penMode]);
 
   useEffect(() => {
+    if (typeof window === "undefined" || !drawingBoardOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [drawingBoardOpen]);
+
+  useEffect(() => {
     if (typeof window === "undefined") return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -806,6 +873,7 @@ export default function Home() {
     showSaju,
     showDailyCalendar,
     memoOpen,
+    drawingBoardOpen,
     sajuResult,
     compatibilityResult,
     result,
@@ -1140,16 +1208,12 @@ export default function Home() {
   const DEFAULT_FAVORITE_PEOPLE = [
     { name: "에스크", gender: "여성", birthDate: "1997-12-31", birthTime: "09:15", birthTimeUnknown: false, calendarType: "solar", isLeapMonth: false },
     { name: "Mgk", gender: "남성", birthDate: "1991-05-23", birthTime: "08:30", birthTimeUnknown: false, calendarType: "solar", isLeapMonth: false },
-    { name: "희망", gender: "남성", birthDate: "1999-02-23", birthTime: "10:00", birthTimeUnknown: false, calendarType: "solar", isLeapMonth: false },
-    { name: "유니콘", gender: "남성", birthDate: "1987-05-07", birthTime: "16:45", birthTimeUnknown: false, calendarType: "solar", isLeapMonth: false },
     { name: "우지안", gender: "여성", birthDate: "1995-11-30", birthTime: "01:29", birthTimeUnknown: false, calendarType: "solar", isLeapMonth: false },
-    { name: "남태식", gender: "남성", birthDate: "1981-01-31", birthTime: "13:30", birthTimeUnknown: false, calendarType: "solar", isLeapMonth: false },
-    { name: "스파크", gender: "남성", birthDate: "1986-12-25", birthTime: "11:53", birthTimeUnknown: false, calendarType: "solar", isLeapMonth: false },
-    { name: "장민혁(쥬토피앙)", gender: "남성", birthDate: "1991-10-22", birthTime: "01:00", birthTimeUnknown: false, calendarType: "solar", isLeapMonth: false },
+    { name: "남태식", gender: "남성", birthDate: "1981-01-31", birthTime: "13:30", birthTimeUnknown: false, calendarType: "solar", isLeapMonth: false },   
     { name: "잉딩", gender: "여성", birthDate: "2002-08-13", birthTime: "11:59", birthTimeUnknown: false, calendarType: "solar", isLeapMonth: false },
     { name: "성민(민2)", gender: "남성", birthDate: "1993-03-28", birthTime: "04:30", birthTimeUnknown: false, calendarType: "solar", isLeapMonth: false },
     { name: "킹스맨", gender: "남성", birthDate: "1986-03-23", birthTime: "20:30", birthTimeUnknown: false, calendarType: "solar", isLeapMonth: false },
-    { name: "뉴탄즈", gender: "남성", birthDate: "1993-08-04", birthTime: "23:00", birthTimeUnknown: false, calendarType: "solar", isLeapMonth: false },
+    { name: "탄게", gender: "남성", birthDate: "1993-08-04", birthTime: "23:00", birthTimeUnknown: false, calendarType: "solar", isLeapMonth: false },
     { name: "간지남", gender: "남성", birthDate: "1988-02-02", birthTime: "00:10", birthTimeUnknown: false, calendarType: "solar", isLeapMonth: false },
   ];
 
@@ -1218,6 +1282,36 @@ export default function Home() {
     if (typeof window === "undefined") return;
 
     try {
+      const savedMemoPosition = window.localStorage.getItem("sajuMemoPosition");
+
+      if (savedMemoPosition) {
+        const parsed = JSON.parse(savedMemoPosition);
+
+        if (typeof parsed?.x === "number" && typeof parsed?.y === "number") {
+          setMemoPosition(parsed);
+          return;
+        }
+      }
+
+      setMemoPosition(getDefaultMemoPosition());
+    } catch {
+      setMemoPosition(getDefaultMemoPosition());
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    window.localStorage.setItem(
+      "sajuMemoPosition",
+      JSON.stringify(memoPosition),
+    );
+  }, [memoPosition]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    try {
       const savedTimerPosition = window.localStorage.getItem("sajuTimerPosition");
 
       if (savedTimerPosition) {
@@ -1251,16 +1345,24 @@ export default function Home() {
     if (typeof window === "undefined") return;
 
     const handleMouseMove = (event: MouseEvent) => {
-      if (!draggingTimer) return;
+      if (draggingTimer) {
+        setTimerPosition({
+          x: event.clientX - timerDragOffsetRef.current.x,
+          y: event.clientY - timerDragOffsetRef.current.y,
+        });
+      }
 
-      setTimerPosition({
-        x: event.clientX - timerDragOffsetRef.current.x,
-        y: event.clientY - timerDragOffsetRef.current.y,
-      });
+      if (draggingMemo) {
+        setMemoPosition({
+          x: event.clientX - memoDragOffsetRef.current.x,
+          y: event.clientY - memoDragOffsetRef.current.y,
+        });
+      }
     };
 
     const handleMouseUp = () => {
       setDraggingTimer(false);
+      setDraggingMemo(false);
     };
 
     window.addEventListener("mousemove", handleMouseMove);
@@ -1270,15 +1372,27 @@ export default function Home() {
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [draggingTimer]);
+  }, [draggingTimer, draggingMemo]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
 
     const handleTimerRestoreShortcut = (event: KeyboardEvent) => {
-      if (event.ctrlKey && event.altKey && event.key.toLowerCase() === "t") {
+      const key = event.key.toLowerCase();
+
+      if (event.ctrlKey && event.altKey && key === "t") {
         event.preventDefault();
         restoreTimerPosition();
+      }
+
+      if (event.ctrlKey && event.altKey && key === "m") {
+        event.preventDefault();
+        restoreMemoPosition();
+      }
+
+      if (event.key === "Escape" && drawingBoardOpen) {
+        event.preventDefault();
+        closeDrawingBoard();
       }
     };
 
@@ -1287,7 +1401,7 @@ export default function Home() {
     return () => {
       window.removeEventListener("keydown", handleTimerRestoreShortcut);
     };
-  }, []);
+  }, [drawingBoardOpen]);
 
   useEffect(() => {
     if (!timerRunning) return;
@@ -4246,6 +4360,44 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
 
   return (
     <>
+      {drawingBoardOpen && (
+        <div className="fixed inset-0 z-[9997] bg-white">
+          <div className="fixed left-1/2 top-4 z-[10000] flex -translate-x-1/2 items-center gap-3 rounded-2xl border border-zinc-300 bg-white/95 px-4 py-3 shadow-2xl">
+            <div className="mr-2 text-2xl font-bold text-black">와콤 그림판</div>
+
+            <button
+              type="button"
+              onClick={undoPenStroke}
+              className="rounded-xl bg-zinc-100 px-4 py-2 text-xl font-bold text-black hover:bg-zinc-200"
+            >
+              실행취소
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                if (confirm("그림판을 모두 지우시겠습니까?")) clearPenCanvas();
+              }}
+              className="rounded-xl bg-red-50 px-4 py-2 text-xl font-bold text-red-700 hover:bg-red-100"
+            >
+              전체 지우기
+            </button>
+
+            <button
+              type="button"
+              onClick={closeDrawingBoard}
+              className="rounded-xl bg-black px-4 py-2 text-xl font-bold text-white hover:bg-zinc-800"
+            >
+              닫기
+            </button>
+          </div>
+
+          <div className="fixed bottom-5 left-1/2 z-[10000] -translate-x-1/2 rounded-full bg-black/75 px-5 py-2 text-lg font-bold text-white">
+            펜촉: 그리기 · 사이드 버튼: 지우기 · Esc: 닫기
+          </div>
+        </div>
+      )}
+
       {penCanvasMounted && (
         <canvas
           ref={penCanvasRef}
@@ -4325,6 +4477,29 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
           </button>
         </div>
 
+        <div className="sticky top-3 z-[55] mt-4 overflow-hidden rounded-2xl border border-[#d7c4ad] bg-white/95 px-4 py-2 shadow-lg backdrop-blur">
+          {mode !== "compatibility" ? (
+            <div className={`flex items-center justify-center gap-4 whitespace-nowrap ${FONT.floatingInfo} font-bold text-[#2b1d12]`}>
+              <span>{form.name || "이름 미입력"}</span>
+              <span className="text-[#b59474]">|</span>
+              <span>{form.gender}</span>
+              <span className="text-[#b59474]">|</span>
+              <span>{form.calendarType === "solar" ? "양력" : form.isLeapMonth ? "음력 윤달" : "음력"}</span>
+              <span>{form.birthDate || "생년월일 미입력"}</span>
+              <span>{form.birthTimeUnknown ? "시간 미상" : form.birthTime || "시간 미입력"}</span>
+            </div>
+          ) : (
+            <div className={`flex items-center justify-center gap-5 whitespace-nowrap ${FONT.floatingInfo} font-bold text-[#2b1d12]`}>
+              <span className="rounded-lg bg-[#fff4e8] px-3 py-1">
+                본인 · {compatibilityForm.left.name || "이름 미입력"} · {compatibilityForm.left.gender} · {compatibilityForm.left.calendarType === "solar" ? "양력" : compatibilityForm.left.isLeapMonth ? "음력 윤달" : "음력"} {compatibilityForm.left.birthDate || "생년월일 미입력"} {compatibilityForm.left.birthTimeUnknown ? "시간 미상" : compatibilityForm.left.birthTime || "시간 미입력"}
+              </span>
+              <span className="rounded-lg bg-[#f4efe9] px-3 py-1">
+                상대 · {compatibilityForm.right.name || "이름 미입력"} · {compatibilityForm.right.gender} · {compatibilityForm.right.calendarType === "solar" ? "양력" : compatibilityForm.right.isLeapMonth ? "음력 윤달" : "음력"} {compatibilityForm.right.birthDate || "생년월일 미입력"} {compatibilityForm.right.birthTimeUnknown ? "시간 미상" : compatibilityForm.right.birthTime || "시간 미입력"}
+              </span>
+            </div>
+          )}
+        </div>
+
         <div className="mt-8 space-y-4">
           {mode !== "compatibility" && (
             <>
@@ -4359,7 +4534,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                   type="text"
                   inputMode="numeric"
                   placeholder="1988-02-02"
-                  className={`flex-1 rounded-xl border p-3 ${FONT.inputText}`}
+                  className={`w-[360px] shrink-0 rounded-xl border p-3 ${FONT.inputText}`}
                   value={form.birthDate}
                   onChange={(e) => {
                     setForm({
@@ -5253,28 +5428,71 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
         </div>
       )}
 
-      {!memoOpen && (
+      {!drawingBoardOpen && (
         <button
           type="button"
-          onClick={() => setMemoOpen(true)}
-          className="fixed right-6 top-[240px] z-[60] rounded-l-2xl rounded-r-md bg-[#6b3f24] px-4 py-6 text-2xl font-bold text-white shadow-2xl transition hover:bg-[#4a2f1c]"
+          onClick={openDrawingBoard}
+          className="fixed bottom-6 left-6 z-[60] rounded-2xl bg-black px-5 py-4 text-2xl font-bold text-white shadow-2xl transition hover:bg-zinc-800"
         >
-          메모 열기
+          그림판 열기
+        </button>
+      )}
+
+      {!drawingBoardOpen && (
+        <button
+          type="button"
+          onClick={() => setMemoOpen((prev) => !prev)}
+          className="fixed right-6 top-[240px] z-[10000] rounded-l-2xl rounded-r-md bg-[#6b3f24] px-4 py-4 text-2xl font-bold text-white shadow-2xl transition hover:bg-[#4a2f1c]"
+        >
+          {memoOpen ? "메모 닫기" : "메모 열기"}
+        </button>
+      )}
+
+      {memoOpen && !drawingBoardOpen && (
+        <button
+          type="button"
+          onClick={restoreMemoPosition}
+          className="fixed right-6 top-[320px] z-[10000] rounded-l-2xl rounded-r-md bg-[#6b3f24] px-4 py-4 text-2xl font-bold text-white shadow-2xl transition hover:bg-[#4a2f1c]"
+          title="메모장이 화면 밖으로 나갔을 때 복구합니다. 단축키: Ctrl + Alt + M"
+        >
+          메모 위치복구
         </button>
       )}
 
       {memoOpen && (
-        <div className="fixed right-6 top-[240px] z-[60] flex h-[calc(100vh-270px)] w-[420px] flex-col rounded-3xl border border-[#ead8c4] bg-[#fffaf3] p-4 shadow-2xl">
-          <div className="mb-3 flex items-center justify-between">
+        <div
+          className="fixed z-[60] flex w-[420px] flex-col rounded-3xl border border-[#ead8c4] bg-[#fffaf3] p-4 shadow-2xl"
+          style={{
+            left: memoPosition.x,
+            top: memoPosition.y,
+            height: "min(720px, calc(100vh - 40px))",
+          }}
+        >
+          <div
+            className="mb-3 flex cursor-move items-center justify-between rounded-xl bg-[#f3e1cf] p-2"
+            onMouseDown={(event) => {
+              setDraggingMemo(true);
+              memoDragOffsetRef.current = {
+                x: event.clientX - memoPosition.x,
+                y: event.clientY - memoPosition.y,
+              };
+            }}
+          >
             <h2 className="text-3xl font-bold text-[#6b3f24]">상담 메모장</h2>
 
-            <button
-              type="button"
-              onClick={() => setMemoOpen(false)}
-              className="rounded-xl bg-white px-3 py-2 text-xl font-bold text-[#6b3f24] shadow-sm"
-            >
-              닫기
-            </button>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setMemoOpen(false);
+                }}
+                onMouseDown={(event) => event.stopPropagation()}
+                className="rounded-xl bg-white px-3 py-2 text-xl font-bold text-[#6b3f24] shadow-sm"
+              >
+                닫기
+              </button>
+            </div>
           </div>
 
           <textarea
@@ -5285,7 +5503,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
           />
 
           <div className="mt-3 text-right text-xl font-bold text-[#6b3f24]">
-            자동 저장됨
+            제목줄 드래그 · 자동 저장 · 위치복구 Ctrl+Alt+M
           </div>
         </div>
       )}
