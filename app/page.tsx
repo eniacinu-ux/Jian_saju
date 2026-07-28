@@ -4473,7 +4473,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
           className={`text-center ${FONT.pageTitle} ${WEIGHT.pageTitle} ${COLOR.pageTitle}`}
         >
           {mode === "saju"
-            ? "사주 분석기 by 탄게"
+            ? "탄게 만세 력분석기"
             : mode === "compatibility"
               ? "궁합 분석"
               : "점성술 분석"}
