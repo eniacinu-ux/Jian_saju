@@ -1623,7 +1623,9 @@ export default function Home() {
   };
 
   const renderPeopleStoragePanel = (onSelect: (person: any) => void) => {
-    const visibleRecentPeople = getFilteredRecentPeople();
+    const searchKeyword = recentPeopleSearch.trim();
+    const searchResults = searchKeyword ? getFilteredRecentPeople() : [];
+    const visibleRecentPeople = recentPeople.slice(0, 20);
 
     return (
       <div className="rounded-2xl border border-[#ead8c4] bg-[#fffaf3] p-4">
@@ -1653,10 +1655,27 @@ export default function Home() {
                 className="w-full rounded-xl border border-[#ead8c4] bg-white px-4 py-3 text-2xl font-bold text-black outline-none placeholder:text-zinc-400"
               />
               <div className="mt-2 text-xl font-bold text-[#6b3f24]">
-                {recentPeopleSearch.trim()
-                  ? `검색 결과 ${visibleRecentPeople.length}명`
-                  : `최근 20명 표시 / 전체 ${recentPeople.length}명`}
+                {searchKeyword
+                  ? `검색 결과 ${searchResults.length}명`
+                  : `최근 본 사람 전체 ${recentPeople.length}명`}
               </div>
+
+              {searchKeyword && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {searchResults.length > 0 ? (
+                    searchResults.map((person) =>
+                      renderPeopleButton(person, onSelect, {
+                        favoriteButton: true,
+                        removeRecentButton: true,
+                      }),
+                    )
+                  ) : (
+                    <div className="text-2xl font-bold text-zinc-400">
+                      검색 결과가 없습니다.
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="mt-4 rounded-2xl bg-white/70 p-3">
@@ -1717,17 +1736,13 @@ export default function Home() {
                       <div className="text-2xl font-bold text-zinc-400">
                         최근 본 사람이 없습니다.
                       </div>
-                    ) : visibleRecentPeople.length > 0 ? (
+                    ) : (
                       visibleRecentPeople.map((person) =>
                         renderPeopleButton(person, onSelect, {
                           favoriteButton: true,
                           removeRecentButton: true,
                         }),
                       )
-                    ) : (
-                      <div className="text-2xl font-bold text-zinc-400">
-                        검색 결과가 없습니다.
-                      </div>
                     )}
                   </div>
                 </>
