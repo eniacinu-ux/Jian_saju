@@ -264,6 +264,7 @@ export default function Home() {
   const [peopleStorageOpen, setPeopleStorageOpen] = useState(false);
   const [favoritePeopleOpen, setFavoritePeopleOpen] = useState(true);
   const [recentPeopleOpen, setRecentPeopleOpen] = useState(true);
+  const [recentPeopleSearch, setRecentPeopleSearch] = useState("");
   const [storageLoaded, setStorageLoaded] = useState(false);
   const [memoOpen, setMemoOpen] = useState(false);
   const [memoText, setMemoText] = useState("");
@@ -1448,7 +1449,7 @@ export default function Home() {
       return [
         normalizedPerson,
         ...prev.filter((item) => makePersonKey(item) !== key),
-      ].slice(0, 50);
+      ].slice(0, 500);
     });
   };
 
@@ -1595,7 +1596,35 @@ export default function Home() {
     );
   };
 
+  const getFilteredRecentPeople = () => {
+    const keyword = recentPeopleSearch.trim().toLowerCase();
+
+    if (!keyword) return recentPeople.slice(0, 20);
+
+    const normalizedKeyword = keyword.replace(/\s/g, "");
+
+    return recentPeople.filter((person) => {
+      const searchableValues = [
+        person.name || "",
+        person.birthDate || "",
+        String(person.birthDate || "").replace(/-/g, ""),
+        person.birthTimeUnknown ? "시간미상" : person.birthTime || "",
+        person.gender || "",
+        person.calendarType === "lunar" ? "음력" : "양력",
+      ];
+
+      return searchableValues.some((value) =>
+        String(value)
+          .toLowerCase()
+          .replace(/\s/g, "")
+          .includes(normalizedKeyword),
+      );
+    });
+  };
+
   const renderPeopleStoragePanel = (onSelect: (person: any) => void) => {
+    const visibleRecentPeople = getFilteredRecentPeople();
+
     return (
       <div className="rounded-2xl border border-[#ead8c4] bg-[#fffaf3] p-4">
         <button
@@ -1665,20 +1694,43 @@ export default function Home() {
               </div>
 
               {recentPeopleOpen && (
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {recentPeople.length > 0 ? (
-                    recentPeople.map((person) =>
-                      renderPeopleButton(person, onSelect, {
-                        favoriteButton: true,
-                        removeRecentButton: true,
-                      }),
-                    )
-                  ) : (
-                    <div className="text-2xl font-bold text-zinc-400">
-                      최근 본 사람이 없습니다.
+                <>
+                  <div className="mt-3">
+                    <input
+                      type="text"
+                      value={recentPeopleSearch}
+                      onChange={(event) =>
+                        setRecentPeopleSearch(event.target.value)
+                      }
+                      placeholder="이름, 생년월일, 출생시간 검색"
+                      className="w-full rounded-xl border border-[#ead8c4] bg-white px-4 py-3 text-2xl font-bold text-black outline-none placeholder:text-zinc-400"
+                    />
+                    <div className="mt-2 text-xl font-bold text-[#6b3f24]">
+                      {recentPeopleSearch.trim()
+                        ? `검색 결과 ${visibleRecentPeople.length}명`
+                        : `최근 20명 표시 / 전체 ${recentPeople.length}명`}
                     </div>
-                  )}
-                </div>
+                  </div>
+
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {recentPeople.length === 0 ? (
+                      <div className="text-2xl font-bold text-zinc-400">
+                        최근 본 사람이 없습니다.
+                      </div>
+                    ) : visibleRecentPeople.length > 0 ? (
+                      visibleRecentPeople.map((person) =>
+                        renderPeopleButton(person, onSelect, {
+                          favoriteButton: true,
+                          removeRecentButton: true,
+                        }),
+                      )
+                    ) : (
+                      <div className="text-2xl font-bold text-zinc-400">
+                        검색 결과가 없습니다.
+                      </div>
+                    )}
+                  </div>
+                </>
               )}
             </div>
           </>
