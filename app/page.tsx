@@ -4529,7 +4529,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
           </button>
         </div>
 
-        <div className="sticky top-12 z-[55] mt-4 overflow-hidden rounded-2xl border border-[#d7c4ad] bg-white/95 px-4 py-2 shadow-lg backdrop-blur">
+        <div className="sticky top-6 z-[55] mt-4 overflow-hidden rounded-2xl border border-[#d7c4ad] bg-white/95 px-4 py-2 shadow-lg backdrop-blur">
           {mode !== "compatibility" ? (
             <div className={`flex items-center justify-center gap-4 whitespace-nowrap ${FONT.floatingInfo} font-bold text-[#2b1d12]`}>
               <span>{form.name || "이름 미입력"}</span>
