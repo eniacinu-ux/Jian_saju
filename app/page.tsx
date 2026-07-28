@@ -4473,7 +4473,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
           className={`text-center ${FONT.pageTitle} ${WEIGHT.pageTitle} ${COLOR.pageTitle}`}
         >
           {mode === "saju"
-            ? "사주 분석"
+            ? "사주 분석기 by 탄게"
             : mode === "compatibility"
               ? "궁합 분석"
               : "점성술 분석"}
@@ -4529,7 +4529,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
           </button>
         </div>
 
-        <div className="sticky top-3 z-[55] mt-4 overflow-hidden rounded-2xl border border-[#d7c4ad] bg-white/95 px-4 py-2 shadow-lg backdrop-blur">
+        <div className="sticky top-12 z-[55] mt-4 overflow-hidden rounded-2xl border border-[#d7c4ad] bg-white/95 px-4 py-2 shadow-lg backdrop-blur">
           {mode !== "compatibility" ? (
             <div className={`flex items-center justify-center gap-4 whitespace-nowrap ${FONT.floatingInfo} font-bold text-[#2b1d12]`}>
               <span>{form.name || "이름 미입력"}</span>
@@ -5082,13 +5082,13 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                     </div>
                   )}
 
-                  <button
+                 {/*<button
                     type="button"
                     onClick={downloadCaptureZip}
                     className={`mt-6 w-full rounded-xl bg-black px-5 py-3 ${FONT.buttonText} ${WEIGHT.buttonText} ${COLOR.buttonText} shadow-md`}
                   >
                     저장하기
-                  </button>
+                  </button>*/}
                 </div>
               )}
             </section>
