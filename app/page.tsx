@@ -1643,6 +1643,23 @@ export default function Home() {
         {peopleStorageOpen && (
           <>
             <div className="mt-4 rounded-2xl bg-white/70 p-3">
+              <input
+                type="text"
+                value={recentPeopleSearch}
+                onChange={(event) =>
+                  setRecentPeopleSearch(event.target.value)
+                }
+                placeholder="이름, 생년월일, 출생시간 검색"
+                className="w-full rounded-xl border border-[#ead8c4] bg-white px-4 py-3 text-2xl font-bold text-black outline-none placeholder:text-zinc-400"
+              />
+              <div className="mt-2 text-xl font-bold text-[#6b3f24]">
+                {recentPeopleSearch.trim()
+                  ? `검색 결과 ${visibleRecentPeople.length}명`
+                  : `최근 20명 표시 / 전체 ${recentPeople.length}명`}
+              </div>
+            </div>
+
+            <div className="mt-4 rounded-2xl bg-white/70 p-3">
               <button
                 type="button"
                 onClick={() => setFavoritePeopleOpen((prev) => !prev)}
@@ -1695,23 +1712,6 @@ export default function Home() {
 
               {recentPeopleOpen && (
                 <>
-                  <div className="mt-3">
-                    <input
-                      type="text"
-                      value={recentPeopleSearch}
-                      onChange={(event) =>
-                        setRecentPeopleSearch(event.target.value)
-                      }
-                      placeholder="이름, 생년월일, 출생시간 검색"
-                      className="w-full rounded-xl border border-[#ead8c4] bg-white px-4 py-3 text-2xl font-bold text-black outline-none placeholder:text-zinc-400"
-                    />
-                    <div className="mt-2 text-xl font-bold text-[#6b3f24]">
-                      {recentPeopleSearch.trim()
-                        ? `검색 결과 ${visibleRecentPeople.length}명`
-                        : `최근 20명 표시 / 전체 ${recentPeople.length}명`}
-                    </div>
-                  </div>
-
                   <div className="mt-3 flex flex-wrap gap-2">
                     {recentPeople.length === 0 ? (
                       <div className="text-2xl font-bold text-zinc-400">
