@@ -4488,7 +4488,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
           className={`text-center ${FONT.pageTitle} ${WEIGHT.pageTitle} ${COLOR.pageTitle}`}
         >
           {mode === "saju"
-            ? "탄게 만세력분석기"
+            ? "사주 분석기"
             : mode === "compatibility"
               ? "궁합 분석"
               : "점성술 분석"}
