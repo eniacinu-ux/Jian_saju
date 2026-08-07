@@ -3853,6 +3853,34 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
     return matched ? Number(matched[0]) : 0;
   };
 
+  const TWELVE_STAGE_BY_DAY_STEM: Record<string, Record<string, string>> = {
+    갑: { 해: "장생", 자: "목욕", 축: "관대", 인: "건록", 묘: "제왕", 진: "쇠", 사: "병", 오: "사", 미: "묘", 신: "절", 유: "태", 술: "양" },
+    을: { 오: "장생", 사: "목욕", 진: "관대", 묘: "건록", 인: "제왕", 축: "쇠", 자: "병", 해: "사", 술: "묘", 유: "절", 신: "태", 미: "양" },
+    병: { 인: "장생", 묘: "목욕", 진: "관대", 사: "건록", 오: "제왕", 미: "쇠", 신: "병", 유: "사", 술: "묘", 해: "절", 자: "태", 축: "양" },
+    정: { 유: "장생", 신: "목욕", 미: "관대", 오: "건록", 사: "제왕", 진: "쇠", 묘: "병", 인: "사", 축: "묘", 자: "절", 해: "태", 술: "양" },
+    무: { 인: "장생", 묘: "목욕", 진: "관대", 사: "건록", 오: "제왕", 미: "쇠", 신: "병", 유: "사", 술: "묘", 해: "절", 자: "태", 축: "양" },
+    기: { 유: "장생", 신: "목욕", 미: "관대", 오: "건록", 사: "제왕", 진: "쇠", 묘: "병", 인: "사", 축: "묘", 자: "절", 해: "태", 술: "양" },
+    경: { 사: "장생", 오: "목욕", 미: "관대", 신: "건록", 유: "제왕", 술: "쇠", 해: "병", 자: "사", 축: "묘", 인: "절", 묘: "태", 진: "양" },
+    신: { 자: "장생", 해: "목욕", 술: "관대", 유: "건록", 신: "제왕", 미: "쇠", 오: "병", 사: "사", 진: "묘", 묘: "절", 인: "태", 축: "양" },
+    임: { 신: "장생", 유: "목욕", 술: "관대", 해: "건록", 자: "제왕", 축: "쇠", 인: "병", 묘: "사", 진: "묘", 사: "절", 오: "태", 미: "양" },
+    계: { 묘: "장생", 인: "목욕", 축: "관대", 자: "건록", 해: "제왕", 술: "쇠", 유: "병", 신: "사", 미: "묘", 오: "절", 사: "태", 진: "양" },
+  };
+
+  const getTwelveStage = (dayStem: string, branch: string) => {
+    const normalizedDayStem = normalizeStem(dayStem);
+    const normalizedBranch = normalizeBranch(branch);
+
+    return TWELVE_STAGE_BY_DAY_STEM[normalizedDayStem]?.[normalizedBranch] || "";
+  };
+
+  const getLuckTwelveStage = (targetSaju: any, branch: string) => {
+    const dayStem = normalizeStem(
+      targetSaju?.day?.stem || String(targetSaju?.day?.ganji || "").slice(0, 1),
+    );
+
+    return getTwelveStage(dayStem, branch);
+  };
+
   const buildYearLuckList = (
     targetSaju: any,
     daewoonItem: any,
@@ -3876,6 +3904,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
         ganji,
         stemTenGod: getTenGod(dayStem, ganji.stem),
         branchTenGod: getTenGod(dayStem, branchMainStem),
+        twelveStage: getTwelveStage(dayStem, ganji.branch),
       };
     });
   };
@@ -3942,6 +3971,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
         ganji,
         stemTenGod: getTenGod(dayStem, ganji.stem),
         branchTenGod: getTenGod(dayStem, branchMainStem),
+        twelveStage: getTwelveStage(dayStem, ganji.branch),
       };
     });
   };
@@ -4237,6 +4267,16 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                 >
                   {formatLuckTenGod(item.branchTenGod)}
                 </div>
+
+                <div
+                  className={
+                    selected
+                      ? `mt-1 ${FONT.twelveState} ${WEIGHT.twelveState} text-white`
+                      : `mt-1 ${FONT.twelveState} ${WEIGHT.twelveState} ${COLOR.twelveState}`
+                  }
+                >
+                  {getLuckTwelveStage(targetSaju, item.ganji.branch)}
+                </div>
               </button>
             );
           })}
@@ -4325,6 +4365,16 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                       >
                         {formatLuckTenGod(yearLuck.branchTenGod)}
                       </div>
+
+                      <div
+                        className={
+                          selected
+                            ? `mt-1 ${FONT.twelveState} ${WEIGHT.twelveState} text-white`
+                            : `mt-1 ${FONT.twelveState} ${WEIGHT.twelveState} ${COLOR.twelveState}`
+                        }
+                      >
+                        {yearLuck.twelveStage}
+                      </div>
                     </div>
                   </button>
                 );
@@ -4388,6 +4438,12 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                           className={`${FONT.monthLuckTenGod} ${WEIGHT.monthLuckTenGod} ${COLOR.monthLuckTenGod}`}
                         >
                           {formatLuckTenGod(monthLuck.branchTenGod)}
+                        </div>
+
+                        <div
+                          className={`mt-1 ${FONT.twelveState} ${WEIGHT.twelveState} ${COLOR.twelveState}`}
+                        >
+                          {monthLuck.twelveStage}
                         </div>
                       </div>
                     </div>
