@@ -205,7 +205,7 @@ export default function Home() {
   const overviewCaptureRef = useRef<HTMLDivElement>(null);
   const luckCaptureRef = useRef<HTMLDivElement>(null);
 
-  const [mode, setMode] = useState<"saju" | "compatibility" | "zodiac">("saju");
+  const [mode, setMode] = useState<"saju" | "compatibility" | "tarot">("saju");
 
   const [form, setForm] = useState({
     name: "",
@@ -284,6 +284,105 @@ export default function Home() {
     type: "stem" | "branch";
     value: string;
   } | null>(null);
+  const [selectedTarotCard, setSelectedTarotCard] = useState<string | null>(null);
+
+
+  type TarotCard = {
+    id: string;
+    group: "메이저" | "지팡이" | "컵" | "검" | "동전";
+    number: string;
+    name: string;
+    korean: string;
+    upright: string;
+    reversed: string;
+  };
+
+  const TAROT_CARDS: TarotCard[] = [
+    { id: "major-0", group: "메이저", number: "0", name: "The Fool", korean: "바보", upright: "시작, 모든 일·사건·관계의 시작, 새로운 곳으로의 여행이나 이동, 순수한 마음과 생각, 긍정적이고 어린아이 같은 태도, 낙천적이고 자유로운 행동.", reversed: "끝이나 정지, 흐름의 정체와 지체, 엉뚱하거나 돌발적인 행동, 생각 없이 행동하는 어리석음, 행동이 따르지 않는 공상, 낭비와 탕진." },
+    { id: "major-1", group: "메이저", number: "I", name: "The Magician", korean: "마법사", upright: "창조, 수완, 능력, 재능의 발휘, 자신감, 기회를 현실로 만드는 힘.", reversed: "겁이 많음, 기만, 능력의 오용, 과신, 말뿐인 계획, 속임수." },
+    { id: "major-2", group: "메이저", number: "II", name: "The High Priestess", korean: "여사제", upright: "지식, 총명, 순결, 직관, 신중함, 내면의 지혜.", reversed: "잔혹, 무례함, 냉담함, 비밀의 오용, 직관을 무시함." },
+    { id: "major-3", group: "메이저", number: "III", name: "The Empress", korean: "여황제", upright: "풍성함, 모성, 풍요, 돌봄, 성장, 생산성과 결실.", reversed: "과잉, 허영, 지나친 의존이나 집착, 낭비, 성장이 막힘." },
+    { id: "major-4", group: "메이저", number: "IV", name: "The Emperor", korean: "황제", upright: "책임, 부성, 카리스마, 질서, 통제력, 안정된 기반.", reversed: "오만, 강한 자만심, 독선, 지나친 통제, 권위의 남용." },
+    { id: "major-5", group: "메이저", number: "V", name: "The Hierophant", korean: "교황", upright: "가르침, 지성, 관대함, 전통, 조언, 제도와 규범.", reversed: "꽉 막힘, 나태함, 고정관념, 형식주의, 잘못된 권위." },
+    { id: "major-6", group: "메이저", number: "VI", name: "The Lovers", korean: "연인", upright: "연애, 성적 끌림, 쾌락, 선택, 조화로운 관계, 결합.", reversed: "사랑하기 힘듦, 배신감, 관계의 불균형, 잘못된 선택, 갈등." },
+    { id: "major-7", group: "메이저", number: "VII", name: "The Chariot", korean: "전차", upright: "전진, 승리, 조화, 강한 추진력, 목표를 향한 돌파.", reversed: "폭주, 좌절, 브레이크 없는 상태, 방향 상실, 무리한 추진." },
+    { id: "major-8", group: "메이저", number: "VIII", name: "Strength", korean: "힘", upright: "힘, 용기, 능력, 인내, 본능을 다스리는 내적 강인함.", reversed: "본성에 휘둘림, 자만, 자신감 저하, 감정 조절의 어려움." },
+    { id: "major-9", group: "메이저", number: "IX", name: "The Hermit", korean: "은둔자", upright: "탐색, 사려 깊음, 차분함, 성찰, 혼자만의 시간, 지혜.", reversed: "음습함, 탐욕, 고립, 지나친 폐쇄성, 외로움." },
+    { id: "major-10", group: "메이저", number: "X", name: "Wheel of Fortune", korean: "운명의 수레바퀴", upright: "기회, 일시적인 행운, 운명적인 변화, 흐름의 전환.", reversed: "오산, 불행의 연속, 시기 불일치, 반복되는 악순환." },
+    { id: "major-11", group: "메이저", number: "XI", name: "Justice", korean: "정의", upright: "균형, 정당함, 깔끔함, 공정한 판단, 원인과 결과.", reversed: "편견, 부정부패, 불공정, 책임 회피, 잘못된 판단." },
+    { id: "major-12", group: "메이저", number: "XII", name: "The Hanged Man", korean: "매달린 사람", upright: "자기희생, 인내, 멈춤을 통한 통찰, 관점의 전환.", reversed: "엉뚱하고 무의미한 희생, 맹목적 태도, 정체, 보상 없는 기다림." },
+    { id: "major-13", group: "메이저", number: "XIII", name: "Death", korean: "죽음", upright: "격변, 이별, 끝을 통한 새로운 희망, 큰 변화와 전환.", reversed: "변화의 유보, 끝내지 못함, 과거에 매임, 정체가 길어짐." },
+    { id: "major-14", group: "메이저", number: "XIV", name: "Temperance", korean: "절제", upright: "조화, 중용, 견실함, 균형, 적절한 조절과 타협.", reversed: "낭비, 불안정, 과도함, 조절 실패, 균형의 붕괴." },
+    { id: "major-15", group: "메이저", number: "XV", name: "The Devil", korean: "악마", upright: "사심, 쾌락, 속박, 타락, 집착과 중독, 욕망에 묶임.", reversed: "악순환으로부터의 각성, 속박에서 벗어남, 집착을 끊으려는 움직임." },
+    { id: "major-16", group: "메이저", number: "XVI", name: "The Tower", korean: "탑", upright: "파괴, 파멸, 급격한 변화, 충격적인 깨달음, 기존 구조의 붕괴.", reversed: "파괴되지 않음, 변화의 지연, 충격을 피하려 함, 붕괴를 간신히 막음." },
+    { id: "major-17", group: "메이저", number: "XVII", name: "The Star", korean: "별", upright: "희망, 연예인 같은 매력, 동경, 회복, 미래에 대한 기대.", reversed: "환멸, 비애, 추락, 희망 상실, 자신감 저하." },
+    { id: "major-18", group: "메이저", number: "XVIII", name: "The Moon", korean: "달", upright: "불안, 애매함, 보이지 않는 것, 착각, 감정의 흔들림.", reversed: "명료함, 혼돈의 끝, 진실이 드러남, 불안의 완화." },
+    { id: "major-19", group: "메이저", number: "XIX", name: "The Sun", korean: "태양", upright: "밝은 미래, 만족, 기대, 성공, 활력과 긍정적인 결과.", reversed: "우울함, 실패, 기대 이하, 자신감 저하, 밝음이 가려짐." },
+    { id: "major-20", group: "메이저", number: "XX", name: "Judgement", korean: "심판", upright: "부활, 개선, 소식, 재기, 결단, 과거를 정리하고 다시 시작함.", reversed: "재기불능, 후회막급, 잘못된 판단, 기회를 놓침, 과거에 붙잡힘." },
+    { id: "major-21", group: "메이저", number: "XXI", name: "The World", korean: "세계", upright: "완성, 완전, 윤회, 성취, 한 사이클의 성공적인 마무리.", reversed: "미완성, 어중간함, 마무리 부족, 목표 직전의 지연." },
+
+    { id: "wands-ace", group: "지팡이", number: "Ace", name: "Ace of Wands", korean: "지팡이 에이스", upright: "열정, 창조력, 출발, 새로운 기회, 행동의 시작.", reversed: "의욕 저하, 시작 지연, 방향 없는 열정, 기회를 놓침." },
+    { id: "wands-2", group: "지팡이", number: "2", name: "Two of Wands", korean: "지팡이 2", upright: "야망과 신념, 이동, 계획, 더 넓은 세계를 바라봄.", reversed: "계획 부족, 두려움, 우유부단, 좁은 시야." },
+    { id: "wands-3", group: "지팡이", number: "3", name: "Three of Wands", korean: "지팡이 3", upright: "교역, 사업상의 협력, 확장, 전망, 기다리던 성과.", reversed: "협력의 지연, 계획 차질, 기대 이하의 성과." },
+    { id: "wands-4", group: "지팡이", number: "4", name: "Four of Wands", korean: "지팡이 4", upright: "안정과 번영, 휴식, 평화, 축하, 기반의 완성.", reversed: "불안정한 기반, 가족·조직 내 갈등, 축하의 지연." },
+    { id: "wands-5", group: "지팡이", number: "5", name: "Five of Wands", korean: "지팡이 5", upright: "치열한 경쟁, 싸움, 의견 충돌, 서로 겨루는 상황.", reversed: "갈등 회피, 경쟁의 완화, 내부 갈등, 소모적인 다툼." },
+    { id: "wands-6", group: "지팡이", number: "6", name: "Six of Wands", korean: "지팡이 6", upright: "승리자, 정복과 성공, 인정, 자신감, 좋은 소식.", reversed: "인정받지 못함, 자신감 저하, 승리의 지연, 평판 문제." },
+    { id: "wands-7", group: "지팡이", number: "7", name: "Seven of Wands", korean: "지팡이 7", upright: "용기, 자기방어, 자신감 있게 저항함, 장애물을 극복함, 타협하지 않는 정신력.", reversed: "근심과 걱정, 난처한 상황, 끝없는 장애, 이길 수 없음, 용기를 내기 어려움." },
+    { id: "wands-8", group: "지팡이", number: "8", name: "Eight of Wands", korean: "지팡이 8", upright: "활동성, 재빠름, 빠른 전개, 이동, 소식과 추진력.", reversed: "지연, 엇갈린 소통, 조급함, 방향 없는 움직임." },
+    { id: "wands-9", group: "지팡이", number: "9", name: "Nine of Wands", korean: "지팡이 9", upright: "싸움에 지친 상태, 마지막 방어, 끈기, 경계심.", reversed: "탈진, 방어 포기, 지나친 의심, 더 버티기 어려움." },
+    { id: "wands-10", group: "지팡이", number: "10", name: "Ten of Wands", korean: "지팡이 10", upright: "억압, 부담, 책임 과중, 일을 혼자 짊어짐.", reversed: "부담을 내려놓음, 책임 회피, 과로의 한계, 짐을 나눔." },
+    { id: "wands-page", group: "지팡이", number: "Page", name: "Page of Wands", korean: "지팡이 시종", upright: "젊은 남성, 사회초년병, 호기심, 새로운 소식, 모험의 시작.", reversed: "미숙함, 충동적 행동, 계획 없는 시작, 좋지 않은 소식." },
+    { id: "wands-knight", group: "지팡이", number: "Knight", name: "Knight of Wands", korean: "지팡이 기사", upright: "출발, 정열적임, 행동력, 모험, 빠른 이동.", reversed: "성급함, 무모함, 쉽게 식는 열정, 충돌과 지연." },
+    { id: "wands-queen", group: "지팡이", number: "Queen", name: "Queen of Wands", korean: "지팡이 여왕", upright: "커리어 우먼 같은 모습, 자신감, 독립성, 따뜻한 카리스마.", reversed: "질투, 예민함, 독선, 자신감의 흔들림." },
+    { id: "wands-king", group: "지팡이", number: "King", name: "King of Wands", korean: "지팡이 왕", upright: "지도자 같은 사람, 비전, 추진력, 창조적 리더십.", reversed: "독단, 성급한 리더십, 고집, 과도한 자신감." },
+
+    { id: "cups-ace", group: "컵", number: "Ace", name: "Ace of Cups", korean: "컵 에이스", upright: "사랑의 기쁨, 시작, 감정의 충만, 새로운 관계.", reversed: "감정 억압, 사랑의 지연, 공허함, 관계 시작의 어려움." },
+    { id: "cups-2", group: "컵", number: "2", name: "Two of Cups", korean: "컵 2", upright: "사랑, 우정, 결혼, 상호 교감, 좋은 파트너십.", reversed: "관계 불균형, 오해, 이별 가능성, 감정의 엇갈림." },
+    { id: "cups-3", group: "컵", number: "3", name: "Three of Cups", korean: "컵 3", upright: "풍족함, 행복, 성취, 우정, 축하와 모임.", reversed: "과도한 즐거움, 삼각관계, 인간관계의 피로, 소문." },
+    { id: "cups-4", group: "컵", number: "4", name: "Four of Cups", korean: "컵 4", upright: "권태, 낙담, 무관심, 제안을 외면함, 감정적 정체.", reversed: "새로운 관심, 권태에서 벗어남, 기회를 다시 봄." },
+    { id: "cups-5", group: "컵", number: "5", name: "Five of Cups", korean: "컵 5", upright: "손실, 상심, 후회, 잃은 것에 집중함.", reversed: "회복, 과거를 놓음, 관계 회복, 희망을 다시 봄." },
+    { id: "cups-6", group: "컵", number: "6", name: "Six of Cups", korean: "컵 6", upright: "과거를 돌이켜봄, 회상, 추억, 순수한 호의.", reversed: "과거에 매임, 미련, 현실 회피, 오래된 문제의 반복." },
+    { id: "cups-7", group: "컵", number: "7", name: "Seven of Cups", korean: "컵 7", upright: "환상, 허황됨, 여러 선택지, 꿈과 욕망.", reversed: "현실적인 선택, 환상에서 깨어남, 우선순위 정리." },
+    { id: "cups-8", group: "컵", number: "8", name: "Eight of Cups", korean: "컵 8", upright: "성공의 방치, 포기, 떠남, 더 나은 것을 찾아감.", reversed: "떠나지 못함, 미련, 반복되는 관계, 결단 지연." },
+    { id: "cups-9", group: "컵", number: "9", name: "Nine of Cups", korean: "컵 9", upright: "물질적 안녕, 만족, 소원 성취, 즐거움.", reversed: "과욕, 만족하지 못함, 겉보기와 다른 공허함." },
+    { id: "cups-10", group: "컵", number: "10", name: "Ten of Cups", korean: "컵 10", upright: "만족, 가족적인 행복, 정서적 완성, 화목.", reversed: "가족 갈등, 관계의 불안정, 기대했던 행복의 흔들림." },
+    { id: "cups-page", group: "컵", number: "Page", name: "Page of Cups", korean: "컵 시종", upright: "공부에 힘쓰는 젊은이, 호기심, 감성적 소식, 새로운 감정.", reversed: "감정 미숙, 현실성 부족, 예민함, 소식의 지연." },
+    { id: "cups-knight", group: "컵", number: "Knight", name: "Knight of Cups", korean: "컵 기사", upright: "도착, 발전, 청혼, 제안, 로맨틱한 접근.", reversed: "비현실적 약속, 감정 기복, 거짓된 호의, 관계 지연." },
+    { id: "cups-queen", group: "컵", number: "Queen", name: "Queen of Cups", korean: "컵 여왕", upright: "선량하고 공정한 여성, 강한 모성, 공감과 배려.", reversed: "감정 과잉, 의존, 예민함, 타인에게 휘둘림." },
+    { id: "cups-king", group: "컵", number: "King", name: "King of Cups", korean: "컵 왕", upright: "공정한 남성, 창조적 지성, 감정적 성숙과 안정.", reversed: "감정 조종, 냉정함, 속마음을 숨김, 감정 통제 실패." },
+
+    { id: "swords-ace", group: "검", number: "Ace", name: "Ace of Swords", korean: "검 에이스", upright: "힘의 승리, 기회와 출발, 명확한 판단, 결단.", reversed: "혼란, 잘못된 판단, 말로 인한 상처, 기회의 오용." },
+    { id: "swords-2", group: "검", number: "2", name: "Two of Swords", korean: "검 2", upright: "균형, 우유부단, 결정을 미룸, 갈등을 잠시 막음.", reversed: "결정 압박, 혼란 심화, 감춰진 사실이 드러남." },
+    { id: "swords-3", group: "검", number: "3", name: "Three of Swords", korean: "검 3", upright: "후퇴, 단절, 슬픔, 상처, 이별.", reversed: "상처 회복, 슬픔을 놓음, 관계 회복의 가능성." },
+    { id: "swords-4", group: "검", number: "4", name: "Four of Swords", korean: "검 4", upright: "은둔, 회복, 자기치유, 휴식, 재정비.", reversed: "휴식 부족, 불안, 다시 움직여야 함, 회복 지연." },
+    { id: "swords-5", group: "검", number: "5", name: "Five of Swords", korean: "검 5", upright: "타락, 패배, 손실, 상처뿐인 승리, 갈등.", reversed: "화해 시도, 갈등을 끝냄, 패배를 인정함." },
+    { id: "swords-6", group: "검", number: "6", name: "Six of Swords", korean: "검 6", upright: "작업을 끝마침, 중개자, 여행, 문제에서 벗어나는 이동.", reversed: "벗어나지 못함, 이동 지연, 과거 문제의 반복." },
+    { id: "swords-7", group: "검", number: "7", name: "Seven of Swords", korean: "검 7", upright: "서두름을 경고, 계획, 전략, 남몰래 움직임.", reversed: "계획 노출, 속임수가 드러남, 전략 수정, 죄책감." },
+    { id: "swords-8", group: "검", number: "8", name: "Eight of Swords", korean: "검 8", upright: "구속된 힘, 비난, 고립, 스스로 만든 제약.", reversed: "제약에서 벗어남, 해결책 발견, 통제력을 되찾음." },
+    { id: "swords-9", group: "검", number: "9", name: "Nine of Swords", korean: "검 9", upright: "실망, 환멸, 불안, 걱정, 잠 못 이루는 고민.", reversed: "불안 완화, 최악에서 벗어남, 두려움과 대면함." },
+    { id: "swords-10", group: "검", number: "10", name: "Ten of Swords", korean: "검 10", upright: "황폐, 고통, 종결, 피할 수 없는 끝.", reversed: "회복의 시작, 최악이 지나감, 다시 일어설 준비." },
+    { id: "swords-page", group: "검", number: "Page", name: "Page of Swords", korean: "검 시종", upright: "경솔, 감시, 경계, 관찰, 정보를 모음.", reversed: "헛소문, 지나친 경계, 말실수, 정보의 왜곡." },
+    { id: "swords-knight", group: "검", number: "Knight", name: "Knight of Swords", korean: "검 기사", upright: "용감함, 성급함, 직진, 빠른 결정과 행동.", reversed: "무모함, 공격성, 성급한 판단, 충돌." },
+    { id: "swords-queen", group: "검", number: "Queen", name: "Queen of Swords", korean: "검 여왕", upright: "슬픔이 많은 여성, 미망인, 냉철함, 독립성과 판단력.", reversed: "냉혹함, 비판적 태도, 원한, 지나친 방어." },
+    { id: "swords-king", group: "검", number: "King", name: "King of Swords", korean: "검 왕", upright: "가부장적, 권위, 명령, 이성적 판단과 통솔.", reversed: "권위 남용, 독단, 냉정한 통제, 판단의 왜곡." },
+
+    { id: "pentacles-ace", group: "동전", number: "Ace", name: "Ace of Pentacles", korean: "동전 에이스", upright: "물질적 안정, 돈을 투자함, 재정적 기회, 현실적인 시작.", reversed: "금전 기회 손실, 투자 실패, 불안정, 준비 부족." },
+    { id: "pentacles-2", group: "동전", number: "2", name: "Two of Pentacles", korean: "동전 2", upright: "명랑함, 현실과 갈등, 여러 일을 조율함, 균형 유지.", reversed: "균형 붕괴, 일정·재정 관리 실패, 우선순위 혼란." },
+    { id: "pentacles-3", group: "동전", number: "3", name: "Three of Pentacles", korean: "동전 3", upright: "기예, 숙련공, 협업, 전문성, 실력을 인정받음.", reversed: "협업 실패, 실력 부족, 낮은 완성도, 인정받지 못함." },
+    { id: "pentacles-4", group: "동전", number: "4", name: "Four of Pentacles", korean: "동전 4", upright: "소유물에 대한 집착, 선물, 재산을 지키려 함.", reversed: "집착 완화, 재정 손실, 지나친 소비, 소유를 놓음." },
+    { id: "pentacles-5", group: "동전", number: "5", name: "Five of Pentacles", korean: "동전 5", upright: "물질적인 고통, 빈곤, 소외, 어려운 재정 상황.", reversed: "재정 회복, 도움을 받음, 어려움에서 벗어나기 시작함." },
+    { id: "pentacles-6", group: "동전", number: "6", name: "Six of Pentacles", korean: "동전 6", upright: "성공, 자선, 주고받음, 도움, 금전적 균형.", reversed: "불공평한 거래, 조건부 도움, 빚, 금전 불균형." },
+    { id: "pentacles-7", group: "동전", number: "7", name: "Seven of Pentacles", korean: "동전 7", upright: "금전적 망설임, 교역, 기다림, 투자 결과를 지켜봄.", reversed: "성과 부족, 조급함, 투자 재검토, 노력 대비 보상 부족." },
+    { id: "pentacles-8", group: "동전", number: "8", name: "Eight of Pentacles", korean: "동전 8", upright: "장인 기질, 준비함, 숙련, 반복을 통한 실력 향상.", reversed: "대충함, 기술 부족, 반복되는 실수, 일에 대한 권태." },
+    { id: "pentacles-9", group: "동전", number: "9", name: "Nine of Pentacles", korean: "동전 9", upright: "물질적인 풍요, 달성, 독립, 노력의 결실.", reversed: "과소비, 겉치레, 재정 의존, 성취의 불안정." },
+    { id: "pentacles-10", group: "동전", number: "10", name: "Ten of Pentacles", korean: "동전 10", upright: "이익, 재산, 가족, 유산, 장기적인 안정.", reversed: "가족 재산 문제, 금전 갈등, 기반 흔들림, 장기 계획 차질." },
+    { id: "pentacles-page", group: "동전", number: "Page", name: "Page of Pentacles", korean: "동전 시종", upright: "성실근면, 학생 같은 태도, 공부, 실무적 기회의 시작.", reversed: "게으름, 계획만 있음, 학업·업무 집중 저하, 기회 활용 실패." },
+    { id: "pentacles-knight", group: "동전", number: "Knight", name: "Knight of Pentacles", korean: "동전 기사", upright: "유용, 재산, 신뢰감, 꾸준함, 성실하게 진행함.", reversed: "정체, 지나친 보수성, 게으름, 변화 없는 반복." },
+    { id: "pentacles-queen", group: "동전", number: "Queen", name: "Queen of Pentacles", korean: "동전 여왕", upright: "부, 현모양처, 안정, 현실적 돌봄, 풍요로운 생활.", reversed: "금전 불안, 자기 돌봄 부족, 소유 집착, 가정과 일의 불균형." },
+    { id: "pentacles-king", group: "동전", number: "King", name: "King of Pentacles", korean: "동전 왕", upright: "사업에 성공, 자선, 재정적 안정, 현실적인 리더십.", reversed: "물질 집착, 탐욕, 돈을 이용한 통제, 사업적 완고함." },
+  ];
+
+  const TAROT_GROUPS = ["메이저", "지팡이", "컵", "검", "동전"] as const;
 
   const timerDragOffsetRef = useRef({ x: 0, y: 0 });
   const memoDragOffsetRef = useRef({ x: 0, y: 0 });
@@ -1800,10 +1899,6 @@ export default function Home() {
         saju: sajuResult,
       };
 
-      if (mode === "zodiac") {
-        endpoint = "/api/zodiac";
-      }
-
       if (mode === "compatibility") {
         endpoint = "/api/compatibility";
 
@@ -1848,11 +1943,7 @@ export default function Home() {
 
       const data = await res.json();
 
-      if (mode === "zodiac") {
-        setResult(JSON.stringify(data, null, 2));
-      } else {
-        setResult(data.result || "결과가 비어 있습니다.");
-      }
+      setResult(data.result || "결과가 비어 있습니다.");
     } catch (error) {
       console.error(error);
       setResult("오류가 발생했습니다. 콘솔을 확인하세요.");
@@ -4481,6 +4572,104 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
     );
   };
 
+
+  const renderTarotMode = () => {
+    const selectedCard = TAROT_CARDS.find((card) => card.id === selectedTarotCard) || null;
+
+    return (
+      <section className="rounded-3xl border border-[#ead8c4] bg-[#fffaf3] p-5 shadow-inner">
+        <div className="mb-5">
+          <h2 className={`${FONT.sectionTitle} ${WEIGHT.sectionTitle} ${COLOR.sectionTitle}`}>
+            타로 카드 해석
+          </h2>
+          <p className={`mt-2 ${FONT.body} ${WEIGHT.body} ${COLOR.body}`}>
+            카드를 클릭하면 정방향과 역방향 해석이 표시됩니다.
+          </p>
+        </div>
+
+        {selectedCard && (
+          <div className="sticky top-6 z-[54] mb-6 rounded-3xl border-2 border-[#6b3f24] bg-white p-5 shadow-xl">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <div className="text-2xl font-bold text-[#9a7657]">
+                  {selectedCard.group} · {selectedCard.number}
+                </div>
+                <h3 className="mt-1 text-5xl font-bold text-[#2b1d12]">
+                  {selectedCard.name}
+                </h3>
+                <div className="mt-1 text-3xl font-bold text-[#6b3f24]">
+                  {selectedCard.korean}
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setSelectedTarotCard(null)}
+                className="rounded-xl bg-zinc-100 px-4 py-2 text-2xl font-bold text-zinc-700 hover:bg-zinc-200"
+              >
+                닫기
+              </button>
+            </div>
+
+            <div className="mt-5 grid grid-cols-2 gap-4">
+              <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
+                <div className="text-3xl font-bold text-emerald-800">정방향</div>
+                <div className="mt-3 text-3xl font-semibold leading-relaxed text-black">
+                  {selectedCard.upright}
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-red-200 bg-red-50 p-5">
+                <div className="text-3xl font-bold text-red-800">역방향</div>
+                <div className="mt-3 text-3xl font-semibold leading-relaxed text-black">
+                  {selectedCard.reversed}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="space-y-7">
+          {TAROT_GROUPS.map((group) => {
+            const cards = TAROT_CARDS.filter((card) => card.group === group);
+
+            return (
+              <div key={group}>
+                <h3 className="mb-3 text-4xl font-bold text-[#6b3f24]">{group}</h3>
+                <div className={group === "메이저" ? "grid grid-cols-6 gap-3" : "grid grid-cols-7 gap-3"}>
+                  {cards.map((card) => {
+                    const selected = selectedTarotCard === card.id;
+
+                    return (
+                      <button
+                        key={card.id}
+                        type="button"
+                        onClick={() => setSelectedTarotCard(card.id)}
+                        className={`min-h-[130px] rounded-2xl border p-3 text-center shadow-sm transition ${
+                          selected
+                            ? "border-[#6b3f24] bg-[#6b3f24] text-white shadow-md"
+                            : "border-[#ead8c4] bg-white text-[#2b1d12] hover:bg-[#f3e1cf]"
+                        }`}
+                      >
+                        <div className={`text-xl font-bold ${selected ? "text-white/80" : "text-[#9a7657]"}`}>
+                          {card.number}
+                        </div>
+                        <div className="mt-1 text-2xl font-bold leading-tight">{card.name}</div>
+                        <div className={`mt-2 text-xl font-bold ${selected ? "text-white/90" : "text-[#6b3f24]"}`}>
+                          {card.korean}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+    );
+  };
+
   return (
     <>
       {drawingBoardOpen && (
@@ -4547,7 +4736,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
             ? "사주 분석기"
             : mode === "compatibility"
               ? "궁합 분석"
-              : "점성술 분석"}
+              : "타로 카드 해석"}
         </h1>
 
         <div className="mt-6 grid grid-cols-3 gap-2 rounded-2xl bg-[#f7efe3] p-1">
@@ -4586,20 +4775,21 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
           <button
             type="button"
             onClick={() => {
-              setMode("zodiac");
+              setMode("tarot");
               setResult("");
               setShowSaju(false);
             }}
             className={`rounded-xl py-3 ${FONT.modeButtonText} ${WEIGHT.modeButtonText} ${COLOR.modeButtonText} transition ${
-              mode === "zodiac"
+              mode === "tarot"
                 ? "bg-[#6b3f24] text-white shadow"
                 : "text-[#6b3f24]"
             }`}
           >
-            별자리 모드
+            타로 모드
           </button>
         </div>
 
+        {mode !== "tarot" && (
         <div className="sticky top-6 z-[55] mt-4 overflow-hidden rounded-2xl border border-[#d7c4ad] bg-white/95 px-4 py-2 shadow-lg backdrop-blur">
           {mode !== "compatibility" ? (
             <div className={`flex items-center justify-center gap-4 whitespace-nowrap ${FONT.floatingInfo} font-bold text-[#2b1d12]`}>
@@ -4622,9 +4812,12 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
             </div>
           )}
         </div>
+        )}
 
         <div className="mt-8 space-y-4">
-          {mode !== "compatibility" && (
+          {mode === "tarot" && renderTarotMode()}
+
+          {mode === "saju" && (
             <>
               <input
                 className={`w-full rounded-xl border p-3 ${FONT.inputText}`}
@@ -4768,20 +4961,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
               {mode === "saju" &&
                 renderPeopleStoragePanel(loadRecentPersonToSaju)}
 
-              {mode === "zodiac" && (
-                <input
-                  type="text"
-                  placeholder="태어난 위치 예: 서울, 대한민국"
-                  className={`w-full rounded-xl border p-3 ${FONT.inputText}`}
-                  value={form.birthLocation}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      birthLocation: e.target.value,
-                    })
-                  }
-                />
-              )}
+
             </>
           )}
 
@@ -5056,16 +5236,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
             </>
           )}
 
-          {mode === "zodiac" && (
-            <button
-              type="button"
-              onClick={handleSubmit}
-              disabled={loading}
-              className={`w-full cursor-pointer rounded-xl bg-[#6b3f24] py-4 ${FONT.buttonText} ${WEIGHT.buttonText} ${COLOR.buttonText} disabled:opacity-50`}
-            >
-              {loading ? "분석 중..." : "점성술 분석하기"}
-            </button>
-          )}
+
 
           {mode === "saju" && showSaju && (
             <section className="mt-6 rounded-3xl border border-[#ead8c4] bg-[#fffaf3] p-5 shadow-inner">
@@ -5234,21 +5405,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
             </section>
           )}
 
-          {mode === "zodiac" && result && (
-            <section className="mt-6 rounded-3xl border border-[#ead8c4] bg-[#fffaf3] p-5 shadow-inner">
-              <h2
-                className={`${FONT.sectionTitle} ${WEIGHT.sectionTitle} ${COLOR.sectionTitle}`}
-              >
-                점성술 해석
-              </h2>
 
-              <div
-                className={`mt-3 whitespace-pre-wrap leading-7 ${FONT.analysisBody} ${WEIGHT.analysisBody} ${COLOR.analysisBody}`}
-              >
-                {result}
-              </div>
-            </section>
-          )}
         </div>
       </div>
       {showDailyCalendar && (
