@@ -1331,7 +1331,7 @@ export default function Home() {
       birthTime: targetForm.birthTimeUnknown ? "12:00" : targetForm.birthTime,
       calendarType: "solar",
       timezone: "Asia/Seoul",
-      lateZiMode: false,
+      lateZiMode: true,
       gender: targetForm.gender === "남성" ? "male" : "female",
     });
 

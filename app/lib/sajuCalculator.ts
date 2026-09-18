@@ -915,10 +915,12 @@ export function calculateSaju(
   // 일주는 사용자가 입력한 한국 표준시 기준 날짜로 계산한다.
   // 진태양시 보정값으로 일주 날짜를 바꾸면 00시 초반/23시 근처에서
   // 하루씩 밀리는 문제가 생길 수 있다.
-  // lateZiMode가 켜진 경우에만 입력 시각 23:00~23:59를 다음 날 일주로 본다.
+  // lateZiMode가 켜진 경우에만 입력 시각 23:30~23:59를 다음 날 일주로 본다.
+  // 23:00~23:29는 당일 일주를 유지한다.
   if (
     input.lateZiMode &&
-    date.getHours() === 23
+    date.getHours() === 23 &&
+    date.getMinutes() >= 30
   ) {
     dayDate.setDate(dayDate.getDate() + 1);
   }
