@@ -2910,6 +2910,63 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
     );
   };
 
+  const getTenGodGroupSummary = (targetSaju: any) => {
+    const summary = {
+      비겁: 0,
+      식상: 0,
+      재성: 0,
+      관성: 0,
+      인성: 0,
+    };
+
+    if (!targetSaju?.tenGods) return summary;
+
+    const tenGodValues = [
+      targetSaju.tenGods?.yearStem,
+      targetSaju.tenGods?.yearBranch,
+      targetSaju.tenGods?.monthStem,
+      targetSaju.tenGods?.monthBranch,
+      targetSaju.tenGods?.dayStem,
+      targetSaju.tenGods?.dayBranch,
+      targetSaju.tenGods?.hourStem,
+      targetSaju.tenGods?.hourBranch,
+    ].filter(Boolean);
+
+    tenGodValues.forEach((tenGod: string) => {
+      if (["비견", "겁재", "일간"].includes(tenGod)) summary.비겁 += 1;
+      else if (["식신", "상관"].includes(tenGod)) summary.식상 += 1;
+      else if (["정재", "편재"].includes(tenGod)) summary.재성 += 1;
+      else if (["정관", "편관"].includes(tenGod)) summary.관성 += 1;
+      else if (["정인", "편인"].includes(tenGod)) summary.인성 += 1;
+    });
+
+    return summary;
+  };
+
+  const renderTenGodSummary = (targetSaju: any) => {
+    const summary = getTenGodGroupSummary(targetSaju);
+
+    return (
+      <div className="rounded-xl border border-[#ead8c4] bg-[#fffaf3] px-3 py-2.5">
+        <div className="mb-2 text-xl font-bold text-[#6b3f24]">십성 종합</div>
+
+        <div className="grid grid-cols-5 gap-2 text-center">
+          {Object.entries(summary).map(([label, count]) => (
+            <div
+              key={label}
+              className="rounded-lg border border-[#ead8c4] bg-white px-2 py-2"
+            >
+              <div className="text-xl font-bold text-zinc-600">{label}</div>
+              <div className="mt-0.5 text-2xl font-bold text-[#2b1d12]">
+                {count}개
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   const renderSajuOverview = (
     targetSaju: any,
     items: any[],
@@ -2925,6 +2982,8 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
           <div className="grid grid-cols-4 gap-3 text-center font-bold text-black">
             {items.map((item) => renderPillarCard(item, cardKey))}
           </div>
+
+          {renderTenGodSummary(targetSaju)}
 
           {renderElementInfo(targetSaju)}
 
@@ -2960,6 +3019,8 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
           <div className="grid grid-cols-4 gap-3 text-center font-bold text-black">
             {items.map((item) => renderPillarCard(item, cardKey))}
           </div>
+
+          {renderTenGodSummary(targetSaju)}
 
           {renderElementInfo(targetSaju)}
         </div>
@@ -3041,13 +3102,31 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
     해: ["무", "갑", "임"],
   };
 
-  const getHiddenStemsText = (branch: string) => {
+  const getHiddenStems = (branch: string) => {
     const normalizedBranch = normalizeBranch(branch);
-    const hiddenStems = BRANCH_HIDDEN_STEMS[normalizedBranch] || [];
+    return BRANCH_HIDDEN_STEMS[normalizedBranch] || [];
+  };
 
-    if (!hiddenStems.length) return "";
+  const HIDDEN_STEM_STYLE = (stem: string) => {
+    const element = STEM_INFO[stem]?.element || "";
+    const color = getElementColor(element);
 
-    return hiddenStems.map((stem: string) => STEM_HANJA[stem] ?? "").join("");
+    // 지장간은 메인 천간/지지보다 글씨가 작으므로 외곽선을 얇게 표시
+    if (color === "#000000") {
+      return { color };
+    }
+
+    const s = 1;
+
+    return {
+      color,
+      textShadow: `
+        ${-s}px ${-s}px 0 #000,
+         ${s}px ${-s}px 0 #000,
+        ${-s}px  ${s}px 0 #000,
+         ${s}px  ${s}px 0 #000
+      `,
+    };
   };
 
   const getBirthDateTimeForJuGwonShin = (targetSaju: any) => {
@@ -4279,9 +4358,17 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
           </div>
 
           <div
-            className={`mt-1 rounded-lg bg-white/70 px-2 py-1 ${FONT.hiddenStem} ${WEIGHT.hiddenStem} ${COLOR.hiddenStem}`}
+            className={`mt-1 rounded-lg bg-white/70 px-2 py-1 ${FONT.hiddenStem} ${WEIGHT.hiddenStem}`}
           >
-            {getHiddenStemsText(item.data.branch)}
+            {getHiddenStems(item.data.branch).map((stem: string, index: number) => (
+              <span
+                key={`${stem}-${index}`}
+                className={index > 0 ? "ml-0.5" : ""}
+                style={HIDDEN_STEM_STYLE(stem)}
+              >
+                {STEM_HANJA[stem] ?? stem}
+              </span>
+            ))}
           </div>
         </div>
 
