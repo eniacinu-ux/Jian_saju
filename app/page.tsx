@@ -2943,27 +2943,25 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
     return summary;
   };
 
-  const renderTenGodSummary = (targetSaju: any) => {
+  const renderTenGodSummaryInline = (targetSaju: any) => {
     const summary = getTenGodGroupSummary(targetSaju);
+    const items = [
+      ["인성", summary.인성],
+      ["식상", summary.식상],
+      ["재성", summary.재성],
+      ["관성", summary.관성],
+      ["비겁", summary.비겁],
+    ];
 
     return (
-      <div className="rounded-xl border border-[#ead8c4] bg-[#fffaf3] px-3 py-2.5">
-        <div className="mb-2 text-xl font-bold text-[#6b3f24]">십성 종합</div>
-
-        <div className="grid grid-cols-5 gap-2 text-center">
-          {Object.entries(summary).map(([label, count]) => (
-            <div
-              key={label}
-              className="rounded-lg border border-[#ead8c4] bg-white px-2 py-2"
-            >
-              <div className="text-xl font-bold text-zinc-600">{label}</div>
-              <div className="mt-0.5 text-2xl font-bold text-[#2b1d12]">
-                {count}개
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+      <span className="ml-4 text-2xl font-bold text-[#6b3f24] whitespace-nowrap">
+        {items.map(([label, count], index) => (
+          <span key={String(label)}>
+            {index > 0 && <span className="mx-2 text-[#c8ad91]">|</span>}
+            {label} {count}
+          </span>
+        ))}
+      </span>
     );
   };
 
@@ -2983,7 +2981,6 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
             {items.map((item) => renderPillarCard(item, cardKey))}
           </div>
 
-          {renderTenGodSummary(targetSaju)}
 
           {renderElementInfo(targetSaju)}
 
@@ -3020,7 +3017,6 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
             {items.map((item) => renderPillarCard(item, cardKey))}
           </div>
 
-          {renderTenGodSummary(targetSaju)}
 
           {renderElementInfo(targetSaju)}
         </div>
@@ -4728,11 +4724,14 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
 
     return (
       <div className="mt-4 rounded-2xl bg-[#ffffff] p-4 text-[#000000] shadow-sm">
-        <h3
-          className={`${FONT.cardTitle} ${WEIGHT.cardTitle} ${COLOR.cardTitle}`}
-        >
-          사주팔자
-        </h3>
+        <div className="flex flex-wrap items-baseline">
+          <h3
+            className={`${FONT.cardTitle} ${WEIGHT.cardTitle} ${COLOR.cardTitle}`}
+          >
+            사주팔자
+          </h3>
+          {renderTenGodSummaryInline(targetSaju)}
+        </div>
 
         {renderSajuOverview(targetSaju, items, cardKey)}
 
@@ -5517,11 +5516,14 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                   <div>
                     <div ref={overviewCaptureRef} data-capture-target>
                       <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                        <h3
-                          className={`${FONT.cardTitle} ${WEIGHT.cardTitle} ${COLOR.cardTitle}`}
-                        >
-                          사주팔자
-                        </h3>
+                        <div className="flex flex-wrap items-baseline">
+                          <h3
+                            className={`${FONT.cardTitle} ${WEIGHT.cardTitle} ${COLOR.cardTitle}`}
+                          >
+                            사주팔자
+                          </h3>
+                          {renderTenGodSummaryInline(sajuResult)}
+                        </div>
 
                         <button
                           type="button"
