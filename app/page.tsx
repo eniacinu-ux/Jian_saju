@@ -520,6 +520,11 @@ export default function Home() {
   const [penMode, setPenMode] = useState(true);
   const [penCanvasMounted, setPenCanvasMounted] = useState(false);
 
+  // 와콤 펜용 커스텀 커서 오버레이
+  // globals.css의 cursor: url("/tange-cursor-32.png") 9 6 과 정확히 동일하게 사용
+  const penCursorOverlayRef = useRef<HTMLDivElement>(null);
+  const penCursorActiveRef = useRef(false);
+
   // 와콤 펜 접촉 직후 브라우저가 mouse/click 이벤트를 추가로 발생시키는 것을 막기 위한 값
   const penClickSuppressUntilRef = useRef(0);
   const penLastScreenPointRef = useRef<{ x: number; y: number } | null>(null);
@@ -808,6 +813,126 @@ export default function Home() {
   useEffect(() => {
     penModeRef.current = penMode;
   }, [penMode]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const html = document.documentElement;
+
+    // 기존 globals.css에는 * { cursor: url(...) !important }가 있으므로
+    // 와콤 오버레이가 켜진 동안에만 더 구체적인 selector로 시스템/CSS 커서를 숨긴다.
+    const style = document.createElement("style");
+    style.dataset.wacomCursorOverlay = "true";
+    style.textContent = `
+      html.wacom-pen-cursor-active,
+      html.wacom-pen-cursor-active body,
+      html.wacom-pen-cursor-active body * {
+        cursor: none !important;
+      }
+    `;
+    document.head.appendChild(style);
+
+    const showCursor = (event: PointerEvent) => {
+      const overlay = penCursorOverlayRef.current;
+      if (!overlay) return;
+
+      penCursorActiveRef.current = true;
+      html.classList.add("wacom-pen-cursor-active");
+
+      // CSS cursor hotspot: 9 6
+      const left = event.clientX - 9;
+      const top = event.clientY - 6;
+
+      overlay.style.transform = `translate3d(${left}px, ${top}px, 0)`;
+      overlay.style.visibility = "visible";
+    };
+
+    const hideCursor = () => {
+      const overlay = penCursorOverlayRef.current;
+      penCursorActiveRef.current = false;
+      html.classList.remove("wacom-pen-cursor-active");
+
+      if (overlay) {
+        overlay.style.visibility = "hidden";
+      }
+    };
+
+    const handleCursorPointerOver = (event: PointerEvent) => {
+      if (!penModeRef.current || event.pointerType !== "pen") return;
+      showCursor(event);
+    };
+
+    const handleCursorPointerDown = (event: PointerEvent) => {
+      if (!penModeRef.current || event.pointerType !== "pen") return;
+      showCursor(event);
+    };
+
+    const handleCursorPointerMove = (event: PointerEvent) => {
+      if (!penModeRef.current) {
+        hideCursor();
+        return;
+      }
+
+      // 정상적인 pen hover/move는 여기서 활성화한다.
+      if (event.pointerType === "pen") {
+        showCursor(event);
+        return;
+      }
+
+      // 일부 와콤 드라이버는 필기 중 move의 pointerType이 순간적으로 흔들릴 수 있다.
+      // 이미 와콤 커서가 활성화되어 있거나 필기 중이면 pointerType을 다시 검사하지 않고
+      // 같은 오버레이를 계속 움직여 깜빡임을 막는다.
+      if (penCursorActiveRef.current || penDrawingRef.current) {
+        showCursor(event);
+      }
+    };
+
+    const handleCursorPointerOut = (event: PointerEvent) => {
+      // 실제 브라우저 영역을 빠져나갈 때만 숨긴다.
+      if (
+        penCursorActiveRef.current &&
+        event.relatedTarget === null &&
+        !penDrawingRef.current
+      ) {
+        hideCursor();
+      }
+    };
+
+    const handleCursorPointerCancel = () => {
+      // pointercancel은 필기 중 자주 발생할 수 있으므로 필기 중에는 유지한다.
+      if (!penDrawingRef.current) hideCursor();
+    };
+
+    const handleMouseDown = (event: MouseEvent) => {
+      // 실제 마우스로 전환했을 때 남아 있는 와콤 오버레이를 정리한다.
+      if (event.isTrusted && !penDrawingRef.current) {
+        hideCursor();
+      }
+    };
+
+    const handleBlur = () => hideCursor();
+
+    window.addEventListener("pointerover", handleCursorPointerOver, true);
+    window.addEventListener("pointerdown", handleCursorPointerDown, true);
+    window.addEventListener("pointermove", handleCursorPointerMove, true);
+    window.addEventListener("pointerout", handleCursorPointerOut, true);
+    window.addEventListener("pointercancel", handleCursorPointerCancel, true);
+    window.addEventListener("mousedown", handleMouseDown, true);
+    window.addEventListener("blur", handleBlur);
+
+    return () => {
+      window.removeEventListener("pointerover", handleCursorPointerOver, true);
+      window.removeEventListener("pointerdown", handleCursorPointerDown, true);
+      window.removeEventListener("pointermove", handleCursorPointerMove, true);
+      window.removeEventListener("pointerout", handleCursorPointerOut, true);
+      window.removeEventListener("pointercancel", handleCursorPointerCancel, true);
+      window.removeEventListener("mousedown", handleMouseDown, true);
+      window.removeEventListener("blur", handleBlur);
+
+      html.classList.remove("wacom-pen-cursor-active");
+      style.remove();
+    };
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -4959,6 +5084,36 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
           }}
         />
       )}
+
+      {/* 와콤 펜이 브라우저 위에 있는 동안 사용하는 단일 커스텀 커서.
+          globals.css의 /tange-cursor-32.png, hotspot 9 6과 동일하다. */}
+      <div
+        ref={penCursorOverlayRef}
+        aria-hidden="true"
+        className="pointer-events-none fixed left-0 top-0"
+        style={{
+          zIndex: 2147483647,
+          visibility: "hidden",
+          transform: "translate3d(-100px, -100px, 0)",
+          willChange: "transform",
+          lineHeight: 0,
+        }}
+      >
+        <img
+          src="/tange-cursor-32.png"
+          alt=""
+          draggable={false}
+          style={{
+            display: "block",
+            width: "auto",
+            height: "auto",
+            maxWidth: "none",
+            maxHeight: "none",
+            pointerEvents: "none",
+            userSelect: "none",
+          }}
+        />
+      </div>
 
       {/* {penMode && (
         <div className="fixed right-6 top-6 z-[10000] rounded-full bg-red-600 px-5 py-3 text-2xl font-bold text-white shadow-2xl">
