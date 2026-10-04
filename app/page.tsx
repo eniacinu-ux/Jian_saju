@@ -287,6 +287,8 @@ export default function Home() {
   const [recentBirthDateNotice, setRecentBirthDateNotice] = useState(false);
   const [recentBirthDateNoticeKey, setRecentBirthDateNoticeKey] = useState("");
   const [showDailyCalendar, setShowDailyCalendar] = useState(false);
+  const [showTimerConfirm, setShowTimerConfirm] = useState(false);
+  const pendingSajuCalculationRef = useRef<any>(null);
   const [calendarDate, setCalendarDate] = useState(new Date());
   const [sajuResult, setSajuResult] = useState<any>(null);
   const [compatibilityResult, setCompatibilityResult] = useState<any>({
@@ -2168,13 +2170,13 @@ export default function Home() {
     );
   };
 
-  const handleCalculateSaju = () => {
-    const calculated = calculateOneSaju(form);
-    if (!calculated) return;
+  const finishSajuCalculation = (shouldOpenTimer: boolean) => {
+    const calculated = pendingSajuCalculationRef.current;
 
-    const shouldOpenTimer = window.confirm("만세력 계산 전에 타이머를 세팅하시겠습니까?");
-    requestAnimationFrame(restoreAppCursor);
-    window.setTimeout(restoreAppCursor, 50);
+    if (!calculated) {
+      setShowTimerConfirm(false);
+      return;
+    }
 
     if (shouldOpenTimer) {
       setTimerOpen(true);
@@ -2188,6 +2190,19 @@ export default function Home() {
 
     saveRecentPerson(form);
     setSajuResult(calculated);
+    pendingSajuCalculationRef.current = null;
+    setShowTimerConfirm(false);
+    requestAnimationFrame(restoreAppCursor);
+  };
+
+  const handleCalculateSaju = () => {
+    const calculated = calculateOneSaju(form);
+    if (!calculated) return;
+
+    // 브라우저 native confirm은 페이지 내부 DOM 커서를 가리므로
+    // 계산 결과를 잠시 보관하고 앱 내부 확인창을 사용한다.
+    pendingSajuCalculationRef.current = calculated;
+    setShowTimerConfirm(true);
     requestAnimationFrame(restoreAppCursor);
   };
 
@@ -5822,7 +5837,10 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                 }
                 className={`w-full rounded-xl border border-[#6b3f24]/40 bg-[#fff7ed] py-4 ${FONT.buttonText} font-bold text-[#6b3f24] shadow-sm transition hover:bg-[#f3e1cf] disabled:opacity-40`}
               >
-                두 사람 만세력 보기
+                {!compatibilityForm.left.calendarType ||
+                !compatibilityForm.right.calendarType
+                  ? "두 사람 모두 양력/음력을 선택해주세요"
+                  : "두 사람 만세력 보기"}
               </button>
 
               {/*<button
@@ -5867,7 +5885,9 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                 }
                 className={`mt-5 w-full rounded-xl bg-[#2b1d12] px-5 py-3 ${FONT.buttonText} ${WEIGHT.buttonText} ${COLOR.buttonText} transition hover:bg-[#4a2f1c] disabled:opacity-40`}
               >
-                계산하기
+                {!form.calendarType
+                  ? "양력 또는 음력을 선택해주세요"
+                  : "계산하기"}
               </button>
 
               {sajuResult && (
@@ -6030,6 +6050,45 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
 
         </div>
       </div>
+      {showTimerConfirm && (
+        <div
+          className="animate-overlay-fade fixed inset-0 flex items-center justify-center bg-black/50 p-6"
+          style={{ zIndex: 2147483646 }}
+        >
+          <div
+            className="animate-modal-reveal w-full max-w-[650px] rounded-3xl border border-[#ead8c4] bg-white p-8 shadow-2xl"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="timer-confirm-title"
+          >
+            <div
+              id="timer-confirm-title"
+              className="text-3xl font-bold text-[#2b1d12]"
+            >
+              만세력 계산 전에 타이머를 세팅하시겠습니까?
+            </div>
+
+            <div className="mt-7 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => finishSajuCalculation(false)}
+                className="rounded-2xl bg-zinc-200 px-8 py-4 text-2xl font-bold text-zinc-800 transition hover:bg-zinc-300"
+              >
+                취소
+              </button>
+
+              <button
+                type="button"
+                onClick={() => finishSajuCalculation(true)}
+                className="rounded-2xl bg-[#6b3f24] px-8 py-4 text-2xl font-bold text-white transition hover:bg-[#4a2f1c]"
+              >
+                확인
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showDailyCalendar && (
         <div
           className="animate-overlay-fade fixed inset-0 flex items-center justify-center bg-black/50 p-6"
