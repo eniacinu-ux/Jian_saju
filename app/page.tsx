@@ -204,6 +204,7 @@ export default function Home() {
   const resultRef = useRef<HTMLDivElement>(null);
   const overviewCaptureRef = useRef<HTMLDivElement>(null);
   const luckCaptureRef = useRef<HTMLDivElement>(null);
+  const peopleBackupInputRef = useRef<HTMLInputElement>(null);
 
   const [mode, setMode] = useState<"saju" | "compatibility" | "tarot">("saju");
 
@@ -265,6 +266,7 @@ export default function Home() {
   const [favoritePeopleOpen, setFavoritePeopleOpen] = useState(true);
   const [recentPeopleOpen, setRecentPeopleOpen] = useState(true);
   const [recentPeopleSearch, setRecentPeopleSearch] = useState("");
+  const [peopleBackupOpen, setPeopleBackupOpen] = useState(false);
   const [storageLoaded, setStorageLoaded] = useState(false);
   const [memoOpen, setMemoOpen] = useState(false);
   const [memoText, setMemoText] = useState("");
@@ -1454,6 +1456,71 @@ export default function Home() {
       });
   };
 
+  const downloadPeopleBackup = () => {
+    const backup = {
+      format: "jian-saju-people-backup",
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      recentPeople: normalizePeopleList(recentPeople),
+      favoritePeople: normalizePeopleList(favoritePeople),
+    };
+
+    const timestamp = new Date()
+      .toISOString()
+      .slice(0, 19)
+      .replace(/[T:]/g, "-");
+    const blob = new Blob([JSON.stringify(backup, null, 2)], {
+      type: "application/json;charset=utf-8",
+    });
+
+    saveAs(blob, `jian-saju-people-backup_${timestamp}.json`);
+  };
+
+  const importPeopleBackup = async (event: any) => {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+
+    if (!file) return;
+
+    try {
+      const parsed = JSON.parse(await file.text());
+      const importedRecent = Array.isArray(parsed)
+        ? parsed
+        : Array.isArray(parsed?.recentPeople)
+          ? parsed.recentPeople
+          : [];
+      const importedFavorite = Array.isArray(parsed?.favoritePeople)
+        ? parsed.favoritePeople
+        : [];
+
+      if (importedRecent.length === 0 && importedFavorite.length === 0) {
+        alert("불러올 명단이 없는 파일입니다.");
+        return;
+      }
+
+      const nextRecent = normalizePeopleList([
+        ...importedRecent,
+        ...recentPeople,
+      ]);
+      const nextFavorite = normalizePeopleList([
+        ...importedFavorite,
+        ...favoritePeople,
+      ]);
+
+      setRecentPeople(nextRecent);
+      setFavoritePeople(nextFavorite);
+
+      alert(
+        `명단을 불러왔습니다.\n최근 본 사람 ${nextRecent.length}명\n즐겨찾기 ${nextFavorite.length}명`,
+      );
+    } catch (error) {
+      console.error("명단 백업 파일을 불러오지 못했습니다.", error);
+      alert("올바른 명단 백업 JSON 파일이 아닙니다.");
+    } finally {
+      input.value = "";
+    }
+  };
+
   const DEFAULT_FAVORITE_PEOPLE = [
     { name: "에스크", gender: "여성", birthDate: "1997-12-31", birthTime: "09:15", birthTimeUnknown: false, calendarType: "solar", isLeapMonth: false },
     { name: "Mgk", gender: "남성", birthDate: "1991-05-23", birthTime: "08:30", birthTimeUnknown: false, calendarType: "solar", isLeapMonth: false },
@@ -1639,6 +1706,12 @@ export default function Home() {
         restoreMemoPosition();
       }
 
+      if (event.ctrlKey && event.altKey && key === "b") {
+        event.preventDefault();
+        setPeopleBackupOpen((prev) => !prev);
+        setPeopleStorageOpen(true);
+      }
+
       if (event.key === "Escape" && drawingBoardOpen) {
         event.preventDefault();
         closeDrawingBoard();
@@ -1697,7 +1770,7 @@ export default function Home() {
       return [
         normalizedPerson,
         ...prev.filter((item) => makePersonKey(item) !== key),
-      ].slice(0, 500);
+      ];
     });
   };
 
@@ -1727,12 +1800,10 @@ export default function Home() {
     const normalizedPerson = normalizeRecentPerson(person);
     const key = makePersonKey(normalizedPerson);
 
-    setFavoritePeople((prev) =>
-      [
-        normalizedPerson,
-        ...prev.filter((item) => makePersonKey(item) !== key),
-      ].slice(0, 100),
-    );
+    setFavoritePeople((prev) => [
+      normalizedPerson,
+      ...prev.filter((item) => makePersonKey(item) !== key),
+    ]);
   };
 
   const removeFavoritePerson = (person: any) => {
@@ -1892,6 +1963,40 @@ export default function Home() {
 
         {peopleStorageOpen && (
           <>
+            {peopleBackupOpen && (
+              <div className="mt-4 rounded-2xl border-2 border-dashed border-[#6b3f24]/40 bg-[#fff4e6] p-3">
+                <div className="mb-3 text-xl font-bold text-[#6b3f24]">
+                  명단 백업 도구
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={downloadPeopleBackup}
+                    className="rounded-lg bg-[#6b3f24] px-4 py-2 text-xl font-bold text-white transition hover:opacity-90"
+                  >
+                    명단 다운로드
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => peopleBackupInputRef.current?.click()}
+                    className="rounded-lg border border-[#6b3f24]/40 bg-white px-4 py-2 text-xl font-bold text-[#6b3f24] transition hover:bg-[#f3e1cf]"
+                  >
+                    명단 불러오기
+                  </button>
+                  <input
+                    ref={peopleBackupInputRef}
+                    type="file"
+                    accept=".json,application/json"
+                    onChange={importPeopleBackup}
+                    className="hidden"
+                  />
+                </div>
+                <div className="mt-2 text-base font-bold text-[#8a5a3b]">
+                  Ctrl + Alt + B로 이 도구를 숨기거나 다시 표시할 수 있습니다.
+                </div>
+              </div>
+            )}
+
             <div className="mt-4 rounded-2xl bg-white/70 p-3">
               <input
                 type="text"
