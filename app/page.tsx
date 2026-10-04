@@ -507,6 +507,7 @@ export default function Home() {
   };
 
   const penCanvasRef = useRef<HTMLCanvasElement>(null);
+  const penContactCursorRef = useRef<HTMLDivElement>(null);
   const penCanvasSizeRef = useRef({ width: 0, height: 0, dpr: 1 });
   const penDrawingRef = useRef(false);
   const penErasingRef = useRef(false);
@@ -519,11 +520,6 @@ export default function Home() {
   const penModeRef = useRef(true);
   const [penMode, setPenMode] = useState(true);
   const [penCanvasMounted, setPenCanvasMounted] = useState(false);
-
-  // 와콤 펜용 커스텀 커서 오버레이
-  // globals.css의 cursor: url("/tange-cursor-32.png") 9 6 과 정확히 동일하게 사용
-  const penCursorOverlayRef = useRef<HTMLDivElement>(null);
-  const penCursorActiveRef = useRef(false);
 
   // 와콤 펜 접촉 직후 브라우저가 mouse/click 이벤트를 추가로 발생시키는 것을 막기 위한 값
   const penClickSuppressUntilRef = useRef(0);
@@ -814,123 +810,59 @@ export default function Home() {
     penModeRef.current = penMode;
   }, [penMode]);
 
+  // 마우스/와콤/펜 접촉 여부와 관계없이 페이지 안에서는 단 하나의 DOM 커서만 사용한다.
+  // pointerdown / pointerup / pressure 변화에서는 커서 상태를 절대 바꾸지 않으므로
+  // 펜촉이 닿는 순간에도 커서가 사라지거나 깜빡이지 않는다.
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const html = document.documentElement;
+    const overlay = () => penContactCursorRef.current;
+    const CURSOR_ACTIVE_CLASS = "single-app-cursor-active";
 
-    // 기존 globals.css에는 * { cursor: url(...) !important }가 있으므로
-    // 와콤 오버레이가 켜진 동안에만 더 구체적인 selector로 시스템/CSS 커서를 숨긴다.
-    const style = document.createElement("style");
-    style.dataset.wacomCursorOverlay = "true";
-    style.textContent = `
-      html.wacom-pen-cursor-active,
-      html.wacom-pen-cursor-active body,
-      html.wacom-pen-cursor-active body * {
-        cursor: none !important;
-      }
-    `;
-    document.head.appendChild(style);
+    const moveAndShowCursor = (clientX: number, clientY: number) => {
+      const target = overlay();
+      if (!target) return;
 
-    const showCursor = (event: PointerEvent) => {
-      const overlay = penCursorOverlayRef.current;
-      if (!overlay) return;
+      // globals.css의 hotspot(9, 6)과 동일하게 맞춘다.
+      target.style.transform = `translate3d(${clientX - 9}px, ${clientY - 6}px, 0)`;
+      target.style.visibility = "visible";
 
-      penCursorActiveRef.current = true;
-      html.classList.add("wacom-pen-cursor-active");
-
-      // CSS cursor hotspot: 9 6
-      const left = event.clientX - 9;
-      const top = event.clientY - 6;
-
-      overlay.style.transform = `translate3d(${left}px, ${top}px, 0)`;
-      overlay.style.visibility = "visible";
+      // DOM 커서가 표시되는 것과 같은 이벤트 사이클에서 네이티브 커서를 숨긴다.
+      // 이후에는 마우스/펜 전환이나 접촉 여부와 무관하게 이 상태를 유지한다.
+      document.documentElement.classList.add(CURSOR_ACTIVE_CLASS);
     };
 
-    const hideCursor = () => {
-      const overlay = penCursorOverlayRef.current;
-      penCursorActiveRef.current = false;
-      html.classList.remove("wacom-pen-cursor-active");
-
-      if (overlay) {
-        overlay.style.visibility = "hidden";
-      }
+    const handlePointerPosition = (event: PointerEvent) => {
+      moveAndShowCursor(event.clientX, event.clientY);
     };
 
-    const handleCursorPointerOver = (event: PointerEvent) => {
-      if (!penModeRef.current || event.pointerType !== "pen") return;
-      showCursor(event);
+    const handleMousePosition = (event: MouseEvent) => {
+      // 일부 와콤/Windows Ink 환경에서 hover가 mouse 이벤트로 전달되는 경우까지 커버한다.
+      moveAndShowCursor(event.clientX, event.clientY);
     };
 
-    const handleCursorPointerDown = (event: PointerEvent) => {
-      if (!penModeRef.current || event.pointerType !== "pen") return;
-      showCursor(event);
+    const handlePointerEnd = (event: PointerEvent) => {
+      // 와콤은 펜을 떼는 순간 pointerout/leave를 브라우저 밖 이탈처럼 보내는 경우가 있다.
+      // 커서를 숨기지 않고 마지막 펜 좌표에 그대로 고정한다.
+      moveAndShowCursor(event.clientX, event.clientY);
     };
 
-    const handleCursorPointerMove = (event: PointerEvent) => {
-      if (!penModeRef.current) {
-        hideCursor();
-        return;
-      }
-
-      // 정상적인 pen hover/move는 여기서 활성화한다.
-      if (event.pointerType === "pen") {
-        showCursor(event);
-        return;
-      }
-
-      // 일부 와콤 드라이버는 필기 중 move의 pointerType이 순간적으로 흔들릴 수 있다.
-      // 이미 와콤 커서가 활성화되어 있거나 필기 중이면 pointerType을 다시 검사하지 않고
-      // 같은 오버레이를 계속 움직여 깜빡임을 막는다.
-      if (penCursorActiveRef.current || penDrawingRef.current) {
-        showCursor(event);
-      }
-    };
-
-    const handleCursorPointerOut = (event: PointerEvent) => {
-      // 실제 브라우저 영역을 빠져나갈 때만 숨긴다.
-      if (
-        penCursorActiveRef.current &&
-        event.relatedTarget === null &&
-        !penDrawingRef.current
-      ) {
-        hideCursor();
-      }
-    };
-
-    const handleCursorPointerCancel = () => {
-      // pointercancel은 필기 중 자주 발생할 수 있으므로 필기 중에는 유지한다.
-      if (!penDrawingRef.current) hideCursor();
-    };
-
-    const handleMouseDown = (event: MouseEvent) => {
-      // 실제 마우스로 전환했을 때 남아 있는 와콤 오버레이를 정리한다.
-      if (event.isTrusted && !penDrawingRef.current) {
-        hideCursor();
-      }
-    };
-
-    const handleBlur = () => hideCursor();
-
-    window.addEventListener("pointerover", handleCursorPointerOver, true);
-    window.addEventListener("pointerdown", handleCursorPointerDown, true);
-    window.addEventListener("pointermove", handleCursorPointerMove, true);
-    window.addEventListener("pointerout", handleCursorPointerOut, true);
-    window.addEventListener("pointercancel", handleCursorPointerCancel, true);
-    window.addEventListener("mousedown", handleMouseDown, true);
-    window.addEventListener("blur", handleBlur);
+    // 필기 effect보다 먼저 capture 단계에서 좌표를 받는다.
+    // 커서는 한 번 표시된 뒤 절대 숨기지 않는다. 펜을 떼거나 pointercancel이 와도
+    // 마지막 좌표를 유지하고 다음 mouse/pen 이동에서 위치만 갱신한다.
+    window.addEventListener("pointerover", handlePointerPosition, true);
+    window.addEventListener("pointermove", handlePointerPosition, true);
+    window.addEventListener("mousemove", handleMousePosition, true);
+    window.addEventListener("pointerup", handlePointerEnd, true);
+    window.addEventListener("pointercancel", handlePointerEnd, true);
 
     return () => {
-      window.removeEventListener("pointerover", handleCursorPointerOver, true);
-      window.removeEventListener("pointerdown", handleCursorPointerDown, true);
-      window.removeEventListener("pointermove", handleCursorPointerMove, true);
-      window.removeEventListener("pointerout", handleCursorPointerOut, true);
-      window.removeEventListener("pointercancel", handleCursorPointerCancel, true);
-      window.removeEventListener("mousedown", handleMouseDown, true);
-      window.removeEventListener("blur", handleBlur);
-
-      html.classList.remove("wacom-pen-cursor-active");
-      style.remove();
+      document.documentElement.classList.remove(CURSOR_ACTIVE_CLASS);
+      window.removeEventListener("pointerover", handlePointerPosition, true);
+      window.removeEventListener("pointermove", handlePointerPosition, true);
+      window.removeEventListener("mousemove", handleMousePosition, true);
+      window.removeEventListener("pointerup", handlePointerEnd, true);
+      window.removeEventListener("pointercancel", handlePointerEnd, true);
     };
   }, []);
 
@@ -5085,10 +5017,10 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
         />
       )}
 
-      {/* 와콤 펜이 브라우저 위에 있는 동안 사용하는 단일 커스텀 커서.
-          globals.css의 /tange-cursor-32.png, hotspot 9 6과 동일하다. */}
+      {/* 마우스/와콤 공용 단일 DOM 커서.
+          hover/접촉/드래그 동안 같은 요소가 계속 유지되어 눌림 순간에도 깜빡이지 않는다. */}
       <div
-        ref={penCursorOverlayRef}
+        ref={penContactCursorRef}
         aria-hidden="true"
         className="pointer-events-none fixed left-0 top-0"
         style={{
@@ -5105,8 +5037,8 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
           draggable={false}
           style={{
             display: "block",
-            width: "72px",
-            height: "72px",
+            width: "50px",
+            height: "45px",
             maxWidth: "none",
             maxHeight: "none",
             pointerEvents: "none",
@@ -5806,7 +5738,10 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
         </div>
       </div>
       {showDailyCalendar && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-6">
+        <div
+          className="fixed inset-0 flex items-center justify-center bg-black/50 p-6"
+          style={{ zIndex: 2147483646 }}
+        >
           <div className="max-h-[90vh] w-[1200px] overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl">
             <div className="mb-6 flex items-center justify-between">
               <button

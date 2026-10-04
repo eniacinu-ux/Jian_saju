@@ -26,6 +26,18 @@ body {
 }
 html,
 body,
-* {
+*,
+*::before,
+*::after {
+  /* React가 준비되기 전/페이지 재진입 시 사용할 안전한 기본 커서 */
   cursor: url("/tange-cursor-32.png") 9 6, auto !important;
+}
+
+/* 포인터가 페이지 안에 들어온 뒤에는 마우스와 와콤을 구분하지 않고
+   단 하나의 DOM 커서만 사용한다. 접촉/해제 시 이 클래스는 바뀌지 않는다. */
+html.single-app-cursor-active,
+html.single-app-cursor-active *,
+html.single-app-cursor-active *::before,
+html.single-app-cursor-active *::after {
+  cursor: none !important;
 }

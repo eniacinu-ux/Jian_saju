@@ -779,7 +779,7 @@ const calculated = calculateSaju({
   birthTime: targetForm.birthTimeUnknown ? "12:00" : targetForm.birthTime,
   calendarType: "solar",
   timezone: "Asia/Seoul",
-  lateZiMode: true,
+  lateZiMode: false,
   gender: targetForm.gender === "남성" ? "male" : "female",
 });
 
