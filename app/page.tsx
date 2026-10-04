@@ -214,7 +214,7 @@ export default function Home() {
     birthTime: "23:00",
     birthTimeUnknown: false,
     birthLocation: "",
-    calendarType: "solar",
+    calendarType: "",
     isLeapMonth: false,
   });
 
@@ -225,7 +225,7 @@ export default function Home() {
       birthDate: "",
       birthTime: "23:00",
       birthTimeUnknown: false,
-      calendarType: "solar",
+      calendarType: "",
       isLeapMonth: false,
     },
     right: {
@@ -234,7 +234,7 @@ export default function Home() {
       birthDate: "",
       birthTime: "23:00",
       birthTimeUnknown: false,
-      calendarType: "solar",
+      calendarType: "",
       isLeapMonth: false,
     },
   });
@@ -1353,6 +1353,8 @@ export default function Home() {
     };
   };
   const calculateOneSaju = (targetForm: any) => {
+    if (!targetForm.calendarType) return null;
+
     if (!targetForm.birthDate) return null;
 
     if (!targetForm.birthTimeUnknown && !targetForm.birthTime) return null;
@@ -1405,6 +1407,14 @@ export default function Home() {
     }
 
     return calculatedWithBirthInfo;
+  };
+
+  const getCalendarTypeLabel = (person: any) => {
+    if (person?.calendarType === "solar") return "양력";
+    if (person?.calendarType === "lunar") {
+      return person?.isLeapMonth ? "음력 윤달" : "음력 평달";
+    }
+    return "양력/음력 미선택";
   };
 
   const makePersonKey = (person: any) => {
@@ -5123,17 +5133,17 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
               <span className="text-[#b59474]">|</span>
               <span>{form.gender}</span>
               <span className="text-[#b59474]">|</span>
-              <span>{form.calendarType === "solar" ? "양력" : form.isLeapMonth ? "음력 윤달" : "음력"}</span>
+              <span className={!form.calendarType ? "text-red-600" : ""}>{getCalendarTypeLabel(form)}</span>
               <span>{form.birthDate || "생년월일 미입력"}</span>
               <span>{form.birthTimeUnknown ? "시간 미상" : form.birthTime || "시간 미입력"}</span>
             </div>
           ) : (
             <div className={`flex items-center justify-center gap-5 whitespace-nowrap ${FONT.floatingInfo} font-bold text-[#2b1d12]`}>
               <span className="rounded-lg bg-[#fff4e8] px-3 py-1">
-                {compatibilityForm.left.name || "이름 미입력"} · {compatibilityForm.left.gender} · {compatibilityForm.left.calendarType === "solar" ? "양력" : compatibilityForm.left.isLeapMonth ? "음력 윤달" : "음력"} {compatibilityForm.left.birthDate || "생년월일 미입력"} {compatibilityForm.left.birthTimeUnknown ? "시간 미상" : compatibilityForm.left.birthTime || "시간 미입력"}
+                {compatibilityForm.left.name || "이름 미입력"} · {compatibilityForm.left.gender} · {getCalendarTypeLabel(compatibilityForm.left)} {compatibilityForm.left.birthDate || "생년월일 미입력"} {compatibilityForm.left.birthTimeUnknown ? "시간 미상" : compatibilityForm.left.birthTime || "시간 미입력"}
               </span>
               <span className="rounded-lg bg-[#f4efe9] px-3 py-1">
-                {compatibilityForm.right.name || "이름 미입력"} · {compatibilityForm.right.gender} · {compatibilityForm.right.calendarType === "solar" ? "양력" : compatibilityForm.right.isLeapMonth ? "음력 윤달" : "음력"} {compatibilityForm.right.birthDate || "생년월일 미입력"} {compatibilityForm.right.birthTimeUnknown ? "시간 미상" : compatibilityForm.right.birthTime || "시간 미입력"}
+                {compatibilityForm.right.name || "이름 미입력"} · {compatibilityForm.right.gender} · {getCalendarTypeLabel(compatibilityForm.right)} {compatibilityForm.right.birthDate || "생년월일 미입력"} {compatibilityForm.right.birthTimeUnknown ? "시간 미상" : compatibilityForm.right.birthTime || "시간 미입력"}
               </span>
             </div>
           )}
@@ -5195,55 +5205,87 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                   }}
                 />
 
-                <label
-                  className={`flex items-center gap-1 ${FONT.formLabel} font-bold`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={form.calendarType === "solar"}
-                    onChange={() =>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
                       setForm({
                         ...form,
                         calendarType: "solar",
                         isLeapMonth: false,
-                      })
-                    }
-                  />
-                  양력
-                </label>
+                      });
+                      setSajuResult(null);
+                      setResult("");
+                    }}
+                    className={`rounded-xl border-2 px-4 py-2 ${FONT.formLabel} font-bold transition ${
+                      form.calendarType === "solar"
+                        ? "border-blue-700 bg-blue-600 text-white shadow-md"
+                        : "border-blue-300 bg-white text-blue-700 hover:bg-blue-50"
+                    }`}
+                  >
+                    양력
+                  </button>
 
-                <label
-                  className={`flex items-center gap-1 ${FONT.formLabel} font-bold`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={form.calendarType === "lunar"}
-                    onChange={() =>
+                  <button
+                    type="button"
+                    onClick={() => {
                       setForm({
                         ...form,
                         calendarType: "lunar",
-                      })
-                    }
-                  />
-                  음력
-                </label>
+                        isLeapMonth: false,
+                      });
+                      setSajuResult(null);
+                      setResult("");
+                    }}
+                    className={`rounded-xl border-2 px-4 py-2 ${FONT.formLabel} font-bold transition ${
+                      form.calendarType === "lunar"
+                        ? "border-orange-700 bg-orange-500 text-white shadow-md"
+                        : "border-orange-300 bg-white text-orange-700 hover:bg-orange-50"
+                    }`}
+                  >
+                    음력
+                  </button>
+                </div>
+
+                {!form.calendarType && (
+                  <span className="whitespace-nowrap rounded-lg bg-red-50 px-3 py-2 text-2xl font-bold text-red-600">
+                    양력/음력 선택 필수
+                  </span>
+                )}
 
                 {form.calendarType === "lunar" && (
-                  <label
-                    className={`flex items-center gap-1 ${FONT.formLabel} font-bold text-[#6b3f24]`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={form.isLeapMonth}
-                      onChange={(e) =>
-                        setForm({
-                          ...form,
-                          isLeapMonth: e.target.checked,
-                        })
-                      }
-                    />
-                    윤달
-                  </label>
+                  <div className="flex items-center gap-2 rounded-xl border border-orange-200 bg-orange-50 p-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setForm({ ...form, isLeapMonth: false });
+                        setSajuResult(null);
+                        setResult("");
+                      }}
+                      className={`rounded-lg px-3 py-1.5 text-2xl font-bold transition ${
+                        !form.isLeapMonth
+                          ? "bg-white text-orange-800 shadow"
+                          : "text-orange-500"
+                      }`}
+                    >
+                      평달
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setForm({ ...form, isLeapMonth: true });
+                        setSajuResult(null);
+                        setResult("");
+                      }}
+                      className={`rounded-lg px-3 py-1.5 text-2xl font-bold transition ${
+                        form.isLeapMonth
+                          ? "bg-white text-orange-800 shadow"
+                          : "text-orange-500"
+                      }`}
+                    >
+                      윤달
+                    </button>
+                  </div>
                 )}
               </div>
 
@@ -5380,15 +5422,10 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                         }}
                       />
 
-                      <label
-                        className={`flex items-center gap-1 ${FONT.formLabel} font-bold`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={
-                            compatibilityForm[key].calendarType === "solar"
-                          }
-                          onChange={() =>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
                             setCompatibilityForm({
                               ...compatibilityForm,
                               [key]: {
@@ -5396,52 +5433,88 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                                 calendarType: "solar",
                                 isLeapMonth: false,
                               },
-                            })
-                          }
-                        />
-                        양력
-                      </label>
+                            });
+                            setCompatibilityResult({ left: null, right: null });
+                            setResult("");
+                          }}
+                          className={`rounded-xl border-2 px-3 py-2 ${FONT.formLabel} font-bold transition ${
+                            compatibilityForm[key].calendarType === "solar"
+                              ? "border-blue-700 bg-blue-600 text-white shadow-md"
+                              : "border-blue-300 bg-white text-blue-700 hover:bg-blue-50"
+                          }`}
+                        >
+                          양력
+                        </button>
 
-                      <label
-                        className={`flex items-center gap-1 ${FONT.formLabel} font-bold`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={
-                            compatibilityForm[key].calendarType === "lunar"
-                          }
-                          onChange={() =>
+                        <button
+                          type="button"
+                          onClick={() => {
                             setCompatibilityForm({
                               ...compatibilityForm,
                               [key]: {
                                 ...compatibilityForm[key],
                                 calendarType: "lunar",
+                                isLeapMonth: false,
                               },
-                            })
-                          }
-                        />
-                        음력
-                      </label>
+                            });
+                            setCompatibilityResult({ left: null, right: null });
+                            setResult("");
+                          }}
+                          className={`rounded-xl border-2 px-3 py-2 ${FONT.formLabel} font-bold transition ${
+                            compatibilityForm[key].calendarType === "lunar"
+                              ? "border-orange-700 bg-orange-500 text-white shadow-md"
+                              : "border-orange-300 bg-white text-orange-700 hover:bg-orange-50"
+                          }`}
+                        >
+                          음력
+                        </button>
+                      </div>
+
+                      {!compatibilityForm[key].calendarType && (
+                        <span className="whitespace-nowrap rounded-lg bg-red-50 px-2 py-2 text-xl font-bold text-red-600">
+                          양력/음력 선택 필수
+                        </span>
+                      )}
 
                       {compatibilityForm[key].calendarType === "lunar" && (
-                        <label
-                          className={`flex items-center gap-1 ${FONT.formLabel} font-bold text-[#6b3f24]`}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={compatibilityForm[key].isLeapMonth}
-                            onChange={(e) =>
+                        <div className="flex items-center gap-1 rounded-xl border border-orange-200 bg-orange-50 p-1">
+                          <button
+                            type="button"
+                            onClick={() => {
                               setCompatibilityForm({
                                 ...compatibilityForm,
-                                [key]: {
-                                  ...compatibilityForm[key],
-                                  isLeapMonth: e.target.checked,
-                                },
-                              })
-                            }
-                          />
-                          윤달
-                        </label>
+                                [key]: { ...compatibilityForm[key], isLeapMonth: false },
+                              });
+                              setCompatibilityResult({ left: null, right: null });
+                              setResult("");
+                            }}
+                            className={`rounded-lg px-2 py-1.5 text-xl font-bold ${
+                              !compatibilityForm[key].isLeapMonth
+                                ? "bg-white text-orange-800 shadow"
+                                : "text-orange-500"
+                            }`}
+                          >
+                            평달
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setCompatibilityForm({
+                                ...compatibilityForm,
+                                [key]: { ...compatibilityForm[key], isLeapMonth: true },
+                              });
+                              setCompatibilityResult({ left: null, right: null });
+                              setResult("");
+                            }}
+                            className={`rounded-lg px-2 py-1.5 text-xl font-bold ${
+                              compatibilityForm[key].isLeapMonth
+                                ? "bg-white text-orange-800 shadow"
+                                : "text-orange-500"
+                            }`}
+                          >
+                            윤달
+                          </button>
+                        </div>
                       )}
                     </div>
 
@@ -5539,9 +5612,11 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                 type="button"
                 onClick={handleCalculateCompatibility}
                 disabled={
+                  !compatibilityForm.left.calendarType ||
                   !compatibilityForm.left.birthDate ||
                   (!compatibilityForm.left.birthTime &&
                     !compatibilityForm.left.birthTimeUnknown) ||
+                  !compatibilityForm.right.calendarType ||
                   !compatibilityForm.right.birthDate ||
                   (!compatibilityForm.right.birthTime &&
                     !compatibilityForm.right.birthTimeUnknown)
@@ -5587,7 +5662,9 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                 type="button"
                 onClick={handleCalculateSaju}
                 disabled={
-                  !form.birthDate || (!form.birthTime && !form.birthTimeUnknown)
+                  !form.calendarType ||
+                  !form.birthDate ||
+                  (!form.birthTime && !form.birthTimeUnknown)
                 }
                 className={`mt-5 w-full rounded-xl bg-[#2b1d12] px-5 py-3 ${FONT.buttonText} ${WEIGHT.buttonText} ${COLOR.buttonText} transition hover:bg-[#4a2f1c] disabled:opacity-40`}
               >
@@ -5609,6 +5686,15 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                           >
                             사주팔자
                           </h3>
+                          <span
+                            className={`ml-3 rounded-lg px-3 py-1 text-2xl font-bold ${
+                              form.calendarType === "solar"
+                                ? "bg-blue-100 text-blue-800"
+                                : "bg-orange-100 text-orange-800"
+                            }`}
+                          >
+                            입력 기준: {getCalendarTypeLabel(form)}
+                          </span>
                           {renderTenGodSummaryInline(sajuResult)}
                         </div>
 
