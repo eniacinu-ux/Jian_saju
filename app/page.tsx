@@ -5159,23 +5159,31 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                 className={`w-full rounded-xl border p-3 ${FONT.inputText}`}
                 placeholder="이름"
                 value={form.name}
-                onChange={(e) =>
-                  setForm({
-                    ...form,
+                onChange={(e) => {
+                  setForm((prev) => ({
+                    ...prev,
                     name: e.target.value,
-                  })
-                }
+                    calendarType: "",
+                    isLeapMonth: false,
+                  }));
+                  setSajuResult(null);
+                  setResult("");
+                }}
               />
 
               <select
                 className={`w-full rounded-xl border p-3 ${FONT.inputText}`}
                 value={form.gender}
-                onChange={(e) =>
-                  setForm({
-                    ...form,
+                onChange={(e) => {
+                  setForm((prev) => ({
+                    ...prev,
                     gender: e.target.value,
-                  })
-                }
+                    calendarType: "",
+                    isLeapMonth: false,
+                  }));
+                  setSajuResult(null);
+                  setResult("");
+                }}
               >
                 <option value="남성">남성</option>
                 <option value="여성">여성</option>
@@ -5189,19 +5197,21 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                   className={`w-[360px] shrink-0 rounded-xl border p-3 ${FONT.inputText}`}
                   value={form.birthDate}
                   onChange={(e) => {
-                    setForm({
-                      ...form,
+                    setForm((prev) => ({
+                      ...prev,
                       birthDate: e.target.value,
-                    });
+                      calendarType: "",
+                      isLeapMonth: false,
+                    }));
 
                     setSajuResult(null);
                     setResult("");
                   }}
                   onBlur={(e) => {
-                    setForm({
-                      ...form,
+                    setForm((prev) => ({
+                      ...prev,
                       birthDate: normalizeDateOnBlur(e.target.value),
-                    });
+                    }));
                   }}
                 />
 
@@ -5352,14 +5362,17 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                       placeholder="이름"
                       value={compatibilityForm[key].name}
                       onChange={(e) => {
-                        setCompatibilityForm({
-                          ...compatibilityForm,
+                        setCompatibilityForm((prev) => ({
+                          ...prev,
                           [key]: {
-                            ...compatibilityForm[key],
+                            ...prev[key],
                             name: e.target.value,
+                            calendarType: "",
+                            isLeapMonth: false,
                           },
-                        });
+                        }));
 
+                        setCompatibilityResult({ left: null, right: null });
                         setResult("");
                       }}
                     />
@@ -5368,13 +5381,15 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                       className={`w-full rounded-xl border p-3 ${FONT.inputText}`}
                       value={compatibilityForm[key].gender}
                       onChange={(e) => {
-                        setCompatibilityForm({
-                          ...compatibilityForm,
+                        setCompatibilityForm((prev) => ({
+                          ...prev,
                           [key]: {
-                            ...compatibilityForm[key],
+                            ...prev[key],
                             gender: e.target.value,
+                            calendarType: "",
+                            isLeapMonth: false,
                           },
-                        });
+                        }));
 
                         setCompatibilityResult({
                           left: null,
@@ -5396,13 +5411,15 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                         className={`flex-1 rounded-xl border p-3 ${FONT.inputText}`}
                         value={compatibilityForm[key].birthDate}
                         onChange={(e) => {
-                          setCompatibilityForm({
-                            ...compatibilityForm,
+                          setCompatibilityForm((prev) => ({
+                            ...prev,
                             [key]: {
-                              ...compatibilityForm[key],
+                              ...prev[key],
                               birthDate: e.target.value,
+                              calendarType: "",
+                              isLeapMonth: false,
                             },
-                          });
+                          }));
 
                           setCompatibilityResult({
                             left: null,
@@ -5412,13 +5429,13 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                           setResult("");
                         }}
                         onBlur={(e) => {
-                          setCompatibilityForm({
-                            ...compatibilityForm,
+                          setCompatibilityForm((prev) => ({
+                            ...prev,
                             [key]: {
-                              ...compatibilityForm[key],
+                              ...prev[key],
                               birthDate: normalizeDateOnBlur(e.target.value),
                             },
-                          });
+                          }));
                         }}
                       />
 
