@@ -1,7 +1,7 @@
 "use client";
 
 import KoreanLunarCalendar from "korean-lunar-calendar";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { flushSync } from "react-dom";
 import { saveAs } from "file-saver";
 import { toPng } from "html-to-image";
@@ -18,6 +18,39 @@ import {
 } from "docx";
 
 import { calculateSaju } from "./lib/sajuCalculator";
+
+
+function ScrollFade({ children, className = "" }: { children: ReactNode; className?: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const node = ref.current;
+    if (!node) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setVisible(entry.isIntersecting);
+      },
+      {
+        threshold: 0.12,
+        rootMargin: "-6% 0px -12% 0px",
+      },
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div
+      ref={ref}
+      className={`scroll-fade-shell ${visible ? "is-visible" : ""} ${className}`}
+    >
+      {children}
+    </div>
+  );
+}
 
 export default function Home() {
   const FONT = {
@@ -510,6 +543,7 @@ export default function Home() {
 
   const penCanvasRef = useRef<HTMLCanvasElement>(null);
   const penContactCursorRef = useRef<HTMLDivElement>(null);
+  const appCursorLastPointRef = useRef<{ x: number; y: number } | null>(null);
   const penCanvasSizeRef = useRef({ width: 0, height: 0, dpr: 1 });
   const penDrawingRef = useRef(false);
   const penErasingRef = useRef(false);
@@ -825,6 +859,8 @@ export default function Home() {
       const target = overlay();
       if (!target) return;
 
+      appCursorLastPointRef.current = { x: clientX, y: clientY };
+
       // globals.css의 hotspot(9, 6)과 동일하게 맞춘다.
       target.style.transform = `translate3d(${clientX - 9}px, ${clientY - 6}px, 0)`;
       target.style.visibility = "visible";
@@ -849,6 +885,12 @@ export default function Home() {
       moveAndShowCursor(event.clientX, event.clientY);
     };
 
+    const restoreCursorAfterWindowFocus = () => {
+      const point = appCursorLastPointRef.current;
+      if (!point) return;
+      requestAnimationFrame(() => moveAndShowCursor(point.x, point.y));
+    };
+
     // 필기 effect보다 먼저 capture 단계에서 좌표를 받는다.
     // 커서는 한 번 표시된 뒤 절대 숨기지 않는다. 펜을 떼거나 pointercancel이 와도
     // 마지막 좌표를 유지하고 다음 mouse/pen 이동에서 위치만 갱신한다.
@@ -857,6 +899,7 @@ export default function Home() {
     window.addEventListener("mousemove", handleMousePosition, true);
     window.addEventListener("pointerup", handlePointerEnd, true);
     window.addEventListener("pointercancel", handlePointerEnd, true);
+    window.addEventListener("focus", restoreCursorAfterWindowFocus, true);
 
     return () => {
       document.documentElement.classList.remove(CURSOR_ACTIVE_CLASS);
@@ -865,8 +908,19 @@ export default function Home() {
       window.removeEventListener("mousemove", handleMousePosition, true);
       window.removeEventListener("pointerup", handlePointerEnd, true);
       window.removeEventListener("pointercancel", handlePointerEnd, true);
+      window.removeEventListener("focus", restoreCursorAfterWindowFocus, true);
     };
   }, []);
+
+  const restoreAppCursor = () => {
+    const target = penContactCursorRef.current;
+    const point = appCursorLastPointRef.current;
+    if (!target || !point) return;
+
+    target.style.transform = `translate3d(${point.x - 9}px, ${point.y - 6}px, 0)`;
+    target.style.visibility = "visible";
+    document.documentElement.classList.add("single-app-cursor-active");
+  };
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -1865,10 +1919,8 @@ export default function Home() {
     const favorite = isFavoritePerson(person);
 
     return (
-      <div
-        key={makePersonKey(person)}
-        className="flex items-center gap-1 rounded-xl bg-white p-1 shadow-sm"
-      >
+      <ScrollFade key={makePersonKey(person)} className="inline-block">
+      <div className="flex items-center gap-1 rounded-xl bg-white p-1 shadow-sm">
         <button
           type="button"
           onClick={() => onSelect(person)}
@@ -1912,6 +1964,7 @@ export default function Home() {
           </button>
         )}
       </div>
+      </ScrollFade>
     );
   };
 
@@ -1964,6 +2017,7 @@ export default function Home() {
         {peopleStorageOpen && (
           <>
             {peopleBackupOpen && (
+              <ScrollFade>
               <div className="mt-4 rounded-2xl border-2 border-dashed border-[#6b3f24]/40 bg-[#fff4e6] p-3">
                 <div className="mb-3 text-xl font-bold text-[#6b3f24]">
                   명단 백업 도구
@@ -1995,8 +2049,10 @@ export default function Home() {
                   Ctrl + Alt + B로 이 도구를 숨기거나 다시 표시할 수 있습니다.
                 </div>
               </div>
+              </ScrollFade>
             )}
 
+            <ScrollFade>
             <div className="mt-4 rounded-2xl bg-white/70 p-3">
               <input
                 type="text"
@@ -2030,7 +2086,9 @@ export default function Home() {
                 </div>
               )}
             </div>
+            </ScrollFade>
 
+            <ScrollFade>
             <div className="mt-4 rounded-2xl bg-white/70 p-3">
               <button
                 type="button"
@@ -2057,7 +2115,9 @@ export default function Home() {
                 </div>
               )}
             </div>
+            </ScrollFade>
 
+            <ScrollFade>
             <div className="mt-4 rounded-2xl bg-white/70 p-3">
               <div className="flex items-center justify-between">
                 <button
@@ -2101,6 +2161,7 @@ export default function Home() {
                 </>
               )}
             </div>
+            </ScrollFade>
           </>
         )}
       </div>
@@ -2112,6 +2173,8 @@ export default function Home() {
     if (!calculated) return;
 
     const shouldOpenTimer = window.confirm("만세력 계산 전에 타이머를 세팅하시겠습니까?");
+    requestAnimationFrame(restoreAppCursor);
+    window.setTimeout(restoreAppCursor, 50);
 
     if (shouldOpenTimer) {
       setTimerOpen(true);
@@ -2125,6 +2188,7 @@ export default function Home() {
 
     saveRecentPerson(form);
     setSajuResult(calculated);
+    requestAnimationFrame(restoreAppCursor);
   };
 
   const handleCalculateCompatibility = () => {
@@ -2138,6 +2202,7 @@ export default function Home() {
       left,
       right,
     });
+    requestAnimationFrame(restoreAppCursor);
   };
 
   async function handleSubmit() {
@@ -4617,6 +4682,8 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
 
     return (
       <div className="mt-6 rounded-2xl bg-white p-4 shadow-sm">
+        <ScrollFade>
+        <div>
         <h3
           className={`${FONT.daewoonTitle} ${WEIGHT.daewoonTitle} ${COLOR.daewoonTitle}`}
         >
@@ -4709,8 +4776,11 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
             );
           })}
         </div>
+        </div>
+        </ScrollFade>
 
         {selectedDaewoon && (
+          <ScrollFade>
           <div className="mt-5 rounded-2xl bg-zinc-100 p-4">
             <h4
               className={`${FONT.yearLuckTitle} ${WEIGHT.yearLuckTitle} ${COLOR.yearLuckTitle}`}
@@ -4810,6 +4880,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
             </div>
 
             {selectedYearLuck && (
+              <ScrollFade>
               <div className="mt-5 rounded-2xl bg-white p-4">
                 <h4
                   className={`${FONT.monthLuckTitle} ${WEIGHT.monthLuckTitle} ${COLOR.monthLuckTitle}`}
@@ -4878,8 +4949,10 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                   ))}
                 </div>
               </div>
+              </ScrollFade>
             )}
           </div>
+          </ScrollFade>
         )}
       </div>
     );
@@ -4896,16 +4969,20 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
 
     return (
       <div className="mt-4 rounded-2xl bg-[#ffffff] p-4 text-[#000000] shadow-sm">
-        <div className="flex flex-wrap items-baseline">
-          <h3
-            className={`${FONT.cardTitle} ${WEIGHT.cardTitle} ${COLOR.cardTitle}`}
-          >
-            사주팔자
-          </h3>
-          {renderTenGodSummaryInline(targetSaju)}
-        </div>
+        <ScrollFade>
+          <div>
+            <div className="flex flex-wrap items-baseline">
+              <h3
+                className={`${FONT.cardTitle} ${WEIGHT.cardTitle} ${COLOR.cardTitle}`}
+              >
+                사주팔자
+              </h3>
+              {renderTenGodSummaryInline(targetSaju)}
+            </div>
 
-        {renderSajuOverview(targetSaju, items, cardKey)}
+            {renderSajuOverview(targetSaju, items, cardKey)}
+          </div>
+        </ScrollFade>
 
         {renderLuckPanel(targetSaju, cardKey, birthDate)}
       </div>
@@ -5800,6 +5877,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                   className="mt-6 rounded-2xl bg-[#ffffff] p-4 text-[#000000] shadow-sm"
                 >
                   <div>
+                    <ScrollFade>
                     <div ref={overviewCaptureRef} data-capture-target>
                       <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex flex-wrap items-baseline">
@@ -5835,6 +5913,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
 
                       {renderSajuOverview(sajuResult, sajuItems, "main")}
                     </div>
+                    </ScrollFade>
 
                     <div ref={luckCaptureRef} data-capture-target>
                       {renderLuckPanel(
@@ -5846,6 +5925,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                   </div>
 
                   {result && (
+                    <ScrollFade>
                     <div className="mt-5 rounded-2xl bg-zinc-100 p-4">
                       <h4
                         className={`${FONT.panelTitle} ${WEIGHT.panelTitle} ${COLOR.panelTitle}`}
@@ -5859,6 +5939,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                         {result}
                       </div>
                     </div>
+                    </ScrollFade>
                   )}
 
                  {/*<button
@@ -5876,6 +5957,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
           {mode === "compatibility" &&
             (compatibilityResult.left || compatibilityResult.right) && (
               <section className="mt-6 rounded-3xl border border-[#ead8c4] bg-[#fffaf3] p-5 shadow-inner">
+                <ScrollFade>
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <h2
                     className={`${FONT.sectionTitle} ${WEIGHT.sectionTitle} ${COLOR.sectionTitle}`}
@@ -5895,6 +5977,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                       : "지지 관계·신살 전체 열기 ▼"}
                   </button>
                 </div>
+                </ScrollFade>
 
                 <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
                   <div>
@@ -5927,6 +6010,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
             )}
 
           {mode === "compatibility" && result && (
+            <ScrollFade>
             <section className="mt-6 rounded-3xl border border-[#ead8c4] bg-[#fffaf3] p-5 shadow-inner">
               <h2
                 className={`${FONT.sectionTitle} ${WEIGHT.sectionTitle} ${COLOR.sectionTitle}`}
@@ -5940,6 +6024,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                 {result}
               </div>
             </section>
+            </ScrollFade>
           )}
 
 
@@ -5947,10 +6032,10 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
       </div>
       {showDailyCalendar && (
         <div
-          className="fixed inset-0 flex items-center justify-center bg-black/50 p-6"
+          className="animate-overlay-fade fixed inset-0 flex items-center justify-center bg-black/50 p-6"
           style={{ zIndex: 2147483646 }}
         >
-          <div className="max-h-[90vh] w-[1200px] overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl">
+          <div className="animate-modal-reveal max-h-[90vh] w-[1200px] overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl">
             <div className="mb-6 flex items-center justify-between">
               <button
                 type="button"

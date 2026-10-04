@@ -41,3 +41,80 @@ html.single-app-cursor-active *::before,
 html.single-app-cursor-active *::after {
   cursor: none !important;
 }
+
+
+@keyframes sectionReveal {
+  0% {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes overlayFade {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes modalReveal {
+  0% {
+    opacity: 0;
+    transform: translateY(20px) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-section-reveal {
+  animation: sectionReveal 0.3s ease-out;
+  transform-origin: top center;
+}
+
+.animate-overlay-fade {
+  animation: overlayFade 0.2s ease-out;
+}
+
+.animate-modal-reveal {
+  animation: modalReveal 0.24s ease-out;
+  transform-origin: center top;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-section-reveal,
+  .animate-overlay-fade,
+  .animate-modal-reveal {
+    animation: none !important;
+  }
+}
+
+
+/* 스크롤 등장/퇴장 효과: 레이아웃/상태를 건드리지 않고 시각 효과만 적용 */
+.scroll-fade-shell {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 420ms ease, transform 420ms ease;
+  will-change: opacity, transform;
+}
+
+.scroll-fade-shell.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scroll-fade-shell,
+  .scroll-fade-shell.is-visible {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
