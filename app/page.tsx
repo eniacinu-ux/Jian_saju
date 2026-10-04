@@ -5541,7 +5541,8 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
           )}
 
           {mode === "compatibility" && (
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               {(["left", "right"] as const).map((key) => (
                 <div
                   key={key}
@@ -5789,6 +5790,28 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                   </div>
                 </div>
               ))}
+              </div>
+
+              <button
+                type="button"
+                onClick={handleCalculateCompatibility}
+                disabled={
+                  !compatibilityForm.left.calendarType ||
+                  !compatibilityForm.left.birthDate ||
+                  (!compatibilityForm.left.birthTime &&
+                    !compatibilityForm.left.birthTimeUnknown) ||
+                  !compatibilityForm.right.calendarType ||
+                  !compatibilityForm.right.birthDate ||
+                  (!compatibilityForm.right.birthTime &&
+                    !compatibilityForm.right.birthTimeUnknown)
+                }
+                className={`w-full rounded-xl border border-[#6b3f24]/40 bg-[#fff7ed] py-4 ${FONT.buttonText} font-bold text-[#6b3f24] shadow-sm transition hover:bg-[#f3e1cf] disabled:opacity-40`}
+              >
+                {!compatibilityForm.left.calendarType ||
+                !compatibilityForm.right.calendarType
+                  ? "두 사람 모두 양력/음력을 선택해주세요"
+                  : "두 사람 만세력 계산하기"}
+              </button>
             </div>
           )}
 
@@ -5819,42 +5842,6 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
               </button>*/}
             </>
           )}
-
-          {mode === "compatibility" && (
-            <>
-              <button
-                type="button"
-                onClick={handleCalculateCompatibility}
-                disabled={
-                  !compatibilityForm.left.calendarType ||
-                  !compatibilityForm.left.birthDate ||
-                  (!compatibilityForm.left.birthTime &&
-                    !compatibilityForm.left.birthTimeUnknown) ||
-                  !compatibilityForm.right.calendarType ||
-                  !compatibilityForm.right.birthDate ||
-                  (!compatibilityForm.right.birthTime &&
-                    !compatibilityForm.right.birthTimeUnknown)
-                }
-                className={`w-full rounded-xl border border-[#6b3f24]/40 bg-[#fff7ed] py-4 ${FONT.buttonText} font-bold text-[#6b3f24] shadow-sm transition hover:bg-[#f3e1cf] disabled:opacity-40`}
-              >
-                {!compatibilityForm.left.calendarType ||
-                !compatibilityForm.right.calendarType
-                  ? "두 사람 모두 양력/음력을 선택해주세요"
-                  : "두 사람 만세력 보기"}
-              </button>
-
-              {/*<button
-                type="button"
-                onClick={handleSubmit}
-                disabled={loading}
-                className={`w-full cursor-pointer rounded-xl bg-[#6b3f24] py-4 ${FONT.buttonText} ${WEIGHT.buttonText} ${COLOR.buttonText} disabled:opacity-50`}
-              >
-                {loading ? "분석 중..." : "궁합 분석하기"}
-              </button>*/}
-            </>
-          )}
-
-
 
           {mode === "saju" && showSaju && (
             <section className="mt-6 rounded-3xl border border-[#ead8c4] bg-[#fffaf3] p-5 shadow-inner">
