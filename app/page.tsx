@@ -284,11 +284,14 @@ export default function Home() {
   const [result, setResult] = useState("");
   const [loading, setLoading] = useState(false);
   const [showSaju, setShowSaju] = useState(false);
+  const [showCompatibilitySaju, setShowCompatibilitySaju] = useState(false);
   const [recentBirthDateNotice, setRecentBirthDateNotice] = useState(false);
   const [recentBirthDateNoticeKey, setRecentBirthDateNoticeKey] = useState("");
   const [showDailyCalendar, setShowDailyCalendar] = useState(false);
   const [showTimerConfirm, setShowTimerConfirm] = useState(false);
   const pendingSajuCalculationRef = useRef<any>(null);
+  const pendingCompatibilityCalculationRef = useRef<any>(null);
+  const pendingCalculationModeRef = useRef<"saju" | "compatibility" | null>(null);
   const [calendarDate, setCalendarDate] = useState(new Date());
   const [sajuResult, setSajuResult] = useState<any>(null);
   const [compatibilityResult, setCompatibilityResult] = useState<any>({
@@ -2171,17 +2174,42 @@ export default function Home() {
   };
 
   const finishSajuCalculation = (shouldOpenTimer: boolean) => {
-    const calculated = pendingSajuCalculationRef.current;
-
-    if (!calculated) {
-      setShowTimerConfirm(false);
-      return;
-    }
-
     if (shouldOpenTimer) {
       setTimerOpen(true);
       setTimerFinished(false);
       setTimerBlink(false);
+    }
+
+    if (pendingCalculationModeRef.current === "compatibility") {
+      const pending = pendingCompatibilityCalculationRef.current;
+
+      if (!pending?.left || !pending?.right) {
+        pendingCompatibilityCalculationRef.current = null;
+        pendingCalculationModeRef.current = null;
+        setShowTimerConfirm(false);
+        return;
+      }
+
+      saveRecentPerson(compatibilityForm.left);
+      saveRecentPerson(compatibilityForm.right);
+      setCompatibilityResult({
+        left: pending.left,
+        right: pending.right,
+      });
+
+      pendingCompatibilityCalculationRef.current = null;
+      pendingCalculationModeRef.current = null;
+      setShowTimerConfirm(false);
+      requestAnimationFrame(restoreAppCursor);
+      return;
+    }
+
+    const calculated = pendingSajuCalculationRef.current;
+
+    if (!calculated) {
+      pendingCalculationModeRef.current = null;
+      setShowTimerConfirm(false);
+      return;
     }
 
     const alreadyViewedBirthDate = hasRecentBirthDate(form);
@@ -2191,6 +2219,7 @@ export default function Home() {
     saveRecentPerson(form);
     setSajuResult(calculated);
     pendingSajuCalculationRef.current = null;
+    pendingCalculationModeRef.current = null;
     setShowTimerConfirm(false);
     requestAnimationFrame(restoreAppCursor);
   };
@@ -2199,9 +2228,10 @@ export default function Home() {
     const calculated = calculateOneSaju(form);
     if (!calculated) return;
 
-    // 브라우저 native confirm은 페이지 내부 DOM 커서를 가리므로
-    // 계산 결과를 잠시 보관하고 앱 내부 확인창을 사용한다.
+    // 브라우저 native confirm 대신 앱 내부 확인창을 사용한다.
     pendingSajuCalculationRef.current = calculated;
+    pendingCompatibilityCalculationRef.current = null;
+    pendingCalculationModeRef.current = "saju";
     setShowTimerConfirm(true);
     requestAnimationFrame(restoreAppCursor);
   };
@@ -2210,13 +2240,13 @@ export default function Home() {
     const left = calculateOneSaju(compatibilityForm.left);
     const right = calculateOneSaju(compatibilityForm.right);
 
-    if (left) saveRecentPerson(compatibilityForm.left);
-    if (right) saveRecentPerson(compatibilityForm.right);
+    if (!left || !right) return;
 
-    setCompatibilityResult({
-      left,
-      right,
-    });
+    // 일반 사주와 동일하게 계산 버튼을 누른 뒤 타이머 확인창을 거친다.
+    pendingCompatibilityCalculationRef.current = { left, right };
+    pendingSajuCalculationRef.current = null;
+    pendingCalculationModeRef.current = "compatibility";
+    setShowTimerConfirm(true);
     requestAnimationFrame(restoreAppCursor);
   };
 
@@ -5791,28 +5821,17 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                 </div>
               ))}
               </div>
-
-              <button
-                type="button"
-                onClick={handleCalculateCompatibility}
-                disabled={
-                  !compatibilityForm.left.calendarType ||
-                  !compatibilityForm.left.birthDate ||
-                  (!compatibilityForm.left.birthTime &&
-                    !compatibilityForm.left.birthTimeUnknown) ||
-                  !compatibilityForm.right.calendarType ||
-                  !compatibilityForm.right.birthDate ||
-                  (!compatibilityForm.right.birthTime &&
-                    !compatibilityForm.right.birthTimeUnknown)
-                }
-                className={`w-full rounded-xl border border-[#6b3f24]/40 bg-[#fff7ed] py-4 ${FONT.buttonText} font-bold text-[#6b3f24] shadow-sm transition hover:bg-[#f3e1cf] disabled:opacity-40`}
-              >
-                {!compatibilityForm.left.calendarType ||
-                !compatibilityForm.right.calendarType
-                  ? "두 사람 모두 양력/음력을 선택해주세요"
-                  : "두 사람 만세력 계산하기"}
-              </button>
             </div>
+          )}
+
+          {mode === "compatibility" && (
+            <button
+              type="button"
+              onClick={() => setShowCompatibilitySaju((prev) => !prev)}
+              className={`w-full rounded-xl border border-[#6b3f24]/40 bg-[#fff7ed] py-4 ${FONT.buttonText} font-bold text-[#6b3f24] shadow-sm transition hover:bg-[#f3e1cf]`}
+            >
+              {showCompatibilitySaju ? "두 사람 만세력 닫기" : "두 사람 만세력 보기"}
+            </button>
           )}
 
           {mode === "saju" && (
@@ -5961,7 +5980,42 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
             </section>
           )}
 
-          {mode === "compatibility" &&
+          {mode === "compatibility" && showCompatibilitySaju && (
+            <section className="mt-6 rounded-3xl border border-[#ead8c4] bg-[#fffaf3] p-5 shadow-inner">
+              <h2
+                className={`${FONT.sectionTitle} ${WEIGHT.sectionTitle} ${COLOR.sectionTitle}`}
+              >
+                두 사람 만세력 계산
+              </h2>
+
+              <p className={`mt-2 ${FONT.body} ${WEIGHT.body} ${COLOR.body}`}>
+                위에 입력한 두 사람의 생년월일시를 기준으로 각각의 만세력을 계산합니다.
+              </p>
+
+              <button
+                type="button"
+                onClick={handleCalculateCompatibility}
+                disabled={
+                  !compatibilityForm.left.calendarType ||
+                  !compatibilityForm.left.birthDate ||
+                  (!compatibilityForm.left.birthTime &&
+                    !compatibilityForm.left.birthTimeUnknown) ||
+                  !compatibilityForm.right.calendarType ||
+                  !compatibilityForm.right.birthDate ||
+                  (!compatibilityForm.right.birthTime &&
+                    !compatibilityForm.right.birthTimeUnknown)
+                }
+                className={`mt-5 w-full rounded-xl bg-[#2b1d12] px-5 py-3 ${FONT.buttonText} ${WEIGHT.buttonText} ${COLOR.buttonText} transition hover:bg-[#4a2f1c] disabled:opacity-40`}
+              >
+                {!compatibilityForm.left.calendarType ||
+                !compatibilityForm.right.calendarType
+                  ? "두 사람 모두 양력/음력을 선택해주세요"
+                  : "계산하기"}
+              </button>
+            </section>
+          )}
+
+          {mode === "compatibility" && showCompatibilitySaju &&
             (compatibilityResult.left || compatibilityResult.right) && (
               <section className="mt-6 rounded-3xl border border-[#ead8c4] bg-[#fffaf3] p-5 shadow-inner">
                 <ScrollFade>
@@ -6016,7 +6070,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
               </section>
             )}
 
-          {mode === "compatibility" && result && (
+          {mode === "compatibility" && showCompatibilitySaju && result && (
             <ScrollFade>
             <section className="mt-6 rounded-3xl border border-[#ead8c4] bg-[#fffaf3] p-5 shadow-inner">
               <h2
