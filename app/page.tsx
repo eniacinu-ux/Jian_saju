@@ -5274,8 +5274,8 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
           draggable={false}
           style={{
             display: "block",
-            width: "50px",
-            height: "45px",
+            width: "70px",
+            height: "63px",
             maxWidth: "none",
             maxHeight: "none",
             pointerEvents: "none",
