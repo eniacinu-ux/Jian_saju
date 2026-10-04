@@ -18,6 +18,7 @@ import {
 } from "docx";
 
 import { calculateSaju } from "./lib/sajuCalculator";
+import { DAILY_EVENT_DATA, DAILY_EVENT_OPTIONS } from "./lib/dailyEventData";
 
 
 function ScrollFade({ children, className = "" }: { children: ReactNode; className?: string }) {
@@ -293,6 +294,10 @@ export default function Home() {
   const pendingCompatibilityCalculationRef = useRef<any>(null);
   const pendingCalculationModeRef = useRef<"saju" | "compatibility" | null>(null);
   const [calendarDate, setCalendarDate] = useState(new Date());
+  const [selectedCalendarEvents, setSelectedCalendarEvents] = useState<string[]>([]);
+  const [calendarEventSearch, setCalendarEventSearch] = useState("");
+  const [calendarEventPickerOpen, setCalendarEventPickerOpen] = useState(false);
+  const [selectedCalendarDay, setSelectedCalendarDay] = useState<Date | null>(null);
   const [sajuResult, setSajuResult] = useState<any>(null);
   const [compatibilityResult, setCompatibilityResult] = useState<any>({
     left: null,
@@ -4340,6 +4345,21 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
     });
   };
 
+  const formatCalendarDateKey = (date: Date) =>
+    `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+
+  const getSelectedEventStatuses = (date: Date) => {
+    const info = DAILY_EVENT_DATA[formatCalendarDateKey(date)];
+    if (!info || selectedCalendarEvents.length === 0) return [];
+
+    return selectedCalendarEvents.flatMap((eventName) => {
+      if (info.allBad) return [{ name: eventName, status: "bad" as const }];
+      if (info.good.includes(eventName)) return [{ name: eventName, status: "good" as const }];
+      if (info.bad.includes(eventName)) return [{ name: eventName, status: "bad" as const }];
+      return [];
+    });
+  };
+
   const buildDailyCalendar = (date: Date) => {
     const year = date.getFullYear();
     const month = date.getMonth();
@@ -4357,8 +4377,11 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
 
       return {
         day: index + 1,
+        date: currentDate,
         ganji: getDayGanji(currentDate),
         solarTerms: getSolarTermsForDate(currentDate),
+        eventStatuses: getSelectedEventStatuses(currentDate),
+        allBad: DAILY_EVENT_DATA[formatCalendarDateKey(currentDate)]?.allBad ?? false,
       };
     });
 
@@ -6175,6 +6198,75 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
               </button>
             </div>
 
+            <div className="mb-5 rounded-2xl border border-[#eadfce] bg-[#fffdf8] p-4">
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setCalendarEventPickerOpen((open) => !open)}
+                  className="rounded-xl bg-[#6b3f24] px-4 py-2 text-xl font-bold text-white"
+                >
+                  행사 선택 {selectedCalendarEvents.length > 0 ? `(${selectedCalendarEvents.length})` : ""}
+                </button>
+                {selectedCalendarEvents.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedCalendarEvents([])}
+                    className="rounded-xl border border-zinc-300 bg-white px-3 py-2 text-lg font-bold text-zinc-600"
+                  >
+                    전체 해제
+                  </button>
+                )}
+                <div className="ml-auto flex items-center gap-4 text-lg font-bold">
+                  <span className="flex items-center gap-2"><span className="h-3 w-3 rounded-full bg-[#c2410c]" />길</span>
+                  <span className="flex items-center gap-2"><span className="h-3 w-3 rounded-full bg-[#2563eb]" />흉</span>
+                </div>
+              </div>
+
+              {selectedCalendarEvents.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {selectedCalendarEvents.map((eventName) => (
+                    <button
+                      type="button"
+                      key={eventName}
+                      onClick={() => setSelectedCalendarEvents((prev) => prev.filter((name) => name !== eventName))}
+                      className="rounded-full border border-[#d8c7b4] bg-white px-3 py-1 text-base font-bold text-[#6b3f24]"
+                      title="클릭하여 선택 해제"
+                    >
+                      {eventName} ×
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {calendarEventPickerOpen && (
+                <div className="mt-4 rounded-2xl border bg-white p-4 shadow-inner">
+                  <input
+                    value={calendarEventSearch}
+                    onChange={(e) => setCalendarEventSearch(e.target.value)}
+                    placeholder="행사 검색 (예: 제사, 이사, 혼례)"
+                    className="mb-3 w-full rounded-xl border border-zinc-300 px-4 py-3 text-xl outline-none focus:border-[#6b3f24]"
+                  />
+                  <div className="max-h-48 overflow-y-auto pr-1">
+                    <div className="flex flex-wrap gap-2">
+                      {DAILY_EVENT_OPTIONS.filter((eventName) => eventName.includes(calendarEventSearch.trim())).map((eventName) => {
+                        const selected = selectedCalendarEvents.includes(eventName);
+                        return (
+                          <button
+                            type="button"
+                            key={eventName}
+                            onClick={() => setSelectedCalendarEvents((prev) => selected ? prev.filter((name) => name !== eventName) : [...prev, eventName])}
+                            className={`rounded-full border px-3 py-1.5 text-base font-bold transition ${selected ? "border-[#6b3f24] bg-[#6b3f24] text-white" : "border-zinc-300 bg-white text-zinc-700 hover:border-[#9b7658]"}`}
+                          >
+                            {selected ? "✓ " : ""}{eventName}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
             <div className="mb-2 grid grid-cols-7 gap-2 text-center text-3xl font-bold">
               {["일", "월", "화", "수", "목", "금", "토"].map((day) => (
                 <div key={day}>{day}</div>
@@ -6188,9 +6280,17 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                 ) : (
                   <div
                     key={index}
-                    className="rounded-2xl border bg-[#fffaf3] p-2 text-center"
+                    className={`min-h-[150px] rounded-2xl border p-2 text-center ${item.allBad && selectedCalendarEvents.length > 0 ? "border-blue-300 bg-blue-50/60" : "bg-[#fffaf3]"}`}
                   >
-                    <div className="text-2xl font-bold">{item.day}</div>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedCalendarDay(item.date)}
+                      className="mx-auto flex h-9 min-w-9 items-center justify-center rounded-full px-2 text-2xl font-bold transition hover:bg-[#6b3f24] hover:text-white focus:outline-none focus:ring-2 focus:ring-[#b98b68]"
+                      title={`${item.date.getFullYear()}년 ${item.date.getMonth() + 1}월 ${item.day}일 전체 행사 길흉 보기`}
+                      aria-label={`${item.date.getFullYear()}년 ${item.date.getMonth() + 1}월 ${item.day}일 전체 행사 길흉 보기`}
+                    >
+                      {item.day}
+                    </button>
                     {item.solarTerms?.map((term: any) => (
                       <div
                         key={term.name}
@@ -6215,14 +6315,126 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                       className: "text-5xl font-bold",
                       children: BRANCH_HANJA[item.ganji.branch],
                     })}
+                    {item.eventStatuses.length > 0 && (
+                      <div className="mt-2 flex flex-col gap-1">
+                        {item.eventStatuses.map((event: any) => (
+                          <div
+                            key={`${event.name}-${event.status}`}
+                            className={`truncate rounded-md px-1.5 py-1 text-sm font-extrabold text-white ${event.status === "good" ? "bg-[#c2410c]" : "bg-[#2563eb]"}`}
+                            title={`${event.name} · ${event.status === "good" ? "길" : "흉"}`}
+                          >
+                            {event.name}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {item.allBad && selectedCalendarEvents.length > 0 && (
+                      <div className="mt-1 text-xs font-bold text-[#2563eb]">諸事不宜</div>
+                    )}
                   </div>
                 ),
               )}
             </div>
 
+            {selectedCalendarDay && (() => {
+              const dateKey = formatCalendarDateKey(selectedCalendarDay);
+              const dayInfo = DAILY_EVENT_DATA[dateKey];
+              const dayGanji = getDayGanji(selectedCalendarDay);
+
+              return (
+                <div
+                  className="fixed inset-0 flex items-center justify-center bg-black/45 p-4"
+                  style={{ zIndex: 2147483647 }}
+                  onClick={() => setSelectedCalendarDay(null)}
+                >
+                  <div
+                    className="max-h-[82vh] w-full max-w-[820px] overflow-y-auto rounded-3xl border border-[#ead8c4] bg-[#fffdf9] p-6 shadow-2xl"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label="선택 날짜 행사 길흉"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <div className="text-3xl font-black text-[#3f2b1d]">
+                          {selectedCalendarDay.getFullYear()}년 {selectedCalendarDay.getMonth() + 1}월 {selectedCalendarDay.getDate()}일
+                        </div>
+                        <div className="mt-1 text-xl font-bold text-[#8a6549]">
+                          {STEM_HANJA[dayGanji.stem]}{BRANCH_HANJA[dayGanji.branch]} · 그날의 전체 행사 일진
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedCalendarDay(null)}
+                        className="rounded-full bg-zinc-100 px-4 py-2 text-xl font-black text-zinc-600 transition hover:bg-zinc-200"
+                        aria-label="닫기"
+                      >
+                        ✕
+                      </button>
+                    </div>
+
+                    {!dayInfo ? (
+                      <div className="mt-6 rounded-2xl border border-dashed border-zinc-300 bg-white p-7 text-center text-xl font-bold text-zinc-500">
+                        이 날짜의 행사 길흉 데이터가 없습니다.
+                      </div>
+                    ) : dayInfo.allBad ? (
+                      <div className="mt-6 rounded-2xl border-2 border-[#2563eb]/30 bg-blue-50 p-6 text-center">
+                        <div className="text-3xl font-black text-[#1d4ed8]">諸事不宜</div>
+                        <div className="mt-2 text-xl font-bold text-[#1e40af]">모든 일을 삼가는 날</div>
+                        <div className="mt-2 text-base font-semibold text-zinc-600">
+                          원본 데이터에서 특정 행사 구분 없이 모든 일을 흉으로 보는 날입니다.
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="mt-6 grid gap-5 md:grid-cols-2">
+                        <section className="rounded-2xl border border-orange-200 bg-orange-50/70 p-5">
+                          <div className="mb-4 flex items-center justify-between">
+                            <h3 className="text-2xl font-black text-[#9a3412]">길한 행사</h3>
+                            <span className="rounded-full bg-[#c2410c] px-3 py-1 text-sm font-black text-white">{dayInfo.good.length}개</span>
+                          </div>
+                          {dayInfo.good.length > 0 ? (
+                            <div className="flex flex-wrap gap-2">
+                              {dayInfo.good.map((eventName) => (
+                                <span key={`detail-good-${eventName}`} className="rounded-full border border-orange-200 bg-white px-3 py-2 text-base font-extrabold text-[#9a3412] shadow-sm">
+                                  {eventName}
+                                </span>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="rounded-xl bg-white/80 p-4 text-center font-bold text-zinc-500">없음</div>
+                          )}
+                        </section>
+
+                        <section className="rounded-2xl border border-blue-200 bg-blue-50/70 p-5">
+                          <div className="mb-4 flex items-center justify-between">
+                            <h3 className="text-2xl font-black text-[#1d4ed8]">흉한 행사</h3>
+                            <span className="rounded-full bg-[#2563eb] px-3 py-1 text-sm font-black text-white">{dayInfo.bad.length}개</span>
+                          </div>
+                          {dayInfo.bad.length > 0 ? (
+                            <div className="flex flex-wrap gap-2">
+                              {dayInfo.bad.map((eventName) => (
+                                <span key={`detail-bad-${eventName}`} className="rounded-full border border-blue-200 bg-white px-3 py-2 text-base font-extrabold text-[#1d4ed8] shadow-sm">
+                                  {eventName}
+                                </span>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="rounded-xl bg-white/80 p-4 text-center font-bold text-zinc-500">없음</div>
+                          )}
+                        </section>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+
             <button
               type="button"
-              onClick={() => setShowDailyCalendar(false)}
+              onClick={() => {
+                setSelectedCalendarDay(null);
+                setShowDailyCalendar(false);
+              }}
               className="mt-6 w-full rounded-2xl bg-[#6b3f24] py-4 text-3xl font-bold text-white"
             >
               닫기
