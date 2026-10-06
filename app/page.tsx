@@ -6279,31 +6279,45 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
       const fixedMonthBranch = getDatingPillarBranch(fixedSaju, "month");
       const candidateMonthBranch = getDatingPillarBranch(candidateSaju, "month");
 
-      if (
-        !matchesDatingRelationFilter(
-          fixedDayBranch,
-          candidateDayBranch,
-          fixedSaju,
-          candidateSaju,
-          filters.dayRelations,
-          filters.dayRelationJoin,
-        )
-      ) return false;
+      // 일지 관계와 월지 관계는 서로 대체 조건으로 취급한다.
+      // 둘 다 선택된 경우 둘 중 하나라도 맞으면 통과(OR).
+      // 각 블록 내부의 육합/삼합/방합 결합 방식은 기존 OR/AND 설정을 그대로 따른다.
+      const hasDayRelationFilter = filters.dayRelations.length > 0;
+      const hasMonthRelationFilter = filters.monthRelations.length > 0;
+
+      const dayRelationMatched = hasDayRelationFilter
+        ? matchesDatingRelationFilter(
+            fixedDayBranch,
+            candidateDayBranch,
+            fixedSaju,
+            candidateSaju,
+            filters.dayRelations,
+            filters.dayRelationJoin,
+          )
+        : false;
+
+      const monthRelationMatched = hasMonthRelationFilter
+        ? matchesDatingRelationFilter(
+            fixedMonthBranch,
+            candidateMonthBranch,
+            fixedSaju,
+            candidateSaju,
+            filters.monthRelations,
+            filters.monthRelationJoin,
+          )
+        : false;
+
+      if (hasDayRelationFilter && hasMonthRelationFilter) {
+        if (!dayRelationMatched && !monthRelationMatched) return false;
+      } else if (hasDayRelationFilter) {
+        if (!dayRelationMatched) return false;
+      } else if (hasMonthRelationFilter) {
+        if (!monthRelationMatched) return false;
+      }
 
       if (
         filters.excludeDayWonjin &&
         isDatingBranchRelation(fixedDayBranch, candidateDayBranch, "원진")
-      ) return false;
-
-      if (
-        !matchesDatingRelationFilter(
-          fixedMonthBranch,
-          candidateMonthBranch,
-          fixedSaju,
-          candidateSaju,
-          filters.monthRelations,
-          filters.monthRelationJoin,
-        )
       ) return false;
 
       if (
