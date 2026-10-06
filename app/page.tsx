@@ -5744,19 +5744,16 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
   const DATING_ELEMENT_FILTER_OPTIONS = ["목", "화", "토", "금", "수"];
   const DATING_STEM_FILTER_OPTIONS = ["갑", "을", "병", "정", "무", "기", "경", "신", "임", "계"];
 
-  const getDatingAnyPillarBranch = (targetSaju: any, pillar: "year" | "month" | "day" | "hour") => {
-    const item = targetSaju?.[pillar];
-    if (!item) return "";
-
-    const direct = normalizeBranch(item?.branch);
-    if (direct && BRANCHES.includes(direct)) return direct;
-
-    const korean = normalizeBranch(item?.branchKor);
-    if (korean && BRANCHES.includes(korean)) return korean;
-
-    const ganji = String(item?.ganji || "").trim();
-    const fromGanji = normalizeBranch(ganji.slice(1, 2));
-    return BRANCHES.includes(fromGanji) ? fromGanji : "";
+  // 소개팅 필터에서도 실제 만세력 카드와 완전히 같은 방식으로 지지를 읽는다.
+  // 별도의 branch/branchKor 추출 로직을 두면 화면에 보이는 지지와 필터 판정이
+  // 어긋날 수 있으므로 renderSajuCard가 사용하는 getItemBranch()를 그대로 재사용한다.
+  const getDatingAnyPillarBranch = (
+    targetSaju: any,
+    pillar: "year" | "month" | "day" | "hour",
+  ) => {
+    const branch = getItemBranch({ data: targetSaju?.[pillar] });
+    const normalized = normalizeBranch(branch);
+    return BRANCHES.includes(normalized) ? normalized : "";
   };
 
   const getDatingPillarBranch = (targetSaju: any, pillar: "day" | "month") =>
@@ -5925,33 +5922,34 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
     return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
   };
 
-  // 소개팅의 삼합/방합은 두 사람의 사주 전체를 합쳐 판정한다.
-  // 단, 선택한 고정 인물의 일지/월지가 해당 합의 구성원이어야 하고
-  // 상대방도 그 합을 이루는 나머지 글자 중 최소 하나는 제공해야 한다.
-  // 이렇게 해야 고정 인물 쪽에 이미 한 글자가 있고 상대방이 나머지를 보완하는
-  // 실제 궁합 관계도 빠뜨리지 않는다.
+  // 소개팅의 삼합/방합은 고정 인물의 선택 기둥(일지 또는 월지)을 기준점으로 삼는다.
+  // 해당 기준점이 속한 3지지 그룹에서 나머지 두 글자를 상대방의 년/월/일/시
+  // 네 기둥 안에서 모두 찾으면 성립한다.
+  // 예: 고정 일지 亥 + 상대방 卯, 未 => 亥卯未 삼합.
   const isDatingFullBranchGroupMatch = (
     fixedAnchorBranch: string,
-    fixedSaju: any,
+    _fixedSaju: any,
     candidateSaju: any,
     rules: any[],
   ) => {
     const anchor = normalizeBranch(fixedAnchorBranch);
-    if (!anchor || !fixedSaju || !candidateSaju) return false;
+    if (!anchor || !candidateSaju) return false;
 
-    const fixedBranches = getAllDatingBranches(fixedSaju);
-    const candidateBranches = getAllDatingBranches(candidateSaju);
-    const combinedBranches = new Set([...fixedBranches, ...candidateBranches]);
+    const candidateBranchSet = new Set(getAllDatingBranches(candidateSaju));
 
     return rules.some((rule: any) => {
-      const group = (rule?.branches || []).map((branch: string) => normalizeBranch(branch));
-      if (!group.includes(anchor)) return false;
-      if (!group.every((branch: string) => combinedBranches.has(branch))) return false;
+      const group = (rule?.branches || [])
+        .map((branch: string) => normalizeBranch(branch))
+        .filter(Boolean);
 
-      // 고정 인물 내부에서만 이미 완성된 합은 소개팅 상대와의 관계로 보지 않는다.
-      // 상대방이 anchor 이외의 구성 글자를 최소 하나는 가져야 한다.
-      return group.some(
-        (branch: string) => branch !== anchor && candidateBranches.includes(branch),
+      if (group.length !== 3 || !group.includes(anchor)) return false;
+
+      const requiredFromCandidate = group.filter(
+        (branch: string) => branch !== anchor,
+      );
+
+      return requiredFromCandidate.every((branch: string) =>
+        candidateBranchSet.has(branch),
       );
     });
   };
@@ -6017,7 +6015,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
 
     const fixedSaju =
       datingResult.left || calculateOneSaju(normalizeRecentPerson(datingFixedPerson));
-    const candidateSaju = calculateOneSaju(normalizeRecentPerson(person));
+    const candidateSaju = calculateOneSaju(normalizeDatingPerson(person));
 
     if (!fixedSaju || !candidateSaju) return false;
 
@@ -6142,7 +6140,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
       try {
         cache.set(
           makePersonKey(person),
-          calculateOneSaju(normalizeRecentPerson(person)),
+          calculateOneSaju(normalizeDatingPerson(person)),
         );
       } catch (error) {
         console.error("소개팅 후보 만세력 캐시 생성 실패", person, error);
@@ -6158,6 +6156,19 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
     const fixedKey = makePersonKey(datingFixedPerson);
     return datingPeople.filter((person) => makePersonKey(person) !== fixedKey);
   }, [datingPeople, datingFixedPerson]);
+
+  // 필터 판정은 화면 상태(datingResult.left)에 의존하지 않고 현재 고정 인물의
+  // 저장된 생년월일 정보에서 직접 계산한다. 화면 상태가 이전 값을 잠깐 유지해도
+  // 필터 결과에는 영향을 주지 않는다.
+  const datingFixedSajuForFilter = useMemo(() => {
+    if (!datingFixedPerson) return null;
+    try {
+      return calculateOneSaju(normalizeDatingPerson(datingFixedPerson));
+    } catch (error) {
+      console.error("고정 인물 필터용 만세력 계산 실패", datingFixedPerson, error);
+      return null;
+    }
+  }, [datingFixedPerson]);
 
   // 버튼 상태는 즉시 바꾸되, 무거운 후보 목록 갱신은 뒤로 미뤄서 기존 명단을 계속 볼 수 있게 한다.
   const datingFilterSnapshot = useMemo(
@@ -6213,10 +6224,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
     // 현재 선택된 조건을 즉시 사용한다. UI와 결과 목록이 서로 다른 시점의 필터를
     // 가리키는 현상을 방지한다.
     const filters = datingFilterSnapshot;
-    const fixedSaju =
-      datingResult.left ||
-      datingSajuCache.get(makePersonKey(datingFixedPerson)) ||
-      calculateOneSaju(normalizeRecentPerson(datingFixedPerson));
+    const fixedSaju = datingFixedSajuForFilter;
     const originalOrder = new Map(
       datingAvailableCandidates.map((candidate, index) => [makePersonKey(candidate), index]),
     );
@@ -6263,7 +6271,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
 
       const candidateSaju =
         datingSajuCache.get(makePersonKey(person)) ||
-        calculateOneSaju(normalizeRecentPerson(person));
+        calculateOneSaju(normalizeDatingPerson(person));
       if (!fixedSaju || !candidateSaju) return false;
 
       const fixedDayBranch = getDatingPillarBranch(fixedSaju, "day");
@@ -6378,6 +6386,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
   }, [
     datingAvailableCandidates,
     datingFixedPerson,
+    datingFixedSajuForFilter,
     datingMatchMeta,
     datingSajuCache,
     datingFilterSnapshot,
