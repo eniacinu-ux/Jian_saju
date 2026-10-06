@@ -1,7 +1,7 @@
 "use client";
 
 import KoreanLunarCalendar from "korean-lunar-calendar";
-import { useDeferredValue, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { flushSync } from "react-dom";
 import { saveAs } from "file-saver";
 import { toPng } from "html-to-image";
@@ -6113,14 +6113,17 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
       datingSortMode,
     ],
   );
-  const deferredDatingFilterSnapshot = useDeferredValue(datingFilterSnapshot);
-  const datingFilterPending = deferredDatingFilterSnapshot !== datingFilterSnapshot;
-
   const filteredDatingCandidates = useMemo(() => {
     if (!datingFixedPerson) return [];
 
-    const filters = deferredDatingFilterSnapshot;
+    // 만세력은 datingSajuCache에 이미 계산되어 있으므로 필터 상태를 지연시키지 않고
+    // 현재 선택된 조건을 즉시 사용한다. UI와 결과 목록이 서로 다른 시점의 필터를
+    // 가리키는 현상을 방지한다.
+    const filters = datingFilterSnapshot;
     const fixedSaju = datingSajuCache.get(makePersonKey(datingFixedPerson));
+    const originalOrder = new Map(
+      datingAvailableCandidates.map((candidate, index) => [makePersonKey(candidate), index]),
+    );
 
     const matches = (person: any) => {
       const sameGender =
@@ -6267,15 +6270,91 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
           if (safeA !== safeB) return safeB - safeA;
         }
 
-        return datingAvailableCandidates.indexOf(a) - datingAvailableCandidates.indexOf(b);
+        return (originalOrder.get(makePersonKey(a)) ?? 0) -
+          (originalOrder.get(makePersonKey(b)) ?? 0);
       });
   }, [
     datingAvailableCandidates,
     datingFixedPerson,
     datingMatchMeta,
     datingSajuCache,
-    deferredDatingFilterSnapshot,
+    datingFilterSnapshot,
   ]);
+
+  const datingFilterCriteriaSignature = useMemo(
+    () =>
+      JSON.stringify({
+        dayRelations: datingDayRelations,
+        dayRelationJoin: datingDayRelationJoin,
+        excludeDayWonjin: datingExcludeDayWonjin,
+        monthRelations: datingMonthRelations,
+        monthRelationJoin: datingMonthRelationJoin,
+        excludeMonthWonjin: datingExcludeMonthWonjin,
+        stemHapMode: datingStemHapMode,
+        dayStems: datingDayStems,
+        cheoneulMode: datingCheoneulMode,
+        pillarDayMatch: datingPillarDayMatch,
+        excludeSameDayPillar: datingExcludeSameDayPillar,
+        genderMode: datingGenderMode,
+        olderMaxAgeGap: datingOlderMaxAgeGap,
+        youngerMaxAgeGap: datingYoungerMaxAgeGap,
+        minStars: datingMinStars,
+        tenGodMinRules: datingTenGodMinRules.map(({ target, count }) => ({ target, count })),
+        tenGodMaxRules: datingTenGodMaxRules.map(({ target, count }) => ({ target, count })),
+        elementMinRules: datingElementMinRules.map(({ target, count }) => ({ target, count })),
+        elementMaxRules: datingElementMaxRules.map(({ target, count }) => ({ target, count })),
+      }),
+    [
+      datingDayRelations,
+      datingDayRelationJoin,
+      datingExcludeDayWonjin,
+      datingMonthRelations,
+      datingMonthRelationJoin,
+      datingExcludeMonthWonjin,
+      datingStemHapMode,
+      datingDayStems,
+      datingCheoneulMode,
+      datingPillarDayMatch,
+      datingExcludeSameDayPillar,
+      datingGenderMode,
+      datingOlderMaxAgeGap,
+      datingYoungerMaxAgeGap,
+      datingMinStars,
+      datingTenGodMinRules,
+      datingTenGodMaxRules,
+      datingElementMinRules,
+      datingElementMaxRules,
+    ],
+  );
+  const previousDatingFilterCriteriaSignatureRef = useRef(datingFilterCriteriaSignature);
+
+  useEffect(() => {
+    if (previousDatingFilterCriteriaSignatureRef.current === datingFilterCriteriaSignature) return;
+
+    previousDatingFilterCriteriaSignatureRef.current = datingFilterCriteriaSignature;
+
+    // 필터 조건이 하나라도 바뀌면 이전 상대 선택/만세력을 즉시 비운다.
+    // 이전 조건에서 선택한 상대 결과가 새 필터 상태와 함께 남아 혼동되는 것을 막는다.
+    setDatingSelectedPerson(null);
+    setDatingResult((prev: any) =>
+      prev?.right ? { ...prev, right: null } : prev,
+    );
+  }, [datingFilterCriteriaSignature]);
+
+  useEffect(() => {
+    if (!datingSelectedPerson) return;
+
+    const selectedKey = makePersonKey(datingSelectedPerson);
+    const stillIncluded = filteredDatingCandidates.some(
+      (person) => makePersonKey(person) === selectedKey,
+    );
+
+    if (stillIncluded) return;
+
+    // 명단 자체가 바뀌어 현재 상대가 사라진 경우에도 오른쪽 결과를 정리한다.
+    setDatingSelectedPerson(null);
+    setDatingResult((prev: any) => ({ ...prev, right: null }));
+  }, [filteredDatingCandidates, datingSelectedPerson]);
 
   const hasDatingFilters =
     datingDayRelations.length > 0 ||
@@ -6293,7 +6372,8 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
     datingTenGodMinRules.length > 0 ||
     datingTenGodMaxRules.length > 0 ||
     datingElementMinRules.length > 0 ||
-    datingElementMaxRules.length > 0;
+    datingElementMaxRules.length > 0 ||
+    datingSortMode !== "default";
 
   const clearDatingFilters = () => {
     setDatingDayRelations([]);
@@ -6315,6 +6395,8 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
     setDatingTenGodMaxRules([]);
     setDatingElementMinRules([]);
     setDatingElementMaxRules([]);
+    setDatingSortMode("default");
+    setDatingSelectedPresetName("");
   };
 
   const getDatingFilterPresetData = () => ({
@@ -6412,6 +6494,26 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
       prev === presetName ? "" : prev,
     );
   };
+
+  useEffect(() => {
+    if (!datingSelectedPresetName) return;
+
+    const selectedPreset = datingFilterPresets.find(
+      (preset: any) => String(preset?.name || "") === datingSelectedPresetName,
+    );
+
+    if (!selectedPreset?.filters) {
+      setDatingSelectedPresetName("");
+      return;
+    }
+
+    // 프리셋을 불러온 뒤 사용자가 조건을 하나라도 직접 바꾸면 더 이상
+    // 그 프리셋과 동일한 상태가 아니므로 선택 강조를 해제한다.
+    const currentFilters = getDatingFilterPresetData();
+    if (JSON.stringify(currentFilters) !== JSON.stringify(selectedPreset.filters)) {
+      setDatingSelectedPresetName("");
+    }
+  }, [datingFilterSnapshot, datingFilterPresets, datingSelectedPresetName]);
 
   const toggleDatingRelation = (scope: "day" | "month", relation: string) => {
     const setter = scope === "day" ? setDatingDayRelations : setDatingMonthRelations;
@@ -6543,6 +6645,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
               if (scope === "day") setDatingDayRelations([]);
               else setDatingMonthRelations([]);
               setExcludeWonjin(false);
+              setRelationJoin("or");
             }}
             className={`rounded-lg px-2.5 py-1.5 text-[0.9em] font-bold transition ${
               filterOff
@@ -6631,7 +6734,6 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
             <div className="text-[1.25em] font-bold text-pink-800">상대 필터</div>
             <div className="mt-0.5 text-[1em] font-bold text-zinc-500">
               결과 {filteredDatingCandidates.length}명 / 전체 {datingAvailableCandidates.length}명
-              {datingFilterPending && <span className="ml-2 text-pink-600">· 필터 적용 중… 기존 명단 유지</span>}
             </div>
           </div>
           <div className="flex flex-wrap items-center justify-end gap-2">
