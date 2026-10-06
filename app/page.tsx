@@ -4018,6 +4018,19 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
       { branches: ["사", "유", "축"], label: "삼합(金)" },
       { branches: ["신", "자", "진"], label: "삼합(水)" },
     ],
+    // 삼합을 두 지지만으로 판정할 때는 왕지(묘/오/유/자)가 포함된 반합만 인정한다.
+    // 생지+고지(해-미, 인-술, 사-축, 신-진)는 같은 삼합국에 속하지만
+    // 왕지가 빠져 있으므로 일반적인 삼합/반합 판정에서는 제외한다.
+    samhapHalf: [
+      { branches: ["해", "묘"], label: "삼합(木)" },
+      { branches: ["묘", "미"], label: "삼합(木)" },
+      { branches: ["인", "오"], label: "삼합(火)" },
+      { branches: ["오", "술"], label: "삼합(火)" },
+      { branches: ["사", "유"], label: "삼합(金)" },
+      { branches: ["유", "축"], label: "삼합(金)" },
+      { branches: ["신", "자"], label: "삼합(水)" },
+      { branches: ["자", "진"], label: "삼합(水)" },
+    ],
     banghap: [
       { branches: ["인", "묘", "진"], label: "방합(東)" },
       { branches: ["사", "오", "미"], label: "방합(南)" },
@@ -4141,12 +4154,9 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
       ([a, b]: string[]) => makeHanjaPairKey(a, b) === pairKey,
     );
 
-    const isSamhap = BRANCH_RELATION_RULES.samhap.some((rule: any) => {
-      return (
-        rule.branches.includes(selectedHanja.value) &&
-        rule.branches.includes(normalizedValue)
-      );
-    });
+    const isSamhap = BRANCH_RELATION_RULES.samhapHalf.some((rule: any) =>
+      makeHanjaPairKey(rule.branches[0], rule.branches[1]) === pairKey,
+    );
 
     const isBanghap = BRANCH_RELATION_RULES.banghap.some((rule: any) => {
       return (
@@ -4310,10 +4320,9 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
           }
         });
 
-        BRANCH_RELATION_RULES.samhap.forEach((rule: any) => {
+        BRANCH_RELATION_RULES.samhapHalf.forEach((rule: any) => {
           if (
-            rule.branches.includes(leftBranch) &&
-            rule.branches.includes(rightBranch)
+            makeBranchPairKey(rule.branches[0], rule.branches[1]) === pairKey
           ) {
             addPairRelation(left, right, rule.label);
           }
@@ -5781,8 +5790,10 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
     }
 
     if (relation === "삼합") {
-      return BRANCH_RELATION_RULES.samhap.some(
-        (rule: any) => rule.branches.includes(left) && rule.branches.includes(right),
+      const pairKey = makeBranchPairKey(left, right);
+      return BRANCH_RELATION_RULES.samhapHalf.some(
+        (rule: any) =>
+          makeBranchPairKey(rule.branches[0], rule.branches[1]) === pairKey,
       );
     }
 
