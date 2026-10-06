@@ -6550,7 +6550,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                 : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200"
             }`}
           >
-            필터 OFF
+            OFF
           </button>
         </div>
 
@@ -6754,8 +6754,8 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                 "일간 천간합",
                 <div className="grid grid-cols-2 gap-2">
                   {([
-                    ["off", "필터 OFF"],
-                    ["include", "천간합 해당"],
+                    ["off", "OFF"],
+                    ["include", "천간합"],
                   ] as const).map(([value, label]) => (
                     <button
                       key={value}
@@ -6848,7 +6848,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                         : "bg-zinc-100 text-zinc-600"
                     }`}
                   >
-                    필터 OFF
+                    OFF
                   </button>
                   <div className="grid grid-cols-5 gap-1.5">
                     {DATING_STEM_FILTER_OPTIONS.map((stem) => {
@@ -6876,7 +6876,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                 "천을귀인",
                 <div className="grid grid-cols-2 gap-2">
                   {([
-                    ["off", "필터 OFF"],
+                    ["off", "OFF"],
                     ["include", "해당"],
                   ] as const).map(([value, label]) => (
                     <button
@@ -6938,9 +6938,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                   >
                     동일주 제외 {datingExcludeSameDayPillar ? "ON" : "OFF"}
                   </button>
-                  <div className="col-span-2 text-[0.8em] font-bold text-zinc-400">
-                    고정인의 년·월·일·시주 중 하나와 상대 일주가 같은 경우
-                  </div>
+                  
                 </div>,
               )}
 
