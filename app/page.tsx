@@ -5915,15 +5915,49 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
     return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
   };
 
+  // 소개팅 필터의 삼합은 단순히 같은 기둥의 두 지지만 비교하지 않는다.
+  // 고정 인물의 기준 지지(일지 또는 월지)를 삼합의 한 글자로 고정하고,
+  // 그 삼합을 완성하는 나머지 두 글자가 상대방의 년·월·일·시 어디에든
+  // 모두 존재할 때 완전 삼합으로 판정한다.
+  const isDatingFullSamhapMatch = (
+    fixedAnchorBranch: string,
+    candidateSaju: any,
+  ) => {
+    const anchor = normalizeBranch(fixedAnchorBranch);
+    if (!anchor || !candidateSaju) return false;
+
+    const candidateBranches = getAllDatingBranches(candidateSaju);
+
+    return BRANCH_RELATION_RULES.samhap.some((rule: any) => {
+      if (!rule.branches.includes(anchor)) return false;
+
+      const requiredCandidateBranches = rule.branches.filter(
+        (branch: string) => branch !== anchor,
+      );
+
+      return requiredCandidateBranches.every((branch: string) =>
+        candidateBranches.includes(branch),
+      );
+    });
+  };
+
   const matchesDatingRelationFilter = (
     leftBranch: string,
     rightBranch: string,
+    candidateSaju: any,
     selectedRelations: string[],
     relationJoin: DatingRelationJoin,
   ) => {
     if (selectedRelations.length === 0) return true;
-    const matcher = (relation: string) =>
-      isDatingBranchRelation(leftBranch, rightBranch, relation);
+
+    const matcher = (relation: string) => {
+      if (relation === "삼합") {
+        return isDatingFullSamhapMatch(leftBranch, candidateSaju);
+      }
+
+      return isDatingBranchRelation(leftBranch, rightBranch, relation);
+    };
+
     return relationJoin === "and"
       ? selectedRelations.every(matcher)
       : selectedRelations.some(matcher);
@@ -5952,6 +5986,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
       !matchesDatingRelationFilter(
         fixedDayBranch,
         candidateDayBranch,
+        candidateSaju,
         datingDayRelations,
         datingDayRelationJoin,
       )
@@ -5966,6 +6001,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
       !matchesDatingRelationFilter(
         fixedMonthBranch,
         candidateMonthBranch,
+        candidateSaju,
         datingMonthRelations,
         datingMonthRelationJoin,
       )
@@ -6188,6 +6224,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
         !matchesDatingRelationFilter(
           fixedDayBranch,
           candidateDayBranch,
+          candidateSaju,
           filters.dayRelations,
           filters.dayRelationJoin,
         )
@@ -6202,6 +6239,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
         !matchesDatingRelationFilter(
           fixedMonthBranch,
           candidateMonthBranch,
+          candidateSaju,
           filters.monthRelations,
           filters.monthRelationJoin,
         )
