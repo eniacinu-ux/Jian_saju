@@ -1,7 +1,7 @@
 "use client";
 
 import KoreanLunarCalendar from "korean-lunar-calendar";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { flushSync } from "react-dom";
 import { saveAs } from "file-saver";
 import { toPng } from "html-to-image";
@@ -239,8 +239,9 @@ export default function Home() {
   const overviewCaptureRef = useRef<HTMLDivElement>(null);
   const luckCaptureRef = useRef<HTMLDivElement>(null);
   const peopleBackupInputRef = useRef<HTMLInputElement>(null);
+  const peopleDatingImportInputRef = useRef<HTMLInputElement>(null);
 
-  const [mode, setMode] = useState<"saju" | "compatibility" | "tarot">("saju");
+  const [mode, setMode] = useState<"saju" | "compatibility" | "tarot" | "dating">("saju");
 
   const [form, setForm] = useState({
     name: "",
@@ -305,6 +306,65 @@ export default function Home() {
   });
   const [recentPeople, setRecentPeople] = useState<any[]>([]);
   const [favoritePeople, setFavoritePeople] = useState<any[]>([]);
+  const [datingPeople, setDatingPeople] = useState<any[]>([]);
+  const [datingFixedPerson, setDatingFixedPerson] = useState<any | null>(null);
+  const [datingFixedSearch, setDatingFixedSearch] = useState("");
+  const [datingSelectedPerson, setDatingSelectedPerson] = useState<any | null>(null);
+  const [datingResult, setDatingResult] = useState<any>({ left: null, right: null });
+
+  type DatingCountFilterRule = {
+    id: number;
+    target: string;
+    count: string;
+  };
+  type DatingRelationJoin = "or" | "and";
+  type DatingStemHapMode = "off" | "include";
+  type DatingCheoneulMode = "off" | "include";
+  type DatingGenderMode = "all" | "exclude-same" | "same-only";
+  type DatingSortMode = "default" | "score-desc" | "stars-desc";
+  type DatingAddMeta = {
+    region: string;
+    longDistance: "" | "가능" | "불가";
+  };
+  type DatingMatchMeta = {
+    stars: number;
+    score: string;
+  };
+
+  const datingFilterRuleIdRef = useRef(1);
+  const [datingFilterOpen, setDatingFilterOpen] = useState(true);
+  const [datingDayRelations, setDatingDayRelations] = useState<string[]>([]);
+  const [datingDayRelationJoin, setDatingDayRelationJoin] =
+    useState<DatingRelationJoin>("or");
+  const [datingExcludeDayWonjin, setDatingExcludeDayWonjin] = useState(false);
+  const [datingMonthRelations, setDatingMonthRelations] = useState<string[]>([]);
+  const [datingMonthRelationJoin, setDatingMonthRelationJoin] =
+    useState<DatingRelationJoin>("or");
+  const [datingExcludeMonthWonjin, setDatingExcludeMonthWonjin] = useState(false);
+  const [datingStemHapMode, setDatingStemHapMode] =
+    useState<DatingStemHapMode>("off");
+  const [datingDayStems, setDatingDayStems] = useState<string[]>([]);
+  const [datingCheoneulMode, setDatingCheoneulMode] =
+    useState<DatingCheoneulMode>("off");
+  const [datingPillarDayMatch, setDatingPillarDayMatch] = useState(false);
+  const [datingExcludeSameDayPillar, setDatingExcludeSameDayPillar] = useState(false);
+  const [datingGenderMode, setDatingGenderMode] =
+    useState<DatingGenderMode>("all");
+  const [datingOlderMaxAgeGap, setDatingOlderMaxAgeGap] = useState("");
+  const [datingYoungerMaxAgeGap, setDatingYoungerMaxAgeGap] = useState("");
+  const [datingMinStars, setDatingMinStars] = useState(0);
+  const [datingSortMode, setDatingSortMode] =
+    useState<DatingSortMode>("default");
+  const [datingTenGodMinRules, setDatingTenGodMinRules] = useState<DatingCountFilterRule[]>([]);
+  const [datingTenGodMaxRules, setDatingTenGodMaxRules] = useState<DatingCountFilterRule[]>([]);
+  const [datingElementMinRules, setDatingElementMinRules] = useState<DatingCountFilterRule[]>([]);
+  const [datingElementMaxRules, setDatingElementMaxRules] = useState<DatingCountFilterRule[]>([]);
+  const [datingAddMeta, setDatingAddMeta] = useState<Record<string, DatingAddMeta>>({});
+  const [datingMatchMeta, setDatingMatchMeta] = useState<Record<string, DatingMatchMeta>>({});
+  const [datingFilterPresets, setDatingFilterPresets] = useState<any[]>([]);
+  const [datingPresetName, setDatingPresetName] = useState("");
+  const [datingSelectedPresetName, setDatingSelectedPresetName] = useState("");
+
   const [peopleStorageOpen, setPeopleStorageOpen] = useState(false);
   const [favoritePeopleOpen, setFavoritePeopleOpen] = useState(true);
   const [recentPeopleOpen, setRecentPeopleOpen] = useState(true);
@@ -1520,6 +1580,30 @@ export default function Home() {
       });
   };
 
+
+  const normalizeDatingPerson = (person: any) => ({
+    ...normalizeRecentPerson(person),
+    datingRegion: String(person?.datingRegion || "").trim(),
+    datingLongDistance:
+      person?.datingLongDistance === "가능" || person?.datingLongDistance === "불가"
+        ? person.datingLongDistance
+        : "",
+  });
+
+  const normalizeDatingPeopleList = (people: any[]) => {
+    const seen = new Set<string>();
+
+    return (people || [])
+      .map((person) => normalizeDatingPerson(person))
+      .filter((person) => person.birthDate)
+      .filter((person) => {
+        const key = makePersonKey(person);
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+  };
+
   const downloadPeopleBackup = () => {
     const backup = {
       format: "jian-saju-people-backup",
@@ -1527,6 +1611,8 @@ export default function Home() {
       exportedAt: new Date().toISOString(),
       recentPeople: normalizePeopleList(recentPeople),
       favoritePeople: normalizePeopleList(favoritePeople),
+      datingPeople: normalizeDatingPeopleList(datingPeople),
+      datingMatchMeta,
     };
 
     const timestamp = new Date()
@@ -1538,6 +1624,26 @@ export default function Home() {
     });
 
     saveAs(blob, `jian-saju-people-backup_${timestamp}.json`);
+  };
+
+  const downloadDatingPeopleBackup = () => {
+    const backup = {
+      format: "jian-saju-dating-people-backup",
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      datingPeople: normalizeDatingPeopleList(datingPeople),
+      datingMatchMeta,
+    };
+
+    const timestamp = new Date()
+      .toISOString()
+      .slice(0, 19)
+      .replace(/[T:]/g, "-");
+    const blob = new Blob([JSON.stringify(backup, null, 2)], {
+      type: "application/json;charset=utf-8",
+    });
+
+    saveAs(blob, `jian-saju-dating-people_${timestamp}.json`);
   };
 
   const importPeopleBackup = async (event: any) => {
@@ -1556,8 +1662,19 @@ export default function Home() {
       const importedFavorite = Array.isArray(parsed?.favoritePeople)
         ? parsed.favoritePeople
         : [];
+      const importedDating = Array.isArray(parsed?.datingPeople)
+        ? parsed.datingPeople
+        : [];
+      const importedDatingMatchMeta =
+        parsed?.datingMatchMeta && typeof parsed.datingMatchMeta === "object"
+          ? parsed.datingMatchMeta
+          : {};
 
-      if (importedRecent.length === 0 && importedFavorite.length === 0) {
+      if (
+        importedRecent.length === 0 &&
+        importedFavorite.length === 0 &&
+        importedDating.length === 0
+      ) {
         alert("불러올 명단이 없는 파일입니다.");
         return;
       }
@@ -1570,15 +1687,78 @@ export default function Home() {
         ...importedFavorite,
         ...favoritePeople,
       ]);
+      const nextDating = normalizeDatingPeopleList([
+        ...importedDating,
+        ...datingPeople,
+      ]);
 
       setRecentPeople(nextRecent);
       setFavoritePeople(nextFavorite);
+      setDatingPeople(nextDating);
+      setDatingMatchMeta((prev) => ({ ...prev, ...importedDatingMatchMeta }));
 
       alert(
-        `명단을 불러왔습니다.\n최근 본 사람 ${nextRecent.length}명\n즐겨찾기 ${nextFavorite.length}명`,
+        `명단을 불러왔습니다.\n최근 본 사람 ${nextRecent.length}명\n즐겨찾기 ${nextFavorite.length}명\n소개팅 명단 ${nextDating.length}명`,
       );
     } catch (error) {
       console.error("명단 백업 파일을 불러오지 못했습니다.", error);
+      alert("올바른 명단 백업 JSON 파일이 아닙니다.");
+    } finally {
+      input.value = "";
+    }
+  };
+
+  const importBackupFileToDating = async (event: any) => {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+
+    if (!file) return;
+
+    try {
+      const parsed = JSON.parse(await file.text());
+      const importedRecent = Array.isArray(parsed)
+        ? parsed
+        : Array.isArray(parsed?.recentPeople)
+          ? parsed.recentPeople
+          : [];
+      const importedFavorite = Array.isArray(parsed?.favoritePeople)
+        ? parsed.favoritePeople
+        : [];
+      const importedDating = Array.isArray(parsed?.datingPeople)
+        ? parsed.datingPeople
+        : [];
+
+      const importedPeople = normalizeDatingPeopleList([
+        ...importedRecent,
+        ...importedFavorite,
+        ...importedDating,
+      ]);
+
+      if (importedPeople.length === 0) {
+        alert("소개팅 명단에 추가할 사람이 없는 백업 파일입니다.");
+        return;
+      }
+
+      const existingKeys = new Set(
+        datingPeople.map((person) => makePersonKey(normalizeDatingPerson(person))),
+      );
+      const addedCount = importedPeople.filter(
+        (person) => !existingKeys.has(makePersonKey(person)),
+      ).length;
+
+      // 기존 소개팅 명단의 지역/장거리 정보는 유지하고,
+      // 첨부 백업 파일의 사람들만 중복 없이 뒤에 추가한다.
+      const nextDatingPeople = normalizeDatingPeopleList([
+        ...datingPeople,
+        ...importedPeople,
+      ]);
+
+      setDatingPeople(nextDatingPeople);
+      alert(
+        `백업 파일에서 ${importedPeople.length}명을 읽었습니다.\n소개팅 명단에 ${addedCount}명을 새로 추가했습니다.\n현재 소개팅 명단 ${nextDatingPeople.length}명`,
+      );
+    } catch (error) {
+      console.error("백업 파일을 소개팅 명단으로 불러오지 못했습니다.", error);
       alert("올바른 명단 백업 JSON 파일이 아닙니다.");
     } finally {
       input.value = "";
@@ -1604,6 +1784,9 @@ export default function Home() {
       const savedRecentPeople = window.localStorage.getItem("sajuRecentPeople");
       const savedFavoritePeople =
         window.localStorage.getItem("sajuFavoritePeople");
+      const savedDatingPeople = window.localStorage.getItem("sajuDatingPeople");
+      const savedDatingMatchMeta = window.localStorage.getItem("sajuDatingMatchMeta");
+      const savedDatingFilterPresets = window.localStorage.getItem("sajuDatingFilterPresets");
       const savedMemoText = window.localStorage.getItem("sajuMemoText");
 
       if (savedMemoText !== null) {
@@ -1626,6 +1809,24 @@ export default function Home() {
           ...savedFavoriteList,
         ]),
       );
+
+      if (savedDatingPeople) {
+        setDatingPeople(normalizeDatingPeopleList(JSON.parse(savedDatingPeople)));
+      }
+
+      if (savedDatingMatchMeta) {
+        const parsedMatchMeta = JSON.parse(savedDatingMatchMeta);
+        if (parsedMatchMeta && typeof parsedMatchMeta === "object") {
+          setDatingMatchMeta(parsedMatchMeta);
+        }
+      }
+
+      if (savedDatingFilterPresets) {
+        const parsedPresets = JSON.parse(savedDatingFilterPresets);
+        if (Array.isArray(parsedPresets)) {
+          setDatingFilterPresets(parsedPresets);
+        }
+      }
     } catch (error) {
       console.error("저장된 사람 목록을 불러오지 못했습니다.", error);
     } finally {
@@ -1651,6 +1852,47 @@ export default function Home() {
       JSON.stringify(favoritePeople),
     );
   }, [favoritePeople, storageLoaded]);
+
+  useEffect(() => {
+    if (!storageLoaded || typeof window === "undefined") return;
+
+    window.localStorage.setItem(
+      "sajuDatingPeople",
+      JSON.stringify(datingPeople),
+    );
+  }, [datingPeople, storageLoaded]);
+
+
+  useEffect(() => {
+    if (!storageLoaded || typeof window === "undefined") return;
+
+    window.localStorage.setItem(
+      "sajuDatingMatchMeta",
+      JSON.stringify(datingMatchMeta),
+    );
+  }, [datingMatchMeta, storageLoaded]);
+
+  useEffect(() => {
+    if (!storageLoaded || typeof window === "undefined") return;
+
+    window.localStorage.setItem(
+      "sajuDatingFilterPresets",
+      JSON.stringify(datingFilterPresets),
+    );
+  }, [datingFilterPresets, storageLoaded]);
+
+  useEffect(() => {
+    if (!datingFixedPerson && !datingSelectedPerson) return;
+
+    const refreshPerson = (person: any) => {
+      if (!person) return null;
+      const key = makePersonKey(person);
+      return datingPeople.find((item) => makePersonKey(item) === key) || person;
+    };
+
+    setDatingFixedPerson((prev: any) => refreshPerson(prev));
+    setDatingSelectedPerson((prev: any) => refreshPerson(prev));
+  }, [datingPeople]);
 
   useEffect(() => {
     if (!memoLoaded || typeof window === "undefined") return;
@@ -1886,6 +2128,220 @@ export default function Home() {
     );
   };
 
+  const findDatingPerson = (person: any) => {
+    if (!person?.birthDate) return null;
+    const key = makePersonKey(normalizeRecentPerson(person));
+    return datingPeople.find((item) => makePersonKey(item) === key) || null;
+  };
+
+  const isDatingPerson = (person: any) => Boolean(findDatingPerson(person));
+
+  const canAddToDatingPeople = (person: any) => {
+    if (!person?.birthDate || !person?.calendarType) return false;
+    if (!person?.birthTime && !person?.birthTimeUnknown) return false;
+    return true;
+  };
+
+  const getDatingAddMeta = (slotKey: string, person: any): DatingAddMeta => {
+    const existing = findDatingPerson(person);
+    const draft = datingAddMeta[slotKey];
+
+    return {
+      region: draft?.region ?? existing?.datingRegion ?? "",
+      longDistance:
+        draft?.longDistance ?? existing?.datingLongDistance ?? "",
+    };
+  };
+
+  const setDatingAddMetaField = (
+    slotKey: string,
+    field: keyof DatingAddMeta,
+    value: string,
+  ) => {
+    setDatingAddMeta((prev) => ({
+      ...prev,
+      [slotKey]: {
+        region: prev[slotKey]?.region ?? "",
+        longDistance: prev[slotKey]?.longDistance ?? "",
+        [field]: value,
+      } as DatingAddMeta,
+    }));
+  };
+
+  const addDatingPerson = (person: any, slotKey: string) => {
+    if (!canAddToDatingPeople(person)) {
+      alert("소개팅 명단에 넣으려면 생년월일, 양력/음력, 출생시간 정보를 입력해주세요.");
+      return;
+    }
+
+    const meta = getDatingAddMeta(slotKey, person);
+    if (!meta.region.trim()) {
+      alert("소개팅 명단에 넣으려면 지역을 입력해주세요.");
+      return;
+    }
+    if (!meta.longDistance) {
+      alert("장거리 가능 여부를 선택해주세요.");
+      return;
+    }
+
+    const normalizedPerson = normalizeDatingPerson({
+      ...person,
+      datingRegion: meta.region.trim(),
+      datingLongDistance: meta.longDistance,
+    });
+    const key = makePersonKey(normalizedPerson);
+
+    setDatingPeople((prev) => {
+      const existingIndex = prev.findIndex((item) => makePersonKey(item) === key);
+      if (existingIndex < 0) return [normalizedPerson, ...prev];
+
+      return prev.map((item, index) =>
+        index === existingIndex ? normalizedPerson : item,
+      );
+    });
+
+    setDatingFixedPerson((prev: any) =>
+      prev && makePersonKey(prev) === key ? normalizedPerson : prev,
+    );
+    setDatingSelectedPerson((prev: any) =>
+      prev && makePersonKey(prev) === key ? normalizedPerson : prev,
+    );
+  };
+
+  const makeDatingMatchKey = (fixedPerson: any, candidatePerson: any) =>
+    `${makePersonKey(fixedPerson)}>>${makePersonKey(candidatePerson)}`;
+
+  const getDatingMatchMeta = (person: any): DatingMatchMeta => {
+    if (!datingFixedPerson || !person) return { stars: 0, score: "" };
+    const key = makeDatingMatchKey(datingFixedPerson, person);
+    const saved = datingMatchMeta[key];
+    return {
+      stars: Math.max(0, Math.min(3, Number(saved?.stars || 0))),
+      score: saved?.score == null ? "" : String(saved.score),
+    };
+  };
+
+  const updateDatingMatchMeta = (
+    person: any,
+    patch: Partial<DatingMatchMeta>,
+  ) => {
+    if (!datingFixedPerson || !person) return;
+    const key = makeDatingMatchKey(datingFixedPerson, person);
+    setDatingMatchMeta((prev) => ({
+      ...prev,
+      [key]: {
+        stars: Math.max(0, Math.min(3, Number(prev[key]?.stars || 0))),
+        score: prev[key]?.score == null ? "" : String(prev[key].score),
+        ...patch,
+      },
+    }));
+  };
+
+  const removeDatingPerson = (person: any) => {
+    const key = makePersonKey(normalizeRecentPerson(person));
+
+    setDatingPeople((prev) =>
+      prev.filter((item) => makePersonKey(item) !== key),
+    );
+
+    setDatingMatchMeta((prev) =>
+      Object.fromEntries(
+        Object.entries(prev).filter(
+          ([matchKey]) =>
+            !matchKey.startsWith(`${key}>>`) && !matchKey.endsWith(`>>${key}`),
+        ),
+      ),
+    );
+
+    if (datingFixedPerson && makePersonKey(datingFixedPerson) === key) {
+      setDatingFixedPerson(null);
+      setDatingSelectedPerson(null);
+      setDatingResult({ left: null, right: null });
+      return;
+    }
+
+    if (datingSelectedPerson && makePersonKey(datingSelectedPerson) === key) {
+      setDatingSelectedPerson(null);
+      setDatingResult((prev: any) => ({ ...prev, right: null }));
+    }
+  };
+
+  const selectDatingFixedPerson = (person: any) => {
+    const normalizedPerson = normalizeDatingPerson(person);
+    const calculated = calculateOneSaju(normalizedPerson);
+    if (!calculated) return;
+
+    // 고정 인물이 바뀌면 이전 상대 선택/만세력은 항상 제거한다.
+    // 이전 고정 인물과의 비교 결과가 남아 있으면 혼동될 수 있기 때문.
+    setDatingFixedPerson(normalizedPerson);
+    setDatingFixedSearch("");
+    setDatingSelectedPerson(null);
+    setDatingResult({ left: calculated, right: null });
+  };
+
+  const selectDatingComparisonPerson = (person: any) => {
+    if (!datingFixedPerson) {
+      alert("먼저 왼쪽에 고정할 사람을 선택해주세요.");
+      return;
+    }
+
+    const normalizedPerson = normalizeDatingPerson(person);
+    const right = calculateOneSaju(normalizedPerson);
+    const left =
+      datingResult.left || calculateOneSaju(normalizeRecentPerson(datingFixedPerson));
+
+    if (!left || !right) return;
+
+    setDatingSelectedPerson(normalizedPerson);
+    setDatingResult({ left, right });
+  };
+
+  const renderAddDatingButton = (person: any, slotKey: string) => {
+    const existing = findDatingPerson(person);
+    const available = canAddToDatingPeople(person);
+    const meta = getDatingAddMeta(slotKey, person);
+    const metaReady = Boolean(meta.region.trim() && meta.longDistance);
+
+    return (
+      <div className="rounded-xl border border-pink-200 bg-pink-50/50 p-3">
+        <div className="grid grid-cols-1 gap-2 md:grid-cols-[1fr_220px_auto]">
+          <input
+            type="text"
+            value={meta.region}
+            onChange={(event) =>
+              setDatingAddMetaField(slotKey, "region", event.target.value)
+            }
+            placeholder="지역 (예: 대전, 서울)"
+            className="min-w-0 rounded-xl border border-pink-200 bg-white px-3 py-2 text-xl font-bold text-black outline-none"
+          />
+          <select
+            value={meta.longDistance}
+            onChange={(event) =>
+              setDatingAddMetaField(slotKey, "longDistance", event.target.value)
+            }
+            className="rounded-xl border border-pink-200 bg-white px-3 py-2 text-xl font-bold text-black outline-none"
+          >
+            <option value="">장거리 가능 여부</option>
+            <option value="가능">장거리 가능</option>
+            <option value="불가">장거리 불가</option>
+          </select>
+          <button
+            type="button"
+            onClick={() => addDatingPerson(person, slotKey)}
+            disabled={!available || !metaReady}
+            className={`rounded-xl border px-4 py-2 ${FONT.buttonText} font-bold shadow-sm transition ${
+              available && metaReady
+                ? "border-pink-300 bg-white text-pink-700 hover:bg-pink-50"
+                : "border-zinc-200 bg-zinc-100 text-zinc-400"
+            } disabled:cursor-not-allowed`}
+          >
+            {existing ? "💕 소개팅 정보 수정" : "💕 소개팅 명단에 추가"}
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   const loadRecentPersonToSaju = (person: any) => {
     const normalizedPerson = normalizeRecentPerson(person);
 
@@ -2042,16 +2498,39 @@ export default function Home() {
                   </button>
                   <button
                     type="button"
+                    onClick={downloadDatingPeopleBackup}
+                    className="rounded-lg bg-pink-600 px-4 py-2 text-xl font-bold text-white transition hover:opacity-90"
+                    title="현재 소개팅 명단과 별표/궁합점수 데이터를 JSON으로 저장"
+                  >
+                    소개팅 명단 저장
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => peopleBackupInputRef.current?.click()}
                     className="rounded-lg border border-[#6b3f24]/40 bg-white px-4 py-2 text-xl font-bold text-[#6b3f24] transition hover:bg-[#f3e1cf]"
                   >
                     명단 불러오기
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => peopleDatingImportInputRef.current?.click()}
+                    className="rounded-lg border border-pink-500/40 bg-pink-50 px-4 py-2 text-xl font-bold text-pink-700 transition hover:bg-pink-100"
+                    title="첨부한 명단 백업 JSON 파일의 사람들을 소개팅 명단에 중복 없이 추가"
+                  >
+                    백업 파일 → 소개팅 명단
                   </button>
                   <input
                     ref={peopleBackupInputRef}
                     type="file"
                     accept=".json,application/json"
                     onChange={importPeopleBackup}
+                    className="hidden"
+                  />
+                  <input
+                    ref={peopleDatingImportInputRef}
+                    type="file"
+                    accept=".json,application/json"
+                    onChange={importBackupFileToDating}
                     className="hidden"
                   />
                 </div>
@@ -3259,7 +3738,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
   ) => {
     if (!targetSaju) return null;
 
-    const isCompatibilityMode = mode === "compatibility";
+    const isCompatibilityMode = mode === "compatibility" || mode === "dating";
 
     if (isCompatibilityMode) {
       return (
@@ -4591,7 +5070,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
   const sajuItems = buildSajuItems(sajuResult);
 
   const renderPillarCard = (item: any, _cardKey = "main") => {
-    const isCompatibilityMode = mode === "compatibility";
+    const isCompatibilityMode = mode === "compatibility" || mode === "dating";
 
     if (!item.data) {
       return (
@@ -4858,7 +5337,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
 
             <div
               className={
-                mode === "compatibility"
+                (mode === "compatibility" || mode === "dating")
                   ? "mt-4 flex gap-3 overflow-x-auto pb-3"
                   : "mt-4 grid grid-cols-2 gap-3 sm:grid-cols-10"
               }
@@ -4878,7 +5357,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                       }))
                     }
                     className={`${
-                      mode === "compatibility" ? "min-w-[100px]" : ""
+                      (mode === "compatibility" || mode === "dating") ? "min-w-[100px]" : ""
                     } rounded-xl p-3 text-center shadow-sm transition ${
                       selected
                         ? "bg-[#6b3f24] text-white shadow-md"
@@ -4958,7 +5437,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
 
                 <div
                   className={
-                    mode === "compatibility"
+                    (mode === "compatibility" || mode === "dating")
                       ? "mt-4 flex gap-3 overflow-x-auto pb-3"
                       : "mt-4 grid grid-cols-2 gap-3 sm:grid-cols-12"
                   }
@@ -4967,7 +5446,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                     <div
                       key={`${monthLuck.year}-${monthLuck.month}`}
                       className={
-                        mode === "compatibility"
+                        (mode === "compatibility" || mode === "dating")
                           ? "min-w-[100px] rounded-xl bg-zinc-100 p-3 text-center shadow-sm"
                           : "rounded-xl bg-zinc-100 p-3 text-center shadow-sm"
                       }
@@ -5226,6 +5705,1295 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
     );
   };
 
+  const DATING_TEN_GOD_FILTER_OPTIONS = [
+    "비견",
+    "겁재",
+    "식신",
+    "상관",
+    "편재",
+    "정재",
+    "편관",
+    "정관",
+    "편인",
+    "정인",
+    "비겁",
+    "식상",
+    "재성",
+    "관성",
+    "인성",
+  ];
+
+  const DATING_ELEMENT_FILTER_OPTIONS = ["목", "화", "토", "금", "수"];
+  const DATING_STEM_FILTER_OPTIONS = ["갑", "을", "병", "정", "무", "기", "경", "신", "임", "계"];
+
+  const getDatingPillarBranch = (targetSaju: any, pillar: "day" | "month") => {
+    const item = targetSaju?.[pillar];
+    return normalizeBranch(item?.branch || String(item?.ganji || "").slice(1, 2));
+  };
+
+  const getDatingDayStem = (targetSaju: any) =>
+    normalizeStem(
+      targetSaju?.day?.stem || String(targetSaju?.day?.ganji || "").slice(0, 1),
+    );
+
+  const getDatingPillarGanji = (targetSaju: any, pillar: "year" | "month" | "day" | "hour") => {
+    const item = targetSaju?.[pillar];
+    const stem = normalizeStem(item?.stem || String(item?.ganji || "").slice(0, 1));
+    const branch = normalizeBranch(item?.branch || String(item?.ganji || "").slice(1, 2));
+    return stem && branch ? `${stem}${branch}` : "";
+  };
+
+  const isDatingPillarDayMatch = (fixedSaju: any, candidateSaju: any) => {
+    const candidateDayGanji = getDatingPillarGanji(candidateSaju, "day");
+    if (!candidateDayGanji) return false;
+
+    const fixedPillars = (["year", "month", "day", "hour"] as const)
+      .map((pillar) => getDatingPillarGanji(fixedSaju, pillar))
+      .filter(Boolean);
+
+    return fixedPillars.includes(candidateDayGanji);
+  };
+
+  const isDatingBranchRelation = (
+    leftBranch: string,
+    rightBranch: string,
+    relation: string,
+  ) => {
+    const left = normalizeBranch(leftBranch);
+    const right = normalizeBranch(rightBranch);
+
+    if (!left || !right || left === right) return false;
+
+    if (relation === "육합") {
+      const pairKey = makeBranchPairKey(left, right);
+      return BRANCH_RELATION_RULES.yukhap.some(
+        ([a, b]: string[]) => makeBranchPairKey(a, b) === pairKey,
+      );
+    }
+
+    if (relation === "삼합") {
+      return BRANCH_RELATION_RULES.samhap.some(
+        (rule: any) => rule.branches.includes(left) && rule.branches.includes(right),
+      );
+    }
+
+    if (relation === "방합") {
+      return BRANCH_RELATION_RULES.banghap.some(
+        (rule: any) => rule.branches.includes(left) && rule.branches.includes(right),
+      );
+    }
+
+    if (relation === "원진") {
+      const pairKey = makeBranchPairKey(left, right);
+      return BRANCH_RELATION_RULES.wonjin.some(
+        ([a, b]: string[]) => makeBranchPairKey(a, b) === pairKey,
+      );
+    }
+
+    return false;
+  };
+
+  const isDatingStemHap = (leftStem: string, rightStem: string) => {
+    const left = normalizeStem(leftStem);
+    const right = normalizeStem(rightStem);
+    if (!left || !right || left === right) return false;
+
+    const pairKey = makeHanjaPairKey(left, right);
+    return STEM_HAP_PAIRS.some(
+      ([a, b]) => makeHanjaPairKey(a, b) === pairKey,
+    );
+  };
+
+  const getCheoneulTargetBranches = (dayStem: string) => {
+    const cheoneulMap: Record<string, string[]> = {
+      갑: ["축", "미"],
+      무: ["축", "미"],
+      경: ["축", "미"],
+      을: ["자", "신"],
+      기: ["자", "신"],
+      병: ["해", "유"],
+      정: ["해", "유"],
+      임: ["사", "묘"],
+      계: ["사", "묘"],
+      신: ["오", "인"],
+    };
+    return cheoneulMap[normalizeStem(dayStem)] || [];
+  };
+
+  const getAllDatingBranches = (targetSaju: any) =>
+    ["year", "month", "day", "hour"]
+      .map((pillar) => {
+        const item = targetSaju?.[pillar];
+        return normalizeBranch(item?.branch || String(item?.ganji || "").slice(1, 2));
+      })
+      .filter(Boolean);
+
+  const isDatingCheoneulMatch = (fixedSaju: any, candidateSaju: any) => {
+    const targets = getCheoneulTargetBranches(getDatingDayStem(fixedSaju));
+    if (targets.length === 0) return false;
+    const candidateBranches = getAllDatingBranches(candidateSaju);
+    return candidateBranches.some((branch) => targets.includes(branch));
+  };
+
+  const getDatingTenGodCounts = (targetSaju: any) => {
+    const exact: Record<string, number> = {
+      비견: 0,
+      겁재: 0,
+      식신: 0,
+      상관: 0,
+      편재: 0,
+      정재: 0,
+      편관: 0,
+      정관: 0,
+      편인: 0,
+      정인: 0,
+    };
+
+    const values = [
+      targetSaju?.tenGods?.yearStem,
+      targetSaju?.tenGods?.yearBranch,
+      targetSaju?.tenGods?.monthStem,
+      targetSaju?.tenGods?.monthBranch,
+      targetSaju?.tenGods?.dayStem,
+      targetSaju?.tenGods?.dayBranch,
+      targetSaju?.tenGods?.hourStem,
+      targetSaju?.tenGods?.hourBranch,
+    ].filter(Boolean);
+
+    values.forEach((raw: string) => {
+      const tenGod = raw === "일간" ? "비견" : raw;
+      if (Object.prototype.hasOwnProperty.call(exact, tenGod)) {
+        exact[tenGod] += 1;
+      }
+    });
+
+    return {
+      ...exact,
+      비겁: exact.비견 + exact.겁재,
+      식상: exact.식신 + exact.상관,
+      재성: exact.편재 + exact.정재,
+      관성: exact.편관 + exact.정관,
+      인성: exact.편인 + exact.정인,
+    };
+  };
+
+  const getDatingElementCount = (targetSaju: any, element: string) => {
+    const elementKeyMap: Record<string, string> = {
+      목: "wood",
+      화: "fire",
+      토: "earth",
+      금: "metal",
+      수: "water",
+    };
+    const key = elementKeyMap[element];
+    return Number(targetSaju?.elementCount?.[key] ?? 0);
+  };
+
+  const parseDatingFilterCount = (value: string) => {
+    if (value === "") return null;
+    const parsed = Number(value);
+    return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
+  };
+
+  const matchesDatingRelationFilter = (
+    leftBranch: string,
+    rightBranch: string,
+    selectedRelations: string[],
+    relationJoin: DatingRelationJoin,
+  ) => {
+    if (selectedRelations.length === 0) return true;
+    const matcher = (relation: string) =>
+      isDatingBranchRelation(leftBranch, rightBranch, relation);
+    return relationJoin === "and"
+      ? selectedRelations.every(matcher)
+      : selectedRelations.some(matcher);
+  };
+
+  const doesDatingCandidateMatchFilters = (person: any) => {
+    if (!datingFixedPerson) return true;
+
+    const sameGender =
+      String(person?.gender || "") === String(datingFixedPerson?.gender || "");
+    if (datingGenderMode === "exclude-same" && sameGender) return false;
+    if (datingGenderMode === "same-only" && !sameGender) return false;
+
+    const fixedSaju =
+      datingResult.left || calculateOneSaju(normalizeRecentPerson(datingFixedPerson));
+    const candidateSaju = calculateOneSaju(normalizeRecentPerson(person));
+
+    if (!fixedSaju || !candidateSaju) return false;
+
+    const fixedDayBranch = getDatingPillarBranch(fixedSaju, "day");
+    const candidateDayBranch = getDatingPillarBranch(candidateSaju, "day");
+    const fixedMonthBranch = getDatingPillarBranch(fixedSaju, "month");
+    const candidateMonthBranch = getDatingPillarBranch(candidateSaju, "month");
+
+    if (
+      !matchesDatingRelationFilter(
+        fixedDayBranch,
+        candidateDayBranch,
+        datingDayRelations,
+        datingDayRelationJoin,
+      )
+    ) return false;
+
+    if (
+      datingExcludeDayWonjin &&
+      isDatingBranchRelation(fixedDayBranch, candidateDayBranch, "원진")
+    ) return false;
+
+    if (
+      !matchesDatingRelationFilter(
+        fixedMonthBranch,
+        candidateMonthBranch,
+        datingMonthRelations,
+        datingMonthRelationJoin,
+      )
+    ) return false;
+
+    if (
+      datingExcludeMonthWonjin &&
+      isDatingBranchRelation(fixedMonthBranch, candidateMonthBranch, "원진")
+    ) return false;
+
+    if (datingStemHapMode === "include") {
+      const stemHap = isDatingStemHap(
+        getDatingDayStem(fixedSaju),
+        getDatingDayStem(candidateSaju),
+      );
+      if (!stemHap) return false;
+    }
+
+    if (
+      datingDayStems.length > 0 &&
+      !datingDayStems.includes(getDatingDayStem(candidateSaju))
+    ) return false;
+
+    if (
+      datingCheoneulMode === "include" &&
+      !isDatingCheoneulMatch(fixedSaju, candidateSaju)
+    ) return false;
+
+    const matchMeta = getDatingMatchMeta(person);
+    if (datingMinStars > 0 && matchMeta.stars < datingMinStars) return false;
+
+    const tenGodCounts = getDatingTenGodCounts(candidateSaju);
+
+    const minTenGodMatched = datingTenGodMinRules.every((rule) => {
+      const count = parseDatingFilterCount(rule.count);
+      if (count === null) return true;
+      return Number(tenGodCounts[rule.target] ?? 0) >= count;
+    });
+    if (!minTenGodMatched) return false;
+
+    const maxTenGodMatched = datingTenGodMaxRules.every((rule) => {
+      const count = parseDatingFilterCount(rule.count);
+      if (count === null) return true;
+      return Number(tenGodCounts[rule.target] ?? 0) <= count;
+    });
+    if (!maxTenGodMatched) return false;
+
+    const minElementMatched = datingElementMinRules.every((rule) => {
+      const count = parseDatingFilterCount(rule.count);
+      if (count === null) return true;
+      return getDatingElementCount(candidateSaju, rule.target) >= count;
+    });
+    if (!minElementMatched) return false;
+
+    const maxElementMatched = datingElementMaxRules.every((rule) => {
+      const count = parseDatingFilterCount(rule.count);
+      if (count === null) return true;
+      return getDatingElementCount(candidateSaju, rule.target) <= count;
+    });
+    if (!maxElementMatched) return false;
+
+    return true;
+  };
+
+  const normalizedDatingFixedSearch = datingFixedSearch.trim().toLowerCase().replace(/\s/g, "");
+  const showDatingFixedSearchResults = normalizedDatingFixedSearch.length > 0;
+  const filteredDatingFixedPeople = useMemo(() => {
+    if (!showDatingFixedSearchResults) return [];
+
+    return datingPeople.filter((person) => {
+      const searchableValues = [
+        person.name || "",
+        person.birthDate || "",
+        String(person.birthDate || "").replace(/-/g, ""),
+        person.birthTimeUnknown ? "시간미상" : person.birthTime || "",
+        person.gender || "",
+        person.datingRegion || "",
+      ];
+
+      return searchableValues.some((value) =>
+        String(value).toLowerCase().replace(/\s/g, "").includes(normalizedDatingFixedSearch),
+      );
+    });
+  }, [datingPeople, normalizedDatingFixedSearch, showDatingFixedSearchResults]);
+
+  // 소개팅 필터는 후보 수가 많을 때 calculateOneSaju() 반복 호출이 가장 큰 병목이다.
+  // 명단 자체가 바뀔 때만 모든 후보의 만세력을 한 번 계산하고 이후 필터 클릭에서는 재사용한다.
+  const datingSajuCache = useMemo(() => {
+    const cache = new Map<string, any>();
+
+    datingPeople.forEach((person) => {
+      try {
+        cache.set(
+          makePersonKey(person),
+          calculateOneSaju(normalizeRecentPerson(person)),
+        );
+      } catch (error) {
+        console.error("소개팅 후보 만세력 캐시 생성 실패", person, error);
+        cache.set(makePersonKey(person), null);
+      }
+    });
+
+    return cache;
+  }, [datingPeople]);
+
+  const datingAvailableCandidates = useMemo(() => {
+    if (!datingFixedPerson) return [];
+    const fixedKey = makePersonKey(datingFixedPerson);
+    return datingPeople.filter((person) => makePersonKey(person) !== fixedKey);
+  }, [datingPeople, datingFixedPerson]);
+
+  // 버튼 상태는 즉시 바꾸되, 무거운 후보 목록 갱신은 뒤로 미뤄서 기존 명단을 계속 볼 수 있게 한다.
+  const datingFilterSnapshot = useMemo(
+    () => ({
+      dayRelations: datingDayRelations,
+      dayRelationJoin: datingDayRelationJoin,
+      excludeDayWonjin: datingExcludeDayWonjin,
+      monthRelations: datingMonthRelations,
+      monthRelationJoin: datingMonthRelationJoin,
+      excludeMonthWonjin: datingExcludeMonthWonjin,
+      stemHapMode: datingStemHapMode,
+      dayStems: datingDayStems,
+      cheoneulMode: datingCheoneulMode,
+      pillarDayMatch: datingPillarDayMatch,
+      excludeSameDayPillar: datingExcludeSameDayPillar,
+      genderMode: datingGenderMode,
+      olderMaxAgeGap: datingOlderMaxAgeGap,
+      youngerMaxAgeGap: datingYoungerMaxAgeGap,
+      minStars: datingMinStars,
+      tenGodMinRules: datingTenGodMinRules,
+      tenGodMaxRules: datingTenGodMaxRules,
+      elementMinRules: datingElementMinRules,
+      elementMaxRules: datingElementMaxRules,
+      sortMode: datingSortMode,
+    }),
+    [
+      datingDayRelations,
+      datingDayRelationJoin,
+      datingExcludeDayWonjin,
+      datingMonthRelations,
+      datingMonthRelationJoin,
+      datingExcludeMonthWonjin,
+      datingStemHapMode,
+      datingDayStems,
+      datingCheoneulMode,
+      datingPillarDayMatch,
+      datingExcludeSameDayPillar,
+      datingGenderMode,
+      datingOlderMaxAgeGap,
+      datingYoungerMaxAgeGap,
+      datingMinStars,
+      datingTenGodMinRules,
+      datingTenGodMaxRules,
+      datingElementMinRules,
+      datingElementMaxRules,
+      datingSortMode,
+    ],
+  );
+  const deferredDatingFilterSnapshot = useDeferredValue(datingFilterSnapshot);
+  const datingFilterPending = deferredDatingFilterSnapshot !== datingFilterSnapshot;
+
+  const filteredDatingCandidates = useMemo(() => {
+    if (!datingFixedPerson) return [];
+
+    const filters = deferredDatingFilterSnapshot;
+    const fixedSaju = datingSajuCache.get(makePersonKey(datingFixedPerson));
+
+    const matches = (person: any) => {
+      const sameGender =
+        String(person?.gender || "") === String(datingFixedPerson?.gender || "");
+      if (filters.genderMode === "exclude-same" && sameGender) return false;
+      if (filters.genderMode === "same-only" && !sameGender) return false;
+
+      const fixedBirthYear = Number(String(datingFixedPerson?.birthDate || "").slice(0, 4));
+      const candidateBirthYear = Number(String(person?.birthDate || "").slice(0, 4));
+      const olderMax = filters.olderMaxAgeGap === "" ? null : Number(filters.olderMaxAgeGap);
+      const youngerMax = filters.youngerMaxAgeGap === "" ? null : Number(filters.youngerMaxAgeGap);
+
+      if (Number.isFinite(fixedBirthYear) && Number.isFinite(candidateBirthYear)) {
+        if (candidateBirthYear < fixedBirthYear && olderMax !== null && Number.isFinite(olderMax)) {
+          if (fixedBirthYear - candidateBirthYear > Math.max(0, olderMax)) return false;
+        }
+        if (candidateBirthYear > fixedBirthYear && youngerMax !== null && Number.isFinite(youngerMax)) {
+          if (candidateBirthYear - fixedBirthYear > Math.max(0, youngerMax)) return false;
+        }
+      }
+
+      const matchMeta = getDatingMatchMeta(person);
+      if (filters.minStars > 0 && matchMeta.stars < filters.minStars) return false;
+
+      const hasSajuFilter =
+        filters.dayRelations.length > 0 ||
+        filters.excludeDayWonjin ||
+        filters.monthRelations.length > 0 ||
+        filters.excludeMonthWonjin ||
+        filters.stemHapMode !== "off" ||
+        filters.dayStems.length > 0 ||
+        filters.cheoneulMode !== "off" ||
+        filters.pillarDayMatch ||
+        filters.tenGodMinRules.length > 0 ||
+        filters.tenGodMaxRules.length > 0 ||
+        filters.elementMinRules.length > 0 ||
+        filters.elementMaxRules.length > 0;
+
+      // 성별/별표 필터만 쓸 때는 만세력 데이터를 전혀 건드리지 않는다.
+      if (!hasSajuFilter) return true;
+
+      const candidateSaju = datingSajuCache.get(makePersonKey(person));
+      if (!fixedSaju || !candidateSaju) return false;
+
+      const fixedDayBranch = getDatingPillarBranch(fixedSaju, "day");
+      const candidateDayBranch = getDatingPillarBranch(candidateSaju, "day");
+      const fixedMonthBranch = getDatingPillarBranch(fixedSaju, "month");
+      const candidateMonthBranch = getDatingPillarBranch(candidateSaju, "month");
+
+      if (
+        !matchesDatingRelationFilter(
+          fixedDayBranch,
+          candidateDayBranch,
+          filters.dayRelations,
+          filters.dayRelationJoin,
+        )
+      ) return false;
+
+      if (
+        filters.excludeDayWonjin &&
+        isDatingBranchRelation(fixedDayBranch, candidateDayBranch, "원진")
+      ) return false;
+
+      if (
+        !matchesDatingRelationFilter(
+          fixedMonthBranch,
+          candidateMonthBranch,
+          filters.monthRelations,
+          filters.monthRelationJoin,
+        )
+      ) return false;
+
+      if (
+        filters.excludeMonthWonjin &&
+        isDatingBranchRelation(fixedMonthBranch, candidateMonthBranch, "원진")
+      ) return false;
+
+      if (
+        filters.stemHapMode === "include" &&
+        !isDatingStemHap(getDatingDayStem(fixedSaju), getDatingDayStem(candidateSaju))
+      ) return false;
+
+      if (
+        filters.dayStems.length > 0 &&
+        !filters.dayStems.includes(getDatingDayStem(candidateSaju))
+      ) return false;
+
+      if (
+        filters.cheoneulMode === "include" &&
+        !isDatingCheoneulMatch(fixedSaju, candidateSaju)
+      ) return false;
+
+      if (filters.pillarDayMatch) {
+        if (!isDatingPillarDayMatch(fixedSaju, candidateSaju)) return false;
+
+        if (filters.excludeSameDayPillar) {
+          const fixedDayGanji = getDatingPillarGanji(fixedSaju, "day");
+          const candidateDayGanji = getDatingPillarGanji(candidateSaju, "day");
+          if (fixedDayGanji && fixedDayGanji === candidateDayGanji) return false;
+        }
+      }
+
+      const tenGodCounts = getDatingTenGodCounts(candidateSaju);
+
+      if (!filters.tenGodMinRules.every((rule) => {
+        const count = parseDatingFilterCount(rule.count);
+        return count === null || Number(tenGodCounts[rule.target] ?? 0) >= count;
+      })) return false;
+
+      if (!filters.tenGodMaxRules.every((rule) => {
+        const count = parseDatingFilterCount(rule.count);
+        return count === null || Number(tenGodCounts[rule.target] ?? 0) <= count;
+      })) return false;
+
+      if (!filters.elementMinRules.every((rule) => {
+        const count = parseDatingFilterCount(rule.count);
+        return count === null || getDatingElementCount(candidateSaju, rule.target) >= count;
+      })) return false;
+
+      if (!filters.elementMaxRules.every((rule) => {
+        const count = parseDatingFilterCount(rule.count);
+        return count === null || getDatingElementCount(candidateSaju, rule.target) <= count;
+      })) return false;
+
+      return true;
+    };
+
+    return datingAvailableCandidates
+      .filter(matches)
+      .slice()
+      .sort((a, b) => {
+        if (filters.sortMode === "stars-desc") {
+          const starDiff = getDatingMatchMeta(b).stars - getDatingMatchMeta(a).stars;
+          if (starDiff !== 0) return starDiff;
+        }
+
+        if (filters.sortMode === "score-desc") {
+          const metaA = getDatingMatchMeta(a);
+          const metaB = getDatingMatchMeta(b);
+          const scoreA = Number(metaA.score);
+          const scoreB = Number(metaB.score);
+          const safeA = Number.isFinite(scoreA) && metaA.score !== "" ? scoreA : -Infinity;
+          const safeB = Number.isFinite(scoreB) && metaB.score !== "" ? scoreB : -Infinity;
+          if (safeA !== safeB) return safeB - safeA;
+        }
+
+        return datingAvailableCandidates.indexOf(a) - datingAvailableCandidates.indexOf(b);
+      });
+  }, [
+    datingAvailableCandidates,
+    datingFixedPerson,
+    datingMatchMeta,
+    datingSajuCache,
+    deferredDatingFilterSnapshot,
+  ]);
+
+  const hasDatingFilters =
+    datingDayRelations.length > 0 ||
+    datingExcludeDayWonjin ||
+    datingMonthRelations.length > 0 ||
+    datingExcludeMonthWonjin ||
+    datingStemHapMode !== "off" ||
+    datingDayStems.length > 0 ||
+    datingCheoneulMode !== "off" ||
+    datingPillarDayMatch ||
+    datingGenderMode !== "all" ||
+    datingOlderMaxAgeGap !== "" ||
+    datingYoungerMaxAgeGap !== "" ||
+    datingMinStars > 0 ||
+    datingTenGodMinRules.length > 0 ||
+    datingTenGodMaxRules.length > 0 ||
+    datingElementMinRules.length > 0 ||
+    datingElementMaxRules.length > 0;
+
+  const clearDatingFilters = () => {
+    setDatingDayRelations([]);
+    setDatingDayRelationJoin("or");
+    setDatingExcludeDayWonjin(false);
+    setDatingMonthRelations([]);
+    setDatingMonthRelationJoin("or");
+    setDatingExcludeMonthWonjin(false);
+    setDatingStemHapMode("off");
+    setDatingDayStems([]);
+    setDatingCheoneulMode("off");
+    setDatingPillarDayMatch(false);
+    setDatingExcludeSameDayPillar(false);
+    setDatingGenderMode("all");
+    setDatingOlderMaxAgeGap("");
+    setDatingYoungerMaxAgeGap("");
+    setDatingMinStars(0);
+    setDatingTenGodMinRules([]);
+    setDatingTenGodMaxRules([]);
+    setDatingElementMinRules([]);
+    setDatingElementMaxRules([]);
+  };
+
+  const getDatingFilterPresetData = () => ({
+    dayRelations: [...datingDayRelations],
+    dayRelationJoin: datingDayRelationJoin,
+    excludeDayWonjin: datingExcludeDayWonjin,
+    monthRelations: [...datingMonthRelations],
+    monthRelationJoin: datingMonthRelationJoin,
+    excludeMonthWonjin: datingExcludeMonthWonjin,
+    stemHapMode: datingStemHapMode,
+    dayStems: [...datingDayStems],
+    cheoneulMode: datingCheoneulMode,
+    pillarDayMatch: datingPillarDayMatch,
+    excludeSameDayPillar: datingExcludeSameDayPillar,
+    genderMode: datingGenderMode,
+    olderMaxAgeGap: datingOlderMaxAgeGap,
+    youngerMaxAgeGap: datingYoungerMaxAgeGap,
+    minStars: datingMinStars,
+    tenGodMinRules: datingTenGodMinRules.map(({ target, count }) => ({ target, count })),
+    tenGodMaxRules: datingTenGodMaxRules.map(({ target, count }) => ({ target, count })),
+    elementMinRules: datingElementMinRules.map(({ target, count }) => ({ target, count })),
+    elementMaxRules: datingElementMaxRules.map(({ target, count }) => ({ target, count })),
+    sortMode: datingSortMode,
+  });
+
+  const restoreDatingCountRules = (rules: any) =>
+    (Array.isArray(rules) ? rules : []).map((rule: any) => ({
+      id: datingFilterRuleIdRef.current++,
+      target: String(rule?.target || ""),
+      count: String(rule?.count ?? ""),
+    }));
+
+  const applyDatingFilterPreset = (preset: any) => {
+    const filters = preset?.filters;
+    if (!filters) return;
+
+    setDatingDayRelations(Array.isArray(filters.dayRelations) ? filters.dayRelations : []);
+    setDatingDayRelationJoin(filters.dayRelationJoin === "and" ? "and" : "or");
+    setDatingExcludeDayWonjin(Boolean(filters.excludeDayWonjin));
+    setDatingMonthRelations(Array.isArray(filters.monthRelations) ? filters.monthRelations : []);
+    setDatingMonthRelationJoin(filters.monthRelationJoin === "and" ? "and" : "or");
+    setDatingExcludeMonthWonjin(Boolean(filters.excludeMonthWonjin));
+    setDatingStemHapMode(filters.stemHapMode === "include" ? "include" : "off");
+    setDatingDayStems(Array.isArray(filters.dayStems) ? filters.dayStems : []);
+    setDatingCheoneulMode(filters.cheoneulMode === "include" ? "include" : "off");
+    setDatingPillarDayMatch(Boolean(filters.pillarDayMatch));
+    setDatingExcludeSameDayPillar(Boolean(filters.excludeSameDayPillar));
+    setDatingGenderMode(
+      filters.genderMode === "exclude-same" || filters.genderMode === "same-only"
+        ? filters.genderMode
+        : "all",
+    );
+    setDatingOlderMaxAgeGap(filters.olderMaxAgeGap == null ? "" : String(filters.olderMaxAgeGap));
+    setDatingYoungerMaxAgeGap(filters.youngerMaxAgeGap == null ? "" : String(filters.youngerMaxAgeGap));
+    setDatingMinStars([1, 2, 3].includes(Number(filters.minStars)) ? Number(filters.minStars) : 0);
+    setDatingTenGodMinRules(restoreDatingCountRules(filters.tenGodMinRules));
+    setDatingTenGodMaxRules(restoreDatingCountRules(filters.tenGodMaxRules));
+    setDatingElementMinRules(restoreDatingCountRules(filters.elementMinRules));
+    setDatingElementMaxRules(restoreDatingCountRules(filters.elementMaxRules));
+    setDatingSortMode(
+      filters.sortMode === "score-desc" || filters.sortMode === "stars-desc"
+        ? filters.sortMode
+        : "default",
+    );
+  };
+
+  const saveDatingFilterPreset = () => {
+    const name = datingPresetName.trim();
+    if (!name) {
+      alert("프리셋 이름을 입력해주세요.");
+      return;
+    }
+
+    const nextPreset = { name, filters: getDatingFilterPresetData() };
+    setDatingFilterPresets((prev) => [
+      ...prev.filter((item: any) => item?.name !== name),
+      nextPreset,
+    ]);
+    setDatingSelectedPresetName(name);
+    setDatingPresetName("");
+  };
+
+  const loadDatingFilterPreset = (preset: any) => {
+    if (!preset) return;
+    setDatingSelectedPresetName(String(preset?.name || ""));
+    applyDatingFilterPreset(preset);
+  };
+
+  const deleteDatingFilterPreset = (presetName: string) => {
+    if (!presetName) return;
+    setDatingFilterPresets((prev) =>
+      prev.filter((item: any) => item?.name !== presetName),
+    );
+    setDatingSelectedPresetName((prev) =>
+      prev === presetName ? "" : prev,
+    );
+  };
+
+  const toggleDatingRelation = (scope: "day" | "month", relation: string) => {
+    const setter = scope === "day" ? setDatingDayRelations : setDatingMonthRelations;
+    setter((prev) =>
+      prev.includes(relation)
+        ? prev.filter((item) => item !== relation)
+        : [...prev, relation],
+    );
+  };
+
+  const toggleDatingDayStem = (stem: string) => {
+    setDatingDayStems((prev) =>
+      prev.includes(stem)
+        ? prev.filter((item) => item !== stem)
+        : [...prev, stem],
+    );
+  };
+
+  const addDatingCountRule = (setter: any, initialTarget: string) => {
+    const nextRule: DatingCountFilterRule = {
+      id: datingFilterRuleIdRef.current++,
+      target: initialTarget,
+      count: "3",
+    };
+    setter((prev: DatingCountFilterRule[]) => [...prev, nextRule]);
+  };
+
+  const renderDatingCountRuleBlock = (
+    title: string,
+    rules: DatingCountFilterRule[],
+    setter: any,
+    options: string[],
+    comparisonLabel: string,
+    initialTarget: string,
+  ) => (
+    <div className="rounded-xl border border-[#ead8c4] bg-white p-3">
+      <div className="flex items-center justify-between gap-2">
+        <div className="text-lg font-bold text-[#6b3f24]">{title}</div>
+        <button
+          type="button"
+          onClick={() => addDatingCountRule(setter, initialTarget)}
+          className="shrink-0 rounded-lg bg-[#f7efe3] px-2.5 py-1.5 text-base font-bold text-[#6b3f24] transition hover:bg-[#f0dcc6]"
+        >
+          + 추가
+        </button>
+      </div>
+
+      {rules.length === 0 ? (
+        <div className="mt-2 text-sm font-bold text-zinc-400">조건 없음</div>
+      ) : (
+        <div className="mt-2 space-y-2">
+          {rules.map((rule) => (
+            <div key={rule.id} className="flex items-center gap-1.5">
+              <select
+                value={rule.target}
+                onChange={(event) =>
+                  setter((prev: DatingCountFilterRule[]) =>
+                    prev.map((item) =>
+                      item.id === rule.id
+                        ? { ...item, target: event.target.value }
+                        : item,
+                    ),
+                  )
+                }
+                className="min-w-0 flex-1 rounded-lg border border-[#ead8c4] bg-white px-2 py-1.5 text-base font-bold text-black"
+              >
+                {options.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+              <input
+                type="number"
+                min="0"
+                max="8"
+                value={rule.count}
+                onChange={(event) =>
+                  setter((prev: DatingCountFilterRule[]) =>
+                    prev.map((item) =>
+                      item.id === rule.id
+                        ? { ...item, count: event.target.value }
+                        : item,
+                    ),
+                  )
+                }
+                className="w-14 rounded-lg border border-[#ead8c4] px-1 py-1.5 text-center text-base font-bold text-black"
+              />
+              <span className="whitespace-nowrap text-sm font-bold text-[#6b3f24]">
+                {comparisonLabel}
+              </span>
+              <button
+                type="button"
+                onClick={() =>
+                  setter((prev: DatingCountFilterRule[]) =>
+                    prev.filter((item) => item.id !== rule.id),
+                  )
+                }
+                className="rounded-lg px-1.5 py-1 text-base font-bold text-red-600 transition hover:bg-red-50"
+                title="조건 삭제"
+              >
+                ×
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  const renderDatingRelationBlock = (
+    title: string,
+    scope: "day" | "month",
+    selectedRelations: string[],
+    relationJoin: DatingRelationJoin,
+    setRelationJoin: any,
+    excludeWonjin: boolean,
+    setExcludeWonjin: any,
+  ) => {
+    const filterOff = selectedRelations.length === 0 && !excludeWonjin;
+
+    return (
+      <div className="rounded-xl border border-[#ead8c4] bg-white p-3">
+        <div className="flex items-center justify-between gap-2">
+          <div className="text-lg font-bold text-[#6b3f24]">{title}</div>
+          <button
+            type="button"
+            onClick={() => {
+              if (scope === "day") setDatingDayRelations([]);
+              else setDatingMonthRelations([]);
+              setExcludeWonjin(false);
+            }}
+            className={`rounded-lg px-2.5 py-1.5 text-sm font-bold transition ${
+              filterOff
+                ? "bg-zinc-700 text-white"
+                : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200"
+            }`}
+          >
+            필터 OFF
+          </button>
+        </div>
+
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {["육합", "삼합", "방합"].map((relation) => {
+            const selected = selectedRelations.includes(relation);
+            return (
+              <button
+                key={`${scope}-${relation}`}
+                type="button"
+                onClick={() => toggleDatingRelation(scope, relation)}
+                className={`rounded-lg border px-2.5 py-1.5 text-base font-bold transition ${
+                  selected
+                    ? "border-[#6b3f24] bg-[#6b3f24] text-white"
+                    : "border-[#ead8c4] bg-white text-[#6b3f24] hover:bg-[#fff7ed]"
+                }`}
+              >
+                {relation}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="mt-2 flex items-center justify-between gap-2">
+          <button
+            type="button"
+            onClick={() => setExcludeWonjin((prev: boolean) => !prev)}
+            className={`rounded-lg border px-2.5 py-1.5 text-sm font-bold transition ${
+              excludeWonjin
+                ? "border-red-500 bg-red-500 text-white"
+                : "border-red-200 bg-white text-red-700 hover:bg-red-50"
+            }`}
+          >
+            원진살 제외 {excludeWonjin ? "ON" : "OFF"}
+          </button>
+          <div className="flex items-center gap-1">
+            <span className="mr-1 text-sm font-bold text-zinc-500">관계</span>
+            {(["or", "and"] as DatingRelationJoin[]).map((value) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setRelationJoin(value)}
+                className={`rounded-lg px-2 py-1 text-sm font-bold ${
+                  relationJoin === value
+                    ? "bg-pink-600 text-white"
+                    : "bg-zinc-100 text-zinc-600"
+                }`}
+              >
+                {value.toUpperCase()}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderSimpleDatingFilterCard = (
+    title: string,
+    children: any,
+  ) => (
+    <div className="rounded-xl border border-[#ead8c4] bg-white p-3">
+      <div className="text-lg font-bold text-[#6b3f24]">{title}</div>
+      <div className="mt-2">{children}</div>
+    </div>
+  );
+
+  const renderDatingFilterPanel = () => {
+    if (!datingFixedPerson) return null;
+
+    return (
+      <div className="mt-3 rounded-2xl border border-pink-200 bg-pink-50/50 p-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <div className="text-xl font-bold text-pink-800">상대 필터</div>
+            <div className="mt-0.5 text-base font-bold text-zinc-500">
+              결과 {filteredDatingCandidates.length}명 / 전체 {datingAvailableCandidates.length}명
+              {datingFilterPending && <span className="ml-2 text-pink-600">· 필터 적용 중… 기존 명단 유지</span>}
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <select
+              value={datingSortMode}
+              onChange={(event) => setDatingSortMode(event.target.value as DatingSortMode)}
+              className="rounded-lg border border-pink-200 bg-white px-3 py-2 text-base font-bold text-[#6b3f24]"
+            >
+              <option value="default">기본 순서</option>
+              <option value="score-desc">궁합점수 높은순</option>
+              <option value="stars-desc">별표 많은순</option>
+            </select>
+            <button
+              type="button"
+              onClick={clearDatingFilters}
+              disabled={!hasDatingFilters}
+              className="rounded-lg border border-red-200 bg-white px-3 py-2 text-base font-bold text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              필터 초기화
+            </button>
+            <button
+              type="button"
+              onClick={() => setDatingFilterOpen((prev) => !prev)}
+              className="rounded-lg border border-pink-200 bg-white px-3 py-2 text-base font-bold text-pink-800 transition hover:bg-pink-50"
+            >
+              {datingFilterOpen ? "접기 ▲" : "열기 ▼"}
+            </button>
+          </div>
+        </div>
+
+        {datingFilterOpen && (
+          <>
+            <div className="mt-3 rounded-xl bg-white/80 px-3 py-2 text-sm font-bold text-zinc-500">
+              서로 다른 필터 카드는 AND로 적용됩니다. 일지·월지의 육합/삼합/방합은 각 카드에서 OR 또는 AND를 선택할 수 있습니다.
+            </div>
+
+            <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-pink-100 bg-white/80 p-2">
+              <span className="shrink-0 text-sm font-bold text-pink-800">필터 프리셋</span>
+              <input
+                type="text"
+                value={datingPresetName}
+                onChange={(event) => setDatingPresetName(event.target.value)}
+                placeholder="프리셋 이름"
+                className="w-36 rounded-lg border border-pink-200 bg-white px-2 py-1.5 text-sm font-bold text-black outline-none"
+              />
+              <button
+                type="button"
+                onClick={saveDatingFilterPreset}
+                className="rounded-lg bg-pink-600 px-3 py-1.5 text-sm font-bold text-white hover:bg-pink-700"
+              >
+                저장
+              </button>
+              <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
+                {datingFilterPresets.length === 0 ? (
+                  <span className="px-2 text-sm font-bold text-zinc-400">
+                    저장된 프리셋 없음
+                  </span>
+                ) : (
+                  datingFilterPresets.map((preset: any) => {
+                    const selected = datingSelectedPresetName === preset?.name;
+
+                    return (
+                      <div
+                        key={preset.name}
+                        className={`flex items-center overflow-hidden rounded-lg border ${
+                          selected
+                            ? "border-pink-500 bg-pink-100"
+                            : "border-pink-200 bg-white"
+                        }`}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => loadDatingFilterPreset(preset)}
+                          className={`px-3 py-1.5 text-sm font-bold transition ${
+                            selected
+                              ? "text-pink-900"
+                              : "text-pink-800 hover:bg-pink-50"
+                          }`}
+                          title={`${preset.name} 프리셋 불러오기`}
+                        >
+                          {preset.name}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => deleteDatingFilterPreset(String(preset?.name || ""))}
+                          className="border-l border-pink-200 px-2 py-1.5 text-sm font-black text-red-600 transition hover:bg-red-50"
+                          title={`${preset.name} 프리셋 삭제`}
+                        >
+                          ×
+                        </button>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+
+            <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-3">
+              {renderDatingRelationBlock(
+                "1. 일지 관계",
+                "day",
+                datingDayRelations,
+                datingDayRelationJoin,
+                setDatingDayRelationJoin,
+                datingExcludeDayWonjin,
+                setDatingExcludeDayWonjin,
+              )}
+
+              {renderDatingRelationBlock(
+                "2. 월지 관계",
+                "month",
+                datingMonthRelations,
+                datingMonthRelationJoin,
+                setDatingMonthRelationJoin,
+                datingExcludeMonthWonjin,
+                setDatingExcludeMonthWonjin,
+              )}
+
+              {renderSimpleDatingFilterCard(
+                "3. 일간 천간합",
+                <div className="grid grid-cols-2 gap-2">
+                  {([
+                    ["off", "필터 OFF"],
+                    ["include", "천간합 해당"],
+                  ] as const).map(([value, label]) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setDatingStemHapMode(value)}
+                      className={`rounded-lg border px-2 py-2 text-base font-bold transition ${
+                        datingStemHapMode === value
+                          ? "border-[#6b3f24] bg-[#6b3f24] text-white"
+                          : "border-[#ead8c4] bg-white text-[#6b3f24] hover:bg-[#fff7ed]"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>,
+              )}
+
+              {renderSimpleDatingFilterCard(
+                "4. 성별",
+                <div className="grid grid-cols-3 gap-1.5">
+                  {([
+                    ["all", "전체"],
+                    ["exclude-same", "이성"],
+                    ["same-only", "동성"],
+                  ] as const).map(([value, label]) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setDatingGenderMode(value)}
+                      className={`rounded-lg border px-1.5 py-2 text-sm font-bold transition ${
+                        datingGenderMode === value
+                          ? "border-[#6b3f24] bg-[#6b3f24] text-white"
+                          : "border-[#ead8c4] bg-white text-[#6b3f24] hover:bg-[#fff7ed]"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>,
+              )}
+
+              {renderSimpleDatingFilterCard(
+                "5. 나이 차이",
+                <div className="grid grid-cols-2 gap-2">
+                  <label className="text-sm font-bold text-[#6b3f24]">
+                    연상 최대
+                    <div className="mt-1 flex items-center gap-1">
+                      <input
+                        type="number"
+                        min="0"
+                        max="99"
+                        value={datingOlderMaxAgeGap}
+                        onChange={(event) => setDatingOlderMaxAgeGap(event.target.value)}
+                        placeholder="제한없음"
+                        className="min-w-0 w-full rounded-lg border border-[#ead8c4] bg-white px-2 py-2 text-center text-base font-bold text-black"
+                      />
+                      <span className="shrink-0">세</span>
+                    </div>
+                  </label>
+                  <label className="text-sm font-bold text-[#6b3f24]">
+                    연하 최대
+                    <div className="mt-1 flex items-center gap-1">
+                      <input
+                        type="number"
+                        min="0"
+                        max="99"
+                        value={datingYoungerMaxAgeGap}
+                        onChange={(event) => setDatingYoungerMaxAgeGap(event.target.value)}
+                        placeholder="제한없음"
+                        className="min-w-0 w-full rounded-lg border border-[#ead8c4] bg-white px-2 py-2 text-center text-base font-bold text-black"
+                      />
+                      <span className="shrink-0">세</span>
+                    </div>
+                  </label>
+                  <div className="col-span-2 text-xs font-bold text-zinc-400">
+                    빈칸은 해당 방향 제한 없음 · 0은 같은 나이만 허용
+                  </div>
+                </div>,
+              )}
+
+              {renderSimpleDatingFilterCard(
+                "6. 특정 일간",
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setDatingDayStems([])}
+                    className={`mb-2 rounded-lg px-2.5 py-1.5 text-sm font-bold ${
+                      datingDayStems.length === 0
+                        ? "bg-zinc-700 text-white"
+                        : "bg-zinc-100 text-zinc-600"
+                    }`}
+                  >
+                    필터 OFF
+                  </button>
+                  <div className="grid grid-cols-5 gap-1.5">
+                    {DATING_STEM_FILTER_OPTIONS.map((stem) => {
+                      const selected = datingDayStems.includes(stem);
+                      return (
+                        <button
+                          key={stem}
+                          type="button"
+                          onClick={() => toggleDatingDayStem(stem)}
+                          className={`rounded-lg border px-1 py-1.5 text-base font-bold ${
+                            selected
+                              ? "border-[#6b3f24] bg-[#6b3f24] text-white"
+                              : "border-[#ead8c4] bg-white text-[#6b3f24]"
+                          }`}
+                        >
+                          {stem}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </>,
+              )}
+
+              {renderSimpleDatingFilterCard(
+                "7. 천을귀인",
+                <div className="grid grid-cols-2 gap-2">
+                  {([
+                    ["off", "필터 OFF"],
+                    ["include", "해당"],
+                  ] as const).map(([value, label]) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setDatingCheoneulMode(value)}
+                      className={`rounded-lg border px-2 py-2 text-base font-bold ${
+                        datingCheoneulMode === value
+                          ? "border-[#6b3f24] bg-[#6b3f24] text-white"
+                          : "border-[#ead8c4] bg-white text-[#6b3f24]"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                  <div className="col-span-2 text-xs font-bold text-zinc-400">
+                    왼쪽 고정인의 일간 기준 천을귀인 지지가 상대 사주에 있는 경우
+                  </div>
+                </div>,
+              )}
+
+              {renderSimpleDatingFilterCard(
+                "8. 기둥일주",
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDatingPillarDayMatch(false);
+                      setDatingExcludeSameDayPillar(false);
+                    }}
+                    className={`rounded-lg border px-2 py-2 text-base font-bold transition ${
+                      !datingPillarDayMatch
+                        ? "border-[#6b3f24] bg-[#6b3f24] text-white"
+                        : "border-[#ead8c4] bg-white text-[#6b3f24] hover:bg-[#fff7ed]"
+                    }`}
+                  >
+                    OFF
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDatingPillarDayMatch(true)}
+                    className={`rounded-lg border px-2 py-2 text-base font-bold transition ${
+                      datingPillarDayMatch
+                        ? "border-[#6b3f24] bg-[#6b3f24] text-white"
+                        : "border-[#ead8c4] bg-white text-[#6b3f24] hover:bg-[#fff7ed]"
+                    }`}
+                  >
+                    ON
+                  </button>
+                  <button
+                    type="button"
+                    disabled={!datingPillarDayMatch}
+                    onClick={() => setDatingExcludeSameDayPillar((prev) => !prev)}
+                    className={`col-span-2 rounded-lg border px-2 py-1.5 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-40 ${
+                      datingExcludeSameDayPillar
+                        ? "border-amber-500 bg-amber-500 text-white"
+                        : "border-amber-200 bg-white text-amber-700 hover:bg-amber-50"
+                    }`}
+                  >
+                    동일주 제외 {datingExcludeSameDayPillar ? "ON" : "OFF"}
+                  </button>
+                  <div className="col-span-2 text-xs font-bold text-zinc-400">
+                    고정인의 년·월·일·시주 중 하나와 상대 일주가 같은 경우
+                  </div>
+                </div>,
+              )}
+
+              {renderSimpleDatingFilterCard(
+                "9. 별표 최소 개수",
+                <div className="grid grid-cols-4 gap-1.5">
+                  {[0, 1, 2, 3].map((count) => (
+                    <button
+                      key={count}
+                      type="button"
+                      onClick={() => setDatingMinStars(count)}
+                      className={`rounded-lg border px-1.5 py-2 text-sm font-bold ${
+                        datingMinStars === count
+                          ? "border-[#6b3f24] bg-[#6b3f24] text-white"
+                          : "border-[#ead8c4] bg-white text-[#6b3f24]"
+                      }`}
+                    >
+                      {count === 0 ? "OFF" : `★${count}+`}
+                    </button>
+                  ))}
+                </div>,
+              )}
+
+              {renderDatingCountRuleBlock(
+                "10. 십성 n개 이상",
+                datingTenGodMinRules,
+                setDatingTenGodMinRules,
+                DATING_TEN_GOD_FILTER_OPTIONS,
+                "이상",
+                "식신",
+              )}
+
+              {renderDatingCountRuleBlock(
+                "11. 십성 n개 이하",
+                datingTenGodMaxRules,
+                setDatingTenGodMaxRules,
+                DATING_TEN_GOD_FILTER_OPTIONS,
+                "이하",
+                "식신",
+              )}
+
+              {renderDatingCountRuleBlock(
+                "12. 오행 n개 이상",
+                datingElementMinRules,
+                setDatingElementMinRules,
+                DATING_ELEMENT_FILTER_OPTIONS,
+                "이상",
+                "목",
+              )}
+
+              {renderDatingCountRuleBlock(
+                "13. 오행 n개 이하",
+                datingElementMaxRules,
+                setDatingElementMaxRules,
+                DATING_ELEMENT_FILTER_OPTIONS,
+                "이하",
+                "목",
+              )}
+            </div>
+          </>
+        )}
+      </div>
+    );
+  };
+
   return (
     <>
       {drawingBoardOpen && (
@@ -5322,10 +7090,12 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
             ? "사주 분석기"
             : mode === "compatibility"
               ? "궁합 분석"
-              : "타로 카드 해석"}
+              : mode === "tarot"
+                ? "타로 카드 해석"
+                : "궁합소개팅"}
         </h1>
 
-        <div className="mt-6 grid grid-cols-3 gap-2 rounded-2xl bg-[#f7efe3] p-1">
+        <div className="mt-6 grid grid-cols-4 gap-2 rounded-2xl bg-[#f7efe3] p-1">
           <button
             type="button"
             onClick={() => {
@@ -5373,11 +7143,27 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
           >
             타로 모드
           </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setMode("dating");
+              setResult("");
+              setShowSaju(false);
+            }}
+            className={`rounded-xl py-3 ${FONT.modeButtonText} ${WEIGHT.modeButtonText} ${COLOR.modeButtonText} transition ${
+              mode === "dating"
+                ? "bg-[#6b3f24] text-white shadow"
+                : "text-[#6b3f24]"
+            }`}
+          >
+            궁합소개팅 모드
+          </button>
         </div>
 
         {mode !== "tarot" && (
         <div className="sticky top-6 z-[55] mt-4 overflow-hidden rounded-2xl border border-[#d7c4ad] bg-white/95 px-4 py-2 shadow-lg backdrop-blur">
-          {mode !== "compatibility" ? (
+          {mode === "saju" ? (
             <div className={`flex items-center justify-center gap-4 whitespace-nowrap ${FONT.floatingInfo} font-bold text-[#2b1d12]`}>
               <span>{form.name || "이름 미입력"}</span>
               <span className="text-[#b59474]">|</span>
@@ -5387,7 +7173,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
               <span>{form.birthDate || "생년월일 미입력"}</span>
               <span>{form.birthTimeUnknown ? "시간 미상" : form.birthTime || "시간 미입력"}</span>
             </div>
-          ) : (
+          ) : mode === "compatibility" ? (
             <div className={`flex items-center justify-center gap-5 whitespace-nowrap ${FONT.floatingInfo} font-bold text-[#2b1d12]`}>
               <span className="rounded-lg bg-[#fff4e8] px-3 py-1">
                 {compatibilityForm.left.name || "이름 미입력"} · {compatibilityForm.left.gender} · {getCalendarTypeLabel(compatibilityForm.left)} {compatibilityForm.left.birthDate || "생년월일 미입력"} {compatibilityForm.left.birthTimeUnknown ? "시간 미상" : compatibilityForm.left.birthTime || "시간 미입력"}
@@ -5396,12 +7182,431 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                 {compatibilityForm.right.name || "이름 미입력"} · {compatibilityForm.right.gender} · {getCalendarTypeLabel(compatibilityForm.right)} {compatibilityForm.right.birthDate || "생년월일 미입력"} {compatibilityForm.right.birthTimeUnknown ? "시간 미상" : compatibilityForm.right.birthTime || "시간 미입력"}
               </span>
             </div>
+          ) : (
+            <div className={`flex items-center justify-center gap-5 whitespace-nowrap ${FONT.floatingInfo} font-bold text-[#2b1d12]`}>
+              <span className="rounded-lg bg-pink-50 px-3 py-1">
+                왼쪽 고정 · {datingFixedPerson ? `${datingFixedPerson.name || "이름없음"} · ${datingFixedPerson.birthDate}` : "미선택"}
+              </span>
+              <span className="rounded-lg bg-[#f4efe9] px-3 py-1">
+                오른쪽 상대 · {datingSelectedPerson ? `${datingSelectedPerson.name || "이름없음"} · ${datingSelectedPerson.birthDate}` : "미선택"}
+              </span>
+            </div>
           )}
         </div>
         )}
 
         <div className="mt-8 space-y-4">
           {mode === "tarot" && renderTarotMode()}
+
+          {mode === "dating" && (
+            <div className="space-y-5">
+              <section className="rounded-3xl border border-[#ead8c4] bg-[#fffaf3] p-5 shadow-inner">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <h2 className={`${FONT.sectionTitle} ${WEIGHT.sectionTitle} ${COLOR.sectionTitle}`}>
+                      소개팅 명단
+                    </h2>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="whitespace-nowrap rounded-full bg-white px-4 py-2 text-xl font-bold text-[#6b3f24] shadow-sm">
+                      {datingPeople.length}명
+                    </span>
+                    {datingPeople.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (confirm("소개팅 명단을 모두 삭제하시겠습니까?")) {
+                            setDatingPeople([]);
+                            setDatingMatchMeta({});
+                            setDatingFixedPerson(null);
+                            setDatingSelectedPerson(null);
+                            setDatingResult({ left: null, right: null });
+                          }
+                        }}
+                        className="rounded-xl border border-red-200 bg-white px-4 py-2 text-xl font-bold text-red-700 transition hover:bg-red-50"
+                      >
+                        전체삭제
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {datingPeople.length === 0 ? (
+                  <div className="mt-5 rounded-2xl border border-dashed border-[#d7c4ad] bg-white p-8 text-center text-2xl font-bold text-zinc-400">
+                    소개팅 명단이 비어 있습니다. 사주 모드 또는 궁합 모드에서 사람을 추가해주세요.
+                  </div>
+                ) : (
+                  <div className="mt-5 space-y-4 lg:flex lg:items-start lg:gap-4 lg:space-y-0">
+                    <div className="rounded-2xl border border-pink-200 bg-pink-50/60 p-4 lg:w-fit lg:max-w-[380px] lg:shrink-0">
+                      <div className="mb-3 flex items-center justify-between">
+                        <h3 className={`${FONT.cardTitle} ${WEIGHT.cardTitle} text-pink-800`}>
+                          고정 인물
+                        </h3>
+                        {datingFixedPerson && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setDatingFixedPerson(null);
+                              setDatingSelectedPerson(null);
+                              setDatingResult({ left: null, right: null });
+                            }}
+                            className="rounded-lg bg-white px-3 py-2 text-xl font-bold text-pink-700 shadow-sm"
+                          >
+                            고정 해제
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="mb-3">
+                        <input
+                          type="text"
+                          value={datingFixedSearch}
+                          onChange={(event) => setDatingFixedSearch(event.target.value)}
+                          placeholder="고정 인물 검색"
+                          autoComplete="off"
+                          className="w-full rounded-xl border border-pink-200 bg-white px-3 py-2 text-lg font-bold text-[#6b3f24] outline-none placeholder:text-zinc-400 focus:border-pink-400"
+                        />
+                        {showDatingFixedSearchResults && (
+                          <div className="mt-1 text-right text-sm font-bold text-pink-700">
+                            {filteredDatingFixedPeople.length}명 검색됨
+                          </div>
+                        )}
+                      </div>
+
+                      {showDatingFixedSearchResults && (
+                        <div className="flex flex-wrap gap-2">
+                          {filteredDatingFixedPeople.map((person) => {
+                            const selected =
+                              datingFixedPerson &&
+                              makePersonKey(datingFixedPerson) === makePersonKey(person);
+
+                            return (
+                              <div
+                                key={`dating-fixed-${makePersonKey(person)}`}
+                                className="flex items-stretch gap-1"
+                              >
+                                <button
+                                  type="button"
+                                  onClick={() => selectDatingFixedPerson(person)}
+                                  className={`rounded-xl border px-4 py-3 text-left text-xl font-bold transition ${
+                                    selected
+                                      ? "border-pink-600 bg-pink-600 text-white shadow-md"
+                                      : "border-pink-200 bg-white text-[#6b3f24] hover:bg-pink-50"
+                                  }`}
+                                >
+                                  <div>{person.name || "이름없음"}</div>
+                                  <div className={`mt-1 text-base ${selected ? "text-pink-50" : "text-zinc-500"}`}>
+                                    {person.birthDate} · {person.birthTimeUnknown ? "시간미상" : person.birthTime}
+                                  </div>
+                                  <div className={`mt-0.5 text-sm ${selected ? "text-pink-50" : "text-zinc-500"}`}>
+                                    {person.datingRegion || "지역 미입력"} · 장거리 {person.datingLongDistance || "미입력"}
+                                  </div>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => removeDatingPerson(person)}
+                                  className="rounded-xl border border-red-100 bg-white px-2 text-lg font-bold text-red-600 transition hover:bg-red-50"
+                                  title="소개팅 명단에서 삭제"
+                                >
+                                  ×
+                                </button>
+                              </div>
+                            );
+                          })}
+                          {filteredDatingFixedPeople.length === 0 && (
+                            <div className="w-full rounded-xl border border-dashed border-pink-200 bg-white px-4 py-5 text-center text-lg font-bold text-zinc-400">
+                              검색 결과가 없습니다.
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="min-w-0 rounded-2xl border border-[#ead8c4] bg-white p-4 lg:flex-1">
+                      <div className="flex items-center justify-between gap-3">
+                        <h3 className={`${FONT.cardTitle} ${WEIGHT.cardTitle} ${COLOR.cardTitle}`}>
+                          소개팅 명단
+                        </h3>
+                        <div className="flex items-center gap-2">
+                          {datingFixedPerson && (
+                            <span className="whitespace-nowrap rounded-full bg-[#f7efe3] px-3 py-1.5 text-lg font-bold text-[#6b3f24]">
+                              {filteredDatingCandidates.length} / {datingAvailableCandidates.length}명
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      {!datingFixedPerson ? (
+                        <div className="mt-4 rounded-xl bg-zinc-50 p-6 text-center text-2xl font-bold text-zinc-400">
+                          먼저 왼쪽에 고정할 사람을 선택해주세요.
+                        </div>
+                      ) : (
+                        <>
+                          {renderDatingFilterPanel()}
+
+                          <div className="mt-3 max-h-[340px] space-y-2 overflow-y-auto pr-1">
+                            {filteredDatingCandidates.map((person) => {
+                              const selected =
+                                datingSelectedPerson &&
+                                makePersonKey(datingSelectedPerson) === makePersonKey(person);
+
+                              return (
+                                <div
+                                  key={`dating-right-${makePersonKey(person)}`}
+                                  className={`flex items-center gap-2 rounded-xl border p-2 transition ${
+                                    selected
+                                      ? "border-[#6b3f24] bg-[#f7efe3] shadow-sm"
+                                      : "border-[#ead8c4] bg-white"
+                                  }`}
+                                >
+                                  <button
+                                    type="button"
+                                    onClick={() => selectDatingComparisonPerson(person)}
+                                    className="min-w-0 flex-1 overflow-x-auto rounded-lg px-3 py-2 text-left transition hover:bg-[#fff7ed]"
+                                  >
+                                    <div className="flex min-w-max items-center gap-0.5 whitespace-nowrap font-bold">
+                                      <span className="text-2xl text-[#6b3f24]">
+                                        {person.name || "이름없음"}
+                                      </span>
+                                      <span className="text-lg text-zinc-400">·</span>
+                                      <span className="text-lg text-zinc-500">{person.gender}</span>
+                                      <span className="text-lg text-zinc-400">·</span>
+                                      <span className="text-lg text-zinc-500">{getCalendarTypeLabel(person)}</span>
+                                      <span className="text-lg text-zinc-400">·</span>
+                                      <span className="text-lg text-zinc-500">{person.birthDate}</span>
+                                      <span className="text-lg text-zinc-400">·</span>
+                                      <span className="text-lg text-zinc-500">
+                                        {person.birthTimeUnknown ? "시간미상" : person.birthTime}
+                                      </span>
+                                      <span className="text-lg text-zinc-400">·</span>
+                                      <span className="text-lg text-pink-700">
+                                        {person.datingRegion || "지역 미입력"}
+                                      </span>
+                                      <span className="text-lg text-zinc-400">·</span>
+                                      <span className="text-lg text-pink-700">
+                                        장거리 {person.datingLongDistance || "미입력"}
+                                      </span>
+                                      <span className="text-lg text-zinc-400">·</span>
+                                      <span className="text-lg text-pink-700">
+                                        {(() => {
+                                          const meta = getDatingMatchMeta(person);
+                                          return `${"★".repeat(meta.stars)}${"☆".repeat(3 - meta.stars)}`;
+                                        })()}
+                                      </span>
+                                      <span className="text-lg text-zinc-400">·</span>
+                                      <span className="text-lg text-pink-700">
+                                        궁합 {getDatingMatchMeta(person).score || "-"}점
+                                      </span>
+                                    </div>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => removeDatingPerson(person)}
+                                    className="rounded-lg px-3 py-2 text-xl font-bold text-red-700 transition hover:bg-red-50"
+                                  >
+                                    삭제
+                                  </button>
+                                </div>
+                              );
+                            })}
+
+                            {datingAvailableCandidates.length === 0 && (
+                              <div className="rounded-xl bg-zinc-50 p-6 text-center text-xl font-bold text-zinc-400">
+                                비교할 상대가 없습니다. 소개팅 명단에 사람을 더 추가해주세요.
+                              </div>
+                            )}
+
+                            {datingAvailableCandidates.length > 0 &&
+                              filteredDatingCandidates.length === 0 && (
+                                <div className="rounded-xl border border-dashed border-pink-200 bg-pink-50/50 p-6 text-center text-xl font-bold text-pink-700">
+                                  현재 필터 조건에 맞는 상대가 없습니다.
+                                </div>
+                              )}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </section>
+
+              {datingFixedPerson && datingAvailableCandidates.length > 0 && (
+                <section className="sticky top-24 z-[54] rounded-2xl border border-[#d7c4ad] bg-white/95 p-3 shadow-lg backdrop-blur">
+                  <div className="flex items-center gap-3">
+                    <div className="shrink-0 rounded-xl bg-pink-50 px-4 py-2">
+                      <div className="text-xl font-bold text-pink-800">상대 빠른 선택</div>
+                      <div className="mt-0.5 text-base font-bold text-zinc-500">
+                        {datingFixedPerson.name || "이름없음"} 기준 · {filteredDatingCandidates.length}명
+                      </div>
+                    </div>
+
+                    <div className="min-w-0 flex-1 overflow-x-auto">
+                      <div className="flex min-w-max items-center gap-2 pb-1">
+                        {filteredDatingCandidates.length === 0 && (
+                          <div className="rounded-xl bg-pink-50 px-4 py-3 text-lg font-bold text-pink-700">
+                            필터 조건에 맞는 상대 없음
+                          </div>
+                        )}
+                        {filteredDatingCandidates.map((person) => {
+                            const selected =
+                              datingSelectedPerson &&
+                              makePersonKey(datingSelectedPerson) === makePersonKey(person);
+
+                            return (
+                              <button
+                                key={`dating-quick-${makePersonKey(person)}`}
+                                type="button"
+                                onClick={() => selectDatingComparisonPerson(person)}
+                                className={`shrink-0 rounded-xl border px-4 py-2 text-left transition ${
+                                  selected
+                                    ? "border-[#6b3f24] bg-[#6b3f24] text-white shadow-md"
+                                    : "border-[#ead8c4] bg-white text-[#6b3f24] hover:bg-[#fff7ed]"
+                                }`}
+                              >
+                                <div className="text-xl font-bold">
+                                  {person.name || "이름없음"}
+                                </div>
+                                <div
+                                  className={`mt-0.5 text-sm font-bold ${
+                                    selected ? "text-[#f7efe3]" : "text-zinc-500"
+                                  }`}
+                                >
+                                  {person.birthDate} · {(() => {
+                                    const meta = getDatingMatchMeta(person);
+                                    return `${"★".repeat(meta.stars)}${meta.score ? ` ${meta.score}점` : ""}`;
+                                  })()}
+                                </div>
+                              </button>
+                            );
+                          })}
+                      </div>
+                    </div>
+
+                    {datingSelectedPerson && (
+                      <div className="shrink-0 rounded-xl bg-[#f7efe3] px-4 py-2 text-right">
+                        <div className="text-base font-bold text-zinc-500">현재 상대</div>
+                        <div className="text-xl font-bold text-[#6b3f24]">
+                          {datingSelectedPerson.name || "이름없음"}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </section>
+              )}
+
+              {(datingResult.left || datingResult.right) && (
+                <section className="rounded-3xl border border-[#ead8c4] bg-[#fffaf3] p-5 shadow-inner">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <h2 className={`${FONT.sectionTitle} ${WEIGHT.sectionTitle} ${COLOR.sectionTitle}`}>
+                      두 사람 만세력
+                    </h2>
+                    <button
+                      type="button"
+                      onClick={() => setShowCompatibilityRelations((prev) => !prev)}
+                      className={`rounded-full border border-[#6b3f24]/40 bg-white px-4 py-2 ${FONT.buttonText} font-bold text-[#6b3f24] shadow-sm transition hover:bg-[#f3e1cf]`}
+                    >
+                      {showCompatibilityRelations
+                        ? "지지 관계·신살 전체 접기 ▲"
+                        : "지지 관계·신살 전체 열기 ▼"}
+                    </button>
+                  </div>
+
+                  {datingSelectedPerson && (
+                    <div className="mt-3 flex justify-end">
+                      <div className="w-full rounded-2xl border border-pink-200 bg-white p-3 shadow-sm lg:w-[calc(50%-0.5rem)]">
+                        <div className="flex flex-wrap items-center justify-center gap-4">
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg font-bold text-[#6b3f24]">별표</span>
+                            {[1, 2, 3].map((star) => {
+                              const currentStars = getDatingMatchMeta(datingSelectedPerson).stars;
+                              return (
+                                <button
+                                  key={star}
+                                  type="button"
+                                  onClick={() =>
+                                    updateDatingMatchMeta(datingSelectedPerson, {
+                                      stars: currentStars === star ? 0 : star,
+                                    })
+                                  }
+                                  className={`text-3xl leading-none transition ${
+                                    star <= currentStars ? "text-amber-500" : "text-zinc-300"
+                                  }`}
+                                  title={`${star}개 별표`}
+                                >
+                                  ★
+                                </button>
+                              );
+                            })}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg font-bold text-[#6b3f24]">궁합 점수</span>
+                            <input
+                              type="number"
+                              min="0"
+                              max="100"
+                              value={getDatingMatchMeta(datingSelectedPerson).score}
+                              onChange={(event) => {
+                                const value = event.target.value;
+                                if (value === "" || /^\d{0,3}$/.test(value)) {
+                                  updateDatingMatchMeta(datingSelectedPerson, { score: value });
+                                }
+                              }}
+                              onBlur={(event) => {
+                                if (event.target.value === "") return;
+                                const clamped = Math.max(0, Math.min(100, Number(event.target.value)));
+                                updateDatingMatchMeta(datingSelectedPerson, { score: String(clamped) });
+                              }}
+                              className="w-24 rounded-lg border border-[#ead8c4] px-3 py-2 text-center text-xl font-bold text-black"
+                              placeholder="0~100"
+                            />
+                            <span className="text-lg font-bold text-zinc-500">점</span>
+                          </div>
+                          <div className="text-base font-bold text-zinc-500">
+                            {datingSelectedPerson.datingRegion || "지역 미입력"} · 장거리 {datingSelectedPerson.datingLongDistance || "미입력"}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+                    <div>
+                      <h3 className={`text-center ${FONT.cardTitle} ${WEIGHT.cardTitle} ${COLOR.cardTitle}`}>
+                        {datingFixedPerson?.name || "왼쪽 고정"}
+                      </h3>
+                      {datingResult.left ? (
+                        renderSajuCard(
+                          datingResult.left,
+                          "dating-left",
+                          normalizeDateForCalc(datingFixedPerson?.birthDate || ""),
+                        )
+                      ) : (
+                        <div className="mt-4 rounded-2xl border border-dashed border-[#d7c4ad] bg-white p-8 text-center text-2xl font-bold text-zinc-400">
+                          왼쪽 인물을 선택해주세요.
+                        </div>
+                      )}
+                    </div>
+
+                    <div>
+                      <h3 className={`text-center ${FONT.cardTitle} ${WEIGHT.cardTitle} ${COLOR.cardTitle}`}>
+                        {datingSelectedPerson?.name || "오른쪽 상대"}
+                      </h3>
+                      {datingResult.right ? (
+                        renderSajuCard(
+                          datingResult.right,
+                          "dating-right",
+                          normalizeDateForCalc(datingSelectedPerson?.birthDate || ""),
+                        )
+                      ) : (
+                        <div className="mt-4 rounded-2xl border border-dashed border-[#d7c4ad] bg-white p-8 text-center text-2xl font-bold text-zinc-400">
+                          오른쪽 명단에서 상대를 클릭하면 이곳에 만세력이 표시됩니다.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </section>
+              )}
+            </div>
+          )}
 
           {mode === "saju" && (
             <>
@@ -5585,6 +7790,8 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                 />
                 출생 시간을 모릅니다
               </label>
+
+              {renderAddDatingButton(form, "saju")}
 
               {mode === "saju" &&
                 renderPeopleStoragePanel(loadRecentPersonToSaju)}
@@ -5836,6 +8043,8 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                       />
                       출생 시간을 모릅니다
                     </label>
+
+                    {renderAddDatingButton(compatibilityForm[key], `compat-${key}`)}
 
                     {renderPeopleStoragePanel((person) =>
                       loadRecentPersonToCompatibility(key, person),
