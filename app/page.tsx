@@ -5941,6 +5941,32 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
     });
   };
 
+  // 소개팅 필터의 방합도 삼합과 동일하게 '완전 방합'을 기준으로 판정한다.
+  // 고정 인물의 기준 지지(일지 또는 월지)를 한 글자로 고정하고,
+  // 해당 방합을 완성하는 나머지 두 글자가 상대방의 년·월·일·시 어디에든
+  // 모두 존재할 때만 방합으로 인정한다.
+  const isDatingFullBanghapMatch = (
+    fixedAnchorBranch: string,
+    candidateSaju: any,
+  ) => {
+    const anchor = normalizeBranch(fixedAnchorBranch);
+    if (!anchor || !candidateSaju) return false;
+
+    const candidateBranches = getAllDatingBranches(candidateSaju);
+
+    return BRANCH_RELATION_RULES.banghap.some((rule: any) => {
+      if (!rule.branches.includes(anchor)) return false;
+
+      const requiredCandidateBranches = rule.branches.filter(
+        (branch: string) => branch !== anchor,
+      );
+
+      return requiredCandidateBranches.every((branch: string) =>
+        candidateBranches.includes(branch),
+      );
+    });
+  };
+
   const matchesDatingRelationFilter = (
     leftBranch: string,
     rightBranch: string,
@@ -5953,6 +5979,10 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
     const matcher = (relation: string) => {
       if (relation === "삼합") {
         return isDatingFullSamhapMatch(leftBranch, candidateSaju);
+      }
+
+      if (relation === "방합") {
+        return isDatingFullBanghapMatch(leftBranch, candidateSaju);
       }
 
       return isDatingBranchRelation(leftBranch, rightBranch, relation);
