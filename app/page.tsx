@@ -4827,14 +4827,19 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
   const formatCalendarDateKey = (date: Date) =>
     `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 
-  const getSelectedEventStatuses = (date: Date) => {
+  type CalendarEventStatus = {
+    name: string;
+    status: "good" | "bad";
+  };
+
+  const getSelectedEventStatuses = (date: Date): CalendarEventStatus[] => {
     const info = DAILY_EVENT_DATA[formatCalendarDateKey(date)];
     if (!info || selectedCalendarEvents.length === 0) return [];
 
-    return selectedCalendarEvents.flatMap((eventName) => {
-      if (info.allBad) return [{ name: eventName, status: "bad" as const }];
-      if (info.good.includes(eventName)) return [{ name: eventName, status: "good" as const }];
-      if (info.bad.includes(eventName)) return [{ name: eventName, status: "bad" as const }];
+    return selectedCalendarEvents.flatMap<CalendarEventStatus>((eventName) => {
+      if (info.allBad) return [{ name: eventName, status: "bad" }];
+      if (info.good.includes(eventName)) return [{ name: eventName, status: "good" }];
+      if (info.bad.includes(eventName)) return [{ name: eventName, status: "bad" }];
       return [];
     });
   };
