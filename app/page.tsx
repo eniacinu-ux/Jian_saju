@@ -6024,31 +6024,45 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
     const fixedMonthBranch = getDatingPillarBranch(fixedSaju, "month");
     const candidateMonthBranch = getDatingPillarBranch(candidateSaju, "month");
 
-    if (
-      !matchesDatingRelationFilter(
+    // 일지 관계와 월지 관계는 서로 독립된 관계 필터 블록이다.
+    // 둘 다 활성화되어 있으면 두 블록 중 하나라도 맞으면 통과(OR)한다.
+    // 단, 각 블록 내부에서 육합/삼합/방합을 여러 개 선택했을 때의
+    // OR/AND 규칙은 datingDayRelationJoin / datingMonthRelationJoin을 그대로 따른다.
+    const hasDayRelationFilter = datingDayRelations.length > 0;
+    const hasMonthRelationFilter = datingMonthRelations.length > 0;
+
+    const dayRelationMatched =
+      hasDayRelationFilter &&
+      matchesDatingRelationFilter(
         fixedDayBranch,
         candidateDayBranch,
         fixedSaju,
         candidateSaju,
         datingDayRelations,
         datingDayRelationJoin,
-      )
-    ) return false;
+      );
 
-    if (
-      datingExcludeDayWonjin &&
-      isDatingBranchRelation(fixedDayBranch, candidateDayBranch, "원진")
-    ) return false;
-
-    if (
-      !matchesDatingRelationFilter(
+    const monthRelationMatched =
+      hasMonthRelationFilter &&
+      matchesDatingRelationFilter(
         fixedMonthBranch,
         candidateMonthBranch,
         fixedSaju,
         candidateSaju,
         datingMonthRelations,
         datingMonthRelationJoin,
-      )
+      );
+
+    if (
+      (hasDayRelationFilter || hasMonthRelationFilter) &&
+      !dayRelationMatched &&
+      !monthRelationMatched
+    ) return false;
+
+    // 원진살 제외는 위 관계 OR 판정과 별개의 강제 제외 조건이다.
+    if (
+      datingExcludeDayWonjin &&
+      isDatingBranchRelation(fixedDayBranch, candidateDayBranch, "원진")
     ) return false;
 
     if (
