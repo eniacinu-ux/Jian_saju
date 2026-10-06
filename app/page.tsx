@@ -5744,10 +5744,23 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
   const DATING_ELEMENT_FILTER_OPTIONS = ["목", "화", "토", "금", "수"];
   const DATING_STEM_FILTER_OPTIONS = ["갑", "을", "병", "정", "무", "기", "경", "신", "임", "계"];
 
-  const getDatingPillarBranch = (targetSaju: any, pillar: "day" | "month") => {
+  const getDatingAnyPillarBranch = (targetSaju: any, pillar: "year" | "month" | "day" | "hour") => {
     const item = targetSaju?.[pillar];
-    return normalizeBranch(item?.branch || String(item?.ganji || "").slice(1, 2));
+    if (!item) return "";
+
+    const direct = normalizeBranch(item?.branch);
+    if (direct && BRANCHES.includes(direct)) return direct;
+
+    const korean = normalizeBranch(item?.branchKor);
+    if (korean && BRANCHES.includes(korean)) return korean;
+
+    const ganji = String(item?.ganji || "").trim();
+    const fromGanji = normalizeBranch(ganji.slice(1, 2));
+    return BRANCHES.includes(fromGanji) ? fromGanji : "";
   };
+
+  const getDatingPillarBranch = (targetSaju: any, pillar: "day" | "month") =>
+    getDatingAnyPillarBranch(targetSaju, pillar);
 
   const getDatingDayStem = (targetSaju: any) =>
     normalizeStem(
@@ -5841,12 +5854,9 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
   };
 
   const getAllDatingBranches = (targetSaju: any) =>
-    ["year", "month", "day", "hour"]
-      .map((pillar) => {
-        const item = targetSaju?.[pillar];
-        return normalizeBranch(item?.branch || String(item?.ganji || "").slice(1, 2));
-      })
-      .filter(Boolean);
+    (["year", "month", "day", "hour"] as const)
+      .map((pillar) => getDatingAnyPillarBranch(targetSaju, pillar))
+      .filter((branch): branch is string => Boolean(branch));
 
   const isDatingCheoneulMatch = (fixedSaju: any, candidateSaju: any) => {
     const targets = getCheoneulTargetBranches(getDatingDayStem(fixedSaju));
@@ -5915,61 +5925,65 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
     return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
   };
 
-  // 소개팅 필터의 삼합은 단순히 같은 기둥의 두 지지만 비교하지 않는다.
-  // 고정 인물의 기준 지지(일지 또는 월지)를 삼합의 한 글자로 고정하고,
-  // 그 삼합을 완성하는 나머지 두 글자가 상대방의 년·월·일·시 어디에든
-  // 모두 존재할 때 완전 삼합으로 판정한다.
+  // 소개팅의 삼합/방합은 두 사람의 사주 전체를 합쳐 판정한다.
+  // 단, 선택한 고정 인물의 일지/월지가 해당 합의 구성원이어야 하고
+  // 상대방도 그 합을 이루는 나머지 글자 중 최소 하나는 제공해야 한다.
+  // 이렇게 해야 고정 인물 쪽에 이미 한 글자가 있고 상대방이 나머지를 보완하는
+  // 실제 궁합 관계도 빠뜨리지 않는다.
+  const isDatingFullBranchGroupMatch = (
+    fixedAnchorBranch: string,
+    fixedSaju: any,
+    candidateSaju: any,
+    rules: any[],
+  ) => {
+    const anchor = normalizeBranch(fixedAnchorBranch);
+    if (!anchor || !fixedSaju || !candidateSaju) return false;
+
+    const fixedBranches = getAllDatingBranches(fixedSaju);
+    const candidateBranches = getAllDatingBranches(candidateSaju);
+    const combinedBranches = new Set([...fixedBranches, ...candidateBranches]);
+
+    return rules.some((rule: any) => {
+      const group = (rule?.branches || []).map((branch: string) => normalizeBranch(branch));
+      if (!group.includes(anchor)) return false;
+      if (!group.every((branch: string) => combinedBranches.has(branch))) return false;
+
+      // 고정 인물 내부에서만 이미 완성된 합은 소개팅 상대와의 관계로 보지 않는다.
+      // 상대방이 anchor 이외의 구성 글자를 최소 하나는 가져야 한다.
+      return group.some(
+        (branch: string) => branch !== anchor && candidateBranches.includes(branch),
+      );
+    });
+  };
+
   const isDatingFullSamhapMatch = (
     fixedAnchorBranch: string,
+    fixedSaju: any,
     candidateSaju: any,
-  ) => {
-    const anchor = normalizeBranch(fixedAnchorBranch);
-    if (!anchor || !candidateSaju) return false;
+  ) =>
+    isDatingFullBranchGroupMatch(
+      fixedAnchorBranch,
+      fixedSaju,
+      candidateSaju,
+      BRANCH_RELATION_RULES.samhap,
+    );
 
-    const candidateBranches = getAllDatingBranches(candidateSaju);
-
-    return BRANCH_RELATION_RULES.samhap.some((rule: any) => {
-      if (!rule.branches.includes(anchor)) return false;
-
-      const requiredCandidateBranches = rule.branches.filter(
-        (branch: string) => branch !== anchor,
-      );
-
-      return requiredCandidateBranches.every((branch: string) =>
-        candidateBranches.includes(branch),
-      );
-    });
-  };
-
-  // 소개팅 필터의 방합도 삼합과 동일하게 '완전 방합'을 기준으로 판정한다.
-  // 고정 인물의 기준 지지(일지 또는 월지)를 한 글자로 고정하고,
-  // 해당 방합을 완성하는 나머지 두 글자가 상대방의 년·월·일·시 어디에든
-  // 모두 존재할 때만 방합으로 인정한다.
   const isDatingFullBanghapMatch = (
     fixedAnchorBranch: string,
+    fixedSaju: any,
     candidateSaju: any,
-  ) => {
-    const anchor = normalizeBranch(fixedAnchorBranch);
-    if (!anchor || !candidateSaju) return false;
-
-    const candidateBranches = getAllDatingBranches(candidateSaju);
-
-    return BRANCH_RELATION_RULES.banghap.some((rule: any) => {
-      if (!rule.branches.includes(anchor)) return false;
-
-      const requiredCandidateBranches = rule.branches.filter(
-        (branch: string) => branch !== anchor,
-      );
-
-      return requiredCandidateBranches.every((branch: string) =>
-        candidateBranches.includes(branch),
-      );
-    });
-  };
+  ) =>
+    isDatingFullBranchGroupMatch(
+      fixedAnchorBranch,
+      fixedSaju,
+      candidateSaju,
+      BRANCH_RELATION_RULES.banghap,
+    );
 
   const matchesDatingRelationFilter = (
     leftBranch: string,
     rightBranch: string,
+    fixedSaju: any,
     candidateSaju: any,
     selectedRelations: string[],
     relationJoin: DatingRelationJoin,
@@ -5978,11 +5992,11 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
 
     const matcher = (relation: string) => {
       if (relation === "삼합") {
-        return isDatingFullSamhapMatch(leftBranch, candidateSaju);
+        return isDatingFullSamhapMatch(leftBranch, fixedSaju, candidateSaju);
       }
 
       if (relation === "방합") {
-        return isDatingFullBanghapMatch(leftBranch, candidateSaju);
+        return isDatingFullBanghapMatch(leftBranch, fixedSaju, candidateSaju);
       }
 
       return isDatingBranchRelation(leftBranch, rightBranch, relation);
@@ -6016,6 +6030,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
       !matchesDatingRelationFilter(
         fixedDayBranch,
         candidateDayBranch,
+        fixedSaju,
         candidateSaju,
         datingDayRelations,
         datingDayRelationJoin,
@@ -6031,6 +6046,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
       !matchesDatingRelationFilter(
         fixedMonthBranch,
         candidateMonthBranch,
+        fixedSaju,
         candidateSaju,
         datingMonthRelations,
         datingMonthRelationJoin,
@@ -6197,7 +6213,10 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
     // 현재 선택된 조건을 즉시 사용한다. UI와 결과 목록이 서로 다른 시점의 필터를
     // 가리키는 현상을 방지한다.
     const filters = datingFilterSnapshot;
-    const fixedSaju = datingSajuCache.get(makePersonKey(datingFixedPerson));
+    const fixedSaju =
+      datingResult.left ||
+      datingSajuCache.get(makePersonKey(datingFixedPerson)) ||
+      calculateOneSaju(normalizeRecentPerson(datingFixedPerson));
     const originalOrder = new Map(
       datingAvailableCandidates.map((candidate, index) => [makePersonKey(candidate), index]),
     );
@@ -6242,7 +6261,9 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
       // 성별/별표 필터만 쓸 때는 만세력 데이터를 전혀 건드리지 않는다.
       if (!hasSajuFilter) return true;
 
-      const candidateSaju = datingSajuCache.get(makePersonKey(person));
+      const candidateSaju =
+        datingSajuCache.get(makePersonKey(person)) ||
+        calculateOneSaju(normalizeRecentPerson(person));
       if (!fixedSaju || !candidateSaju) return false;
 
       const fixedDayBranch = getDatingPillarBranch(fixedSaju, "day");
@@ -6254,6 +6275,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
         !matchesDatingRelationFilter(
           fixedDayBranch,
           candidateDayBranch,
+          fixedSaju,
           candidateSaju,
           filters.dayRelations,
           filters.dayRelationJoin,
@@ -6269,6 +6291,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
         !matchesDatingRelationFilter(
           fixedMonthBranch,
           candidateMonthBranch,
+          fixedSaju,
           candidateSaju,
           filters.monthRelations,
           filters.monthRelationJoin,
