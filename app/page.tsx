@@ -53,6 +53,10 @@ function ScrollFade({ children, className = "" }: { children: ReactNode; classNa
   );
 }
 
+// 궁합소개팅 > 상대 필터 레이어의 기준 글씨 크기(px)
+// 이 숫자 하나만 바꾸면 필터 레이어 내부 글씨가 전체적으로 함께 커지거나 작아집니다.
+const DATING_FILTER_FONT_SIZE = 22;
+
 export default function Home() {
   const FONT = {
     // 제목
@@ -6445,18 +6449,18 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
   ) => (
     <div className="rounded-xl border border-[#ead8c4] bg-white p-3">
       <div className="flex items-center justify-between gap-2">
-        <div className="text-lg font-bold text-[#6b3f24]">{title}</div>
+        <div className="text-[1.1em] font-bold text-[#6b3f24]">{title}</div>
         <button
           type="button"
           onClick={() => addDatingCountRule(setter, initialTarget)}
-          className="shrink-0 rounded-lg bg-[#f7efe3] px-2.5 py-1.5 text-base font-bold text-[#6b3f24] transition hover:bg-[#f0dcc6]"
+          className="shrink-0 rounded-lg bg-[#f7efe3] px-2.5 py-1.5 text-[1em] font-bold text-[#6b3f24] transition hover:bg-[#f0dcc6]"
         >
           + 추가
         </button>
       </div>
 
       {rules.length === 0 ? (
-        <div className="mt-2 text-sm font-bold text-zinc-400">조건 없음</div>
+        <div className="mt-2 text-[0.9em] font-bold text-zinc-400">조건 없음</div>
       ) : (
         <div className="mt-2 space-y-2">
           {rules.map((rule) => (
@@ -6472,7 +6476,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                     ),
                   )
                 }
-                className="min-w-0 flex-1 rounded-lg border border-[#ead8c4] bg-white px-2 py-1.5 text-base font-bold text-black"
+                className="min-w-0 flex-1 rounded-lg border border-[#ead8c4] bg-white px-2 py-1.5 text-[1em] font-bold text-black"
               >
                 {options.map((option) => (
                   <option key={option} value={option}>
@@ -6494,9 +6498,9 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                     ),
                   )
                 }
-                className="w-14 rounded-lg border border-[#ead8c4] px-1 py-1.5 text-center text-base font-bold text-black"
+                className="w-14 rounded-lg border border-[#ead8c4] px-1 py-1.5 text-center text-[1em] font-bold text-black"
               />
-              <span className="whitespace-nowrap text-sm font-bold text-[#6b3f24]">
+              <span className="whitespace-nowrap text-[0.9em] font-bold text-[#6b3f24]">
                 {comparisonLabel}
               </span>
               <button
@@ -6506,7 +6510,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                     prev.filter((item) => item.id !== rule.id),
                   )
                 }
-                className="rounded-lg px-1.5 py-1 text-base font-bold text-red-600 transition hover:bg-red-50"
+                className="rounded-lg px-1.5 py-1 text-[1em] font-bold text-red-600 transition hover:bg-red-50"
                 title="조건 삭제"
               >
                 ×
@@ -6532,7 +6536,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
     return (
       <div className="rounded-xl border border-[#ead8c4] bg-white p-3">
         <div className="flex items-center justify-between gap-2">
-          <div className="text-lg font-bold text-[#6b3f24]">{title}</div>
+          <div className="text-[1.1em] font-bold text-[#6b3f24]">{title}</div>
           <button
             type="button"
             onClick={() => {
@@ -6540,7 +6544,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
               else setDatingMonthRelations([]);
               setExcludeWonjin(false);
             }}
-            className={`rounded-lg px-2.5 py-1.5 text-sm font-bold transition ${
+            className={`rounded-lg px-2.5 py-1.5 text-[0.9em] font-bold transition ${
               filterOff
                 ? "bg-zinc-700 text-white"
                 : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200"
@@ -6558,7 +6562,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                 key={`${scope}-${relation}`}
                 type="button"
                 onClick={() => toggleDatingRelation(scope, relation)}
-                className={`rounded-lg border px-2.5 py-1.5 text-base font-bold transition ${
+                className={`rounded-lg border px-2.5 py-1.5 text-[1em] font-bold transition ${
                   selected
                     ? "border-[#6b3f24] bg-[#6b3f24] text-white"
                     : "border-[#ead8c4] bg-white text-[#6b3f24] hover:bg-[#fff7ed]"
@@ -6574,7 +6578,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
           <button
             type="button"
             onClick={() => setExcludeWonjin((prev: boolean) => !prev)}
-            className={`rounded-lg border px-2.5 py-1.5 text-sm font-bold transition ${
+            className={`rounded-lg border px-2.5 py-1.5 text-[0.9em] font-bold transition ${
               excludeWonjin
                 ? "border-red-500 bg-red-500 text-white"
                 : "border-red-200 bg-white text-red-700 hover:bg-red-50"
@@ -6583,13 +6587,13 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
             원진살 제외 {excludeWonjin ? "ON" : "OFF"}
           </button>
           <div className="flex items-center gap-1">
-            <span className="mr-1 text-sm font-bold text-zinc-500">관계</span>
+            <span className="mr-1 text-[0.9em] font-bold text-zinc-500">관계</span>
             {(["or", "and"] as DatingRelationJoin[]).map((value) => (
               <button
                 key={value}
                 type="button"
                 onClick={() => setRelationJoin(value)}
-                className={`rounded-lg px-2 py-1 text-sm font-bold ${
+                className={`rounded-lg px-2 py-1 text-[0.9em] font-bold ${
                   relationJoin === value
                     ? "bg-pink-600 text-white"
                     : "bg-zinc-100 text-zinc-600"
@@ -6609,7 +6613,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
     children: any,
   ) => (
     <div className="rounded-xl border border-[#ead8c4] bg-white p-3">
-      <div className="text-lg font-bold text-[#6b3f24]">{title}</div>
+      <div className="text-[1.1em] font-bold text-[#6b3f24]">{title}</div>
       <div className="mt-2">{children}</div>
     </div>
   );
@@ -6618,11 +6622,14 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
     if (!datingFixedPerson) return null;
 
     return (
-      <div className="mt-3 rounded-2xl border border-pink-200 bg-pink-50/50 p-3">
+      <div
+        className="mt-3 rounded-2xl border border-pink-200 bg-pink-50/50 p-3"
+        style={{ fontSize: `${DATING_FILTER_FONT_SIZE}px` }}
+      >
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <div className="text-xl font-bold text-pink-800">상대 필터</div>
-            <div className="mt-0.5 text-base font-bold text-zinc-500">
+            <div className="text-[1.25em] font-bold text-pink-800">상대 필터</div>
+            <div className="mt-0.5 text-[1em] font-bold text-zinc-500">
               결과 {filteredDatingCandidates.length}명 / 전체 {datingAvailableCandidates.length}명
               {datingFilterPending && <span className="ml-2 text-pink-600">· 필터 적용 중… 기존 명단 유지</span>}
             </div>
@@ -6631,7 +6638,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
             <select
               value={datingSortMode}
               onChange={(event) => setDatingSortMode(event.target.value as DatingSortMode)}
-              className="rounded-lg border border-pink-200 bg-white px-3 py-2 text-base font-bold text-[#6b3f24]"
+              className="rounded-lg border border-pink-200 bg-white px-3 py-2 text-[1em] font-bold text-[#6b3f24]"
             >
               <option value="default">기본 순서</option>
               <option value="score-desc">궁합점수 높은순</option>
@@ -6641,14 +6648,14 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
               type="button"
               onClick={clearDatingFilters}
               disabled={!hasDatingFilters}
-              className="rounded-lg border border-red-200 bg-white px-3 py-2 text-base font-bold text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
+              className="rounded-lg border border-red-200 bg-white px-3 py-2 text-[1em] font-bold text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
             >
               필터 초기화
             </button>
             <button
               type="button"
               onClick={() => setDatingFilterOpen((prev) => !prev)}
-              className="rounded-lg border border-pink-200 bg-white px-3 py-2 text-base font-bold text-pink-800 transition hover:bg-pink-50"
+              className="rounded-lg border border-pink-200 bg-white px-3 py-2 text-[1em] font-bold text-pink-800 transition hover:bg-pink-50"
             >
               {datingFilterOpen ? "접기 ▲" : "열기 ▼"}
             </button>
@@ -6657,29 +6664,29 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
 
         {datingFilterOpen && (
           <>
-            <div className="mt-3 rounded-xl bg-white/80 px-3 py-2 text-sm font-bold text-zinc-500">
+            <div className="mt-3 rounded-xl bg-white/80 px-3 py-2 text-[0.9em] font-bold text-zinc-500">
               서로 다른 필터 카드는 AND로 적용됩니다. 일지·월지의 육합/삼합/방합은 각 카드에서 OR 또는 AND를 선택할 수 있습니다.
             </div>
 
             <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-pink-100 bg-white/80 p-2">
-              <span className="shrink-0 text-sm font-bold text-pink-800">필터 프리셋</span>
+              <span className="shrink-0 text-[0.9em] font-bold text-pink-800">필터 프리셋</span>
               <input
                 type="text"
                 value={datingPresetName}
                 onChange={(event) => setDatingPresetName(event.target.value)}
                 placeholder="프리셋 이름"
-                className="w-36 rounded-lg border border-pink-200 bg-white px-2 py-1.5 text-sm font-bold text-black outline-none"
+                className="w-36 rounded-lg border border-pink-200 bg-white px-2 py-1.5 text-[0.9em] font-bold text-black outline-none"
               />
               <button
                 type="button"
                 onClick={saveDatingFilterPreset}
-                className="rounded-lg bg-pink-600 px-3 py-1.5 text-sm font-bold text-white hover:bg-pink-700"
+                className="rounded-lg bg-pink-600 px-3 py-1.5 text-[0.9em] font-bold text-white hover:bg-pink-700"
               >
                 저장
               </button>
               <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
                 {datingFilterPresets.length === 0 ? (
-                  <span className="px-2 text-sm font-bold text-zinc-400">
+                  <span className="px-2 text-[0.9em] font-bold text-zinc-400">
                     저장된 프리셋 없음
                   </span>
                 ) : (
@@ -6698,7 +6705,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                         <button
                           type="button"
                           onClick={() => loadDatingFilterPreset(preset)}
-                          className={`px-3 py-1.5 text-sm font-bold transition ${
+                          className={`px-3 py-1.5 text-[0.9em] font-bold transition ${
                             selected
                               ? "text-pink-900"
                               : "text-pink-800 hover:bg-pink-50"
@@ -6710,7 +6717,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                         <button
                           type="button"
                           onClick={() => deleteDatingFilterPreset(String(preset?.name || ""))}
-                          className="border-l border-pink-200 px-2 py-1.5 text-sm font-black text-red-600 transition hover:bg-red-50"
+                          className="border-l border-pink-200 px-2 py-1.5 text-[0.9em] font-black text-red-600 transition hover:bg-red-50"
                           title={`${preset.name} 프리셋 삭제`}
                         >
                           ×
@@ -6754,7 +6761,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                       key={value}
                       type="button"
                       onClick={() => setDatingStemHapMode(value)}
-                      className={`rounded-lg border px-2 py-2 text-base font-bold transition ${
+                      className={`rounded-lg border px-2 py-2 text-[1em] font-bold transition ${
                         datingStemHapMode === value
                           ? "border-[#6b3f24] bg-[#6b3f24] text-white"
                           : "border-[#ead8c4] bg-white text-[#6b3f24] hover:bg-[#fff7ed]"
@@ -6778,7 +6785,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                       key={value}
                       type="button"
                       onClick={() => setDatingGenderMode(value)}
-                      className={`rounded-lg border px-1.5 py-2 text-sm font-bold transition ${
+                      className={`rounded-lg border px-1.5 py-2 text-[0.9em] font-bold transition ${
                         datingGenderMode === value
                           ? "border-[#6b3f24] bg-[#6b3f24] text-white"
                           : "border-[#ead8c4] bg-white text-[#6b3f24] hover:bg-[#fff7ed]"
@@ -6793,7 +6800,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
               {renderSimpleDatingFilterCard(
                 "5. 나이 차이",
                 <div className="grid grid-cols-2 gap-2">
-                  <label className="text-sm font-bold text-[#6b3f24]">
+                  <label className="text-[0.9em] font-bold text-[#6b3f24]">
                     연상 최대
                     <div className="mt-1 flex items-center gap-1">
                       <input
@@ -6803,12 +6810,12 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                         value={datingOlderMaxAgeGap}
                         onChange={(event) => setDatingOlderMaxAgeGap(event.target.value)}
                         placeholder="제한없음"
-                        className="min-w-0 w-full rounded-lg border border-[#ead8c4] bg-white px-2 py-2 text-center text-base font-bold text-black"
+                        className="min-w-0 w-full rounded-lg border border-[#ead8c4] bg-white px-2 py-2 text-center text-[1em] font-bold text-black"
                       />
                       <span className="shrink-0">세</span>
                     </div>
                   </label>
-                  <label className="text-sm font-bold text-[#6b3f24]">
+                  <label className="text-[0.9em] font-bold text-[#6b3f24]">
                     연하 최대
                     <div className="mt-1 flex items-center gap-1">
                       <input
@@ -6818,12 +6825,12 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                         value={datingYoungerMaxAgeGap}
                         onChange={(event) => setDatingYoungerMaxAgeGap(event.target.value)}
                         placeholder="제한없음"
-                        className="min-w-0 w-full rounded-lg border border-[#ead8c4] bg-white px-2 py-2 text-center text-base font-bold text-black"
+                        className="min-w-0 w-full rounded-lg border border-[#ead8c4] bg-white px-2 py-2 text-center text-[1em] font-bold text-black"
                       />
                       <span className="shrink-0">세</span>
                     </div>
                   </label>
-                  <div className="col-span-2 text-xs font-bold text-zinc-400">
+                  <div className="col-span-2 text-[0.8em] font-bold text-zinc-400">
                     빈칸은 해당 방향 제한 없음 · 0은 같은 나이만 허용
                   </div>
                 </div>,
@@ -6835,7 +6842,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                   <button
                     type="button"
                     onClick={() => setDatingDayStems([])}
-                    className={`mb-2 rounded-lg px-2.5 py-1.5 text-sm font-bold ${
+                    className={`mb-2 rounded-lg px-2.5 py-1.5 text-[0.9em] font-bold ${
                       datingDayStems.length === 0
                         ? "bg-zinc-700 text-white"
                         : "bg-zinc-100 text-zinc-600"
@@ -6851,7 +6858,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                           key={stem}
                           type="button"
                           onClick={() => toggleDatingDayStem(stem)}
-                          className={`rounded-lg border px-1 py-1.5 text-base font-bold ${
+                          className={`rounded-lg border px-1 py-1.5 text-[1em] font-bold ${
                             selected
                               ? "border-[#6b3f24] bg-[#6b3f24] text-white"
                               : "border-[#ead8c4] bg-white text-[#6b3f24]"
@@ -6876,7 +6883,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                       key={value}
                       type="button"
                       onClick={() => setDatingCheoneulMode(value)}
-                      className={`rounded-lg border px-2 py-2 text-base font-bold ${
+                      className={`rounded-lg border px-2 py-2 text-[1em] font-bold ${
                         datingCheoneulMode === value
                           ? "border-[#6b3f24] bg-[#6b3f24] text-white"
                           : "border-[#ead8c4] bg-white text-[#6b3f24]"
@@ -6885,7 +6892,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                       {label}
                     </button>
                   ))}
-                  <div className="col-span-2 text-xs font-bold text-zinc-400">
+                  <div className="col-span-2 text-[0.8em] font-bold text-zinc-400">
                     왼쪽 고정인의 일간 기준 천을귀인 지지가 상대 사주에 있는 경우
                   </div>
                 </div>,
@@ -6900,7 +6907,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                       setDatingPillarDayMatch(false);
                       setDatingExcludeSameDayPillar(false);
                     }}
-                    className={`rounded-lg border px-2 py-2 text-base font-bold transition ${
+                    className={`rounded-lg border px-2 py-2 text-[1em] font-bold transition ${
                       !datingPillarDayMatch
                         ? "border-[#6b3f24] bg-[#6b3f24] text-white"
                         : "border-[#ead8c4] bg-white text-[#6b3f24] hover:bg-[#fff7ed]"
@@ -6911,7 +6918,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                   <button
                     type="button"
                     onClick={() => setDatingPillarDayMatch(true)}
-                    className={`rounded-lg border px-2 py-2 text-base font-bold transition ${
+                    className={`rounded-lg border px-2 py-2 text-[1em] font-bold transition ${
                       datingPillarDayMatch
                         ? "border-[#6b3f24] bg-[#6b3f24] text-white"
                         : "border-[#ead8c4] bg-white text-[#6b3f24] hover:bg-[#fff7ed]"
@@ -6923,7 +6930,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                     type="button"
                     disabled={!datingPillarDayMatch}
                     onClick={() => setDatingExcludeSameDayPillar((prev) => !prev)}
-                    className={`col-span-2 rounded-lg border px-2 py-1.5 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-40 ${
+                    className={`col-span-2 rounded-lg border px-2 py-1.5 text-[0.9em] font-bold transition disabled:cursor-not-allowed disabled:opacity-40 ${
                       datingExcludeSameDayPillar
                         ? "border-amber-500 bg-amber-500 text-white"
                         : "border-amber-200 bg-white text-amber-700 hover:bg-amber-50"
@@ -6931,7 +6938,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                   >
                     동일주 제외 {datingExcludeSameDayPillar ? "ON" : "OFF"}
                   </button>
-                  <div className="col-span-2 text-xs font-bold text-zinc-400">
+                  <div className="col-span-2 text-[0.8em] font-bold text-zinc-400">
                     고정인의 년·월·일·시주 중 하나와 상대 일주가 같은 경우
                   </div>
                 </div>,
@@ -6945,7 +6952,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                       key={count}
                       type="button"
                       onClick={() => setDatingMinStars(count)}
-                      className={`rounded-lg border px-1.5 py-2 text-sm font-bold ${
+                      className={`rounded-lg border px-1.5 py-2 text-[0.9em] font-bold ${
                         datingMinStars === count
                           ? "border-[#6b3f24] bg-[#6b3f24] text-white"
                           : "border-[#ead8c4] bg-white text-[#6b3f24]"
