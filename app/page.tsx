@@ -6731,7 +6731,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
 
             <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-3">
               {renderDatingRelationBlock(
-                "1. 일지 관계",
+                "일지 관계",
                 "day",
                 datingDayRelations,
                 datingDayRelationJoin,
@@ -6741,7 +6741,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
               )}
 
               {renderDatingRelationBlock(
-                "2. 월지 관계",
+                "월지 관계",
                 "month",
                 datingMonthRelations,
                 datingMonthRelationJoin,
@@ -6751,7 +6751,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
               )}
 
               {renderSimpleDatingFilterCard(
-                "3. 일간 천간합",
+                "일간 천간합",
                 <div className="grid grid-cols-2 gap-2">
                   {([
                     ["off", "필터 OFF"],
@@ -6774,7 +6774,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
               )}
 
               {renderSimpleDatingFilterCard(
-                "4. 성별",
+                "성별",
                 <div className="grid grid-cols-3 gap-1.5">
                   {([
                     ["all", "전체"],
@@ -6798,7 +6798,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
               )}
 
               {renderSimpleDatingFilterCard(
-                "5. 나이 차이",
+                "나이 차이",
                 <div className="grid grid-cols-2 gap-2">
                   <label className="text-[0.9em] font-bold text-[#6b3f24]">
                     연상 최대
@@ -6837,7 +6837,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
               )}
 
               {renderSimpleDatingFilterCard(
-                "6. 특정 일간",
+                "특정 일간",
                 <>
                   <button
                     type="button"
@@ -6873,7 +6873,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
               )}
 
               {renderSimpleDatingFilterCard(
-                "7. 천을귀인",
+                "천을귀인",
                 <div className="grid grid-cols-2 gap-2">
                   {([
                     ["off", "필터 OFF"],
@@ -6899,7 +6899,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
               )}
 
               {renderSimpleDatingFilterCard(
-                "8. 기둥일주",
+                "기둥일주",
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
@@ -6945,7 +6945,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
               )}
 
               {renderSimpleDatingFilterCard(
-                "9. 별표 최소 개수",
+                "별표 최소 개수",
                 <div className="grid grid-cols-4 gap-1.5">
                   {[0, 1, 2, 3].map((count) => (
                     <button
@@ -6965,7 +6965,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
               )}
 
               {renderDatingCountRuleBlock(
-                "10. 십성 n개 이상",
+                "십성 n개 이상",
                 datingTenGodMinRules,
                 setDatingTenGodMinRules,
                 DATING_TEN_GOD_FILTER_OPTIONS,
@@ -6974,7 +6974,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
               )}
 
               {renderDatingCountRuleBlock(
-                "11. 십성 n개 이하",
+                "십성 n개 이하",
                 datingTenGodMaxRules,
                 setDatingTenGodMaxRules,
                 DATING_TEN_GOD_FILTER_OPTIONS,
@@ -6983,7 +6983,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
               )}
 
               {renderDatingCountRuleBlock(
-                "12. 오행 n개 이상",
+                "오행 n개 이상",
                 datingElementMinRules,
                 setDatingElementMinRules,
                 DATING_ELEMENT_FILTER_OPTIONS,
@@ -6992,7 +6992,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
               )}
 
               {renderDatingCountRuleBlock(
-                "13. 오행 n개 이하",
+                "오행 n개 이하",
                 datingElementMaxRules,
                 setDatingElementMaxRules,
                 DATING_ELEMENT_FILTER_OPTIONS,
