@@ -7211,43 +7211,13 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
           {mode === "dating" && (
             <div className="space-y-5">
               <section className="rounded-3xl border border-[#ead8c4] bg-[#fffaf3] p-5 shadow-inner">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <h2 className={`${FONT.sectionTitle} ${WEIGHT.sectionTitle} ${COLOR.sectionTitle}`}>
-                      소개팅 명단
-                    </h2>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="whitespace-nowrap rounded-full bg-white px-4 py-2 text-xl font-bold text-[#6b3f24] shadow-sm">
-                      {datingPeople.length}명
-                    </span>
-                    {datingPeople.length > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (confirm("소개팅 명단을 모두 삭제하시겠습니까?")) {
-                            setDatingPeople([]);
-                            setDatingMatchMeta({});
-                            setDatingFixedPerson(null);
-                            setDatingSelectedPerson(null);
-                            setDatingResult({ left: null, right: null });
-                          }
-                        }}
-                        className="rounded-xl border border-red-200 bg-white px-4 py-2 text-xl font-bold text-red-700 transition hover:bg-red-50"
-                      >
-                        전체삭제
-                      </button>
-                    )}
-                  </div>
-                </div>
-
                 {datingPeople.length === 0 ? (
                   <div className="mt-5 rounded-2xl border border-dashed border-[#d7c4ad] bg-white p-8 text-center text-2xl font-bold text-zinc-400">
                     소개팅 명단이 비어 있습니다. 사주 모드 또는 궁합 모드에서 사람을 추가해주세요.
                   </div>
                 ) : (
-                  <div className="mt-5 space-y-4 lg:flex lg:items-start lg:gap-4 lg:space-y-0">
-                    <div className="rounded-2xl border border-pink-200 bg-pink-50/60 p-4 lg:w-fit lg:max-w-[380px] lg:shrink-0">
+                  <div className="mt-5 space-y-4">
+                    <div className="rounded-2xl border border-pink-200 bg-pink-50/60 p-4">
                       <div className="mb-3 flex items-center justify-between">
                         <h3 className={`${FONT.cardTitle} ${WEIGHT.cardTitle} text-pink-800`}>
                           고정 인물
@@ -7332,7 +7302,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                       )}
                     </div>
 
-                    <div className="min-w-0 rounded-2xl border border-[#ead8c4] bg-white p-4 lg:flex-1">
+                    <div className="min-w-0 rounded-2xl border border-[#ead8c4] bg-white p-4">
                       <div className="flex items-center justify-between gap-3">
                         <h3 className={`${FONT.cardTitle} ${WEIGHT.cardTitle} ${COLOR.cardTitle}`}>
                           소개팅 명단
@@ -7342,6 +7312,26 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                             <span className="whitespace-nowrap rounded-full bg-[#f7efe3] px-3 py-1.5 text-lg font-bold text-[#6b3f24]">
                               {filteredDatingCandidates.length} / {datingAvailableCandidates.length}명
                             </span>
+                          )}
+                          <span className="whitespace-nowrap rounded-full bg-[#fffaf3] px-3 py-1.5 text-lg font-bold text-[#6b3f24]">
+                            전체 {datingPeople.length}명
+                          </span>
+                          {datingPeople.length > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (confirm("소개팅 명단을 모두 삭제하시겠습니까?")) {
+                                  setDatingPeople([]);
+                                  setDatingMatchMeta({});
+                                  setDatingFixedPerson(null);
+                                  setDatingSelectedPerson(null);
+                                  setDatingResult({ left: null, right: null });
+                                }
+                              }}
+                              className="rounded-xl border border-red-200 bg-white px-3 py-1.5 text-lg font-bold text-red-700 transition hover:bg-red-50"
+                            >
+                              전체삭제
+                            </button>
                           )}
                         </div>
                       </div>
