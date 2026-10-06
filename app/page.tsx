@@ -5840,7 +5840,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
     return candidateBranches.some((branch) => targets.includes(branch));
   };
 
-  const getDatingTenGodCounts = (targetSaju: any) => {
+  const getDatingTenGodCounts = (targetSaju: any): Record<string, number> => {
     const exact: Record<string, number> = {
       비견: 0,
       겁재: 0,
