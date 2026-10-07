@@ -57,6 +57,19 @@ function ScrollFade({ children, className = "" }: { children: ReactNode; classNa
 // 이 숫자 하나만 바꾸면 필터 레이어 내부 글씨가 전체적으로 함께 커지거나 작아집니다.
 const DATING_FILTER_FONT_SIZE = 22;
 
+const DATING_REGION_OPTIONS = [
+  "서울",
+  "경기/인천",
+  "대전/세종/충남",
+  "충북",
+  "대구/경북",
+  "부산/울산/경남",
+  "광주/전남",
+  "전북",
+  "강원",
+  "제주",
+] as const;
+
 export default function Home() {
   const FONT = {
     // 제목
@@ -368,6 +381,8 @@ export default function Home() {
   const [datingFilterPresets, setDatingFilterPresets] = useState<any[]>([]);
   const [datingPresetName, setDatingPresetName] = useState("");
   const [datingSelectedPresetName, setDatingSelectedPresetName] = useState("");
+  const [datingToast, setDatingToast] = useState("");
+  const datingToastTimerRef = useRef<number | null>(null);
 
   const [peopleStorageOpen, setPeopleStorageOpen] = useState(false);
   const [favoritePeopleOpen, setFavoritePeopleOpen] = useState(true);
@@ -2172,6 +2187,29 @@ export default function Home() {
     }));
   };
 
+  const showDatingToast = (message: string) => {
+    setDatingToast(message);
+
+    if (typeof window === "undefined") return;
+
+    if (datingToastTimerRef.current !== null) {
+      window.clearTimeout(datingToastTimerRef.current);
+    }
+
+    datingToastTimerRef.current = window.setTimeout(() => {
+      setDatingToast("");
+      datingToastTimerRef.current = null;
+    }, 1800);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (typeof window !== "undefined" && datingToastTimerRef.current !== null) {
+        window.clearTimeout(datingToastTimerRef.current);
+      }
+    };
+  }, []);
+
   const addDatingPerson = (person: any, slotKey: string) => {
     if (!canAddToDatingPeople(person)) {
       alert("소개팅 명단에 넣으려면 생년월일, 양력/음력, 출생시간 정보를 입력해주세요.");
@@ -2180,7 +2218,7 @@ export default function Home() {
 
     const meta = getDatingAddMeta(slotKey, person);
     if (!meta.region.trim()) {
-      alert("소개팅 명단에 넣으려면 지역을 입력해주세요.");
+      alert("소개팅 명단에 넣으려면 지역을 선택해주세요.");
       return;
     }
     if (!meta.longDistance) {
@@ -2194,6 +2232,7 @@ export default function Home() {
       datingLongDistance: meta.longDistance,
     });
     const key = makePersonKey(normalizedPerson);
+    const wasExisting = Boolean(findDatingPerson(person));
 
     setDatingPeople((prev) => {
       const existingIndex = prev.findIndex((item) => makePersonKey(item) === key);
@@ -2209,6 +2248,12 @@ export default function Home() {
     );
     setDatingSelectedPerson((prev: any) =>
       prev && makePersonKey(prev) === key ? normalizedPerson : prev,
+    );
+
+    showDatingToast(
+      wasExisting
+        ? "소개팅 정보가 수정되었습니다."
+        : "소개팅 명단에 추가되었습니다.",
     );
   };
 
@@ -2309,15 +2354,24 @@ export default function Home() {
     return (
       <div className="rounded-xl border border-pink-200 bg-pink-50/50 p-3">
         <div className="grid grid-cols-1 gap-2 md:grid-cols-[1fr_220px_auto]">
-          <input
-            type="text"
+          <select
             value={meta.region}
             onChange={(event) =>
               setDatingAddMetaField(slotKey, "region", event.target.value)
             }
-            placeholder="지역 (예: 대전, 서울)"
             className="min-w-0 rounded-xl border border-pink-200 bg-white px-3 py-2 text-xl font-bold text-black outline-none"
-          />
+          >
+            <option value="">지역 선택</option>
+            {meta.region &&
+              !DATING_REGION_OPTIONS.some((region) => region === meta.region) && (
+                <option value={meta.region}>{meta.region} (기존)</option>
+              )}
+            {DATING_REGION_OPTIONS.map((region) => (
+              <option key={region} value={region}>
+                {region}
+              </option>
+            ))}
+          </select>
           <select
             value={meta.longDistance}
             onChange={(event) =>
@@ -7812,7 +7866,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                   <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
                     <div>
                       <h3 className={`text-center ${FONT.cardTitle} ${WEIGHT.cardTitle} ${COLOR.cardTitle}`}>
-                        {datingFixedPerson?.name || "왼쪽 고정"}
+                        {datingFixedPerson ? `${datingFixedPerson.name || "이름 미입력"} · ${datingFixedPerson.gender || "성별 미입력"}` : "왼쪽 고정"}
                       </h3>
                       {datingResult.left ? (
                         renderSajuCard(
@@ -7829,7 +7883,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
 
                     <div>
                       <h3 className={`text-center ${FONT.cardTitle} ${WEIGHT.cardTitle} ${COLOR.cardTitle}`}>
-                        {datingSelectedPerson?.name || "오른쪽 상대"}
+                        {datingSelectedPerson ? `${datingSelectedPerson.name || "이름 미입력"} · ${datingSelectedPerson.gender || "성별 미입력"}` : "오른쪽 상대"}
                       </h3>
                       {datingResult.right ? (
                         renderSajuCard(
@@ -9172,6 +9226,16 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
           <div className="mt-3 text-right text-xl font-bold text-[#6b3f24]">
             제목줄 드래그 · 자동 저장 · 위치복구 Ctrl+Alt+M
           </div>
+        </div>
+      )}
+
+      {datingToast && (
+        <div
+          className="pointer-events-none fixed bottom-8 left-1/2 z-[20000] -translate-x-1/2 rounded-full bg-black/85 px-6 py-3 text-2xl font-bold text-white shadow-2xl"
+          role="status"
+          aria-live="polite"
+        >
+          {datingToast}
         </div>
       )}
     </main>
