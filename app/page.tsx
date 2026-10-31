@@ -5616,8 +5616,8 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
 
     return (
       <div className="compat-saju-card mt-4 rounded-2xl bg-[#ffffff] p-4 text-[#000000] shadow-sm">
-        <ScrollFade>
-          <div>
+        <ScrollFade className="compat-person-overview">
+          <div className="compat-person-overview-content">
             <div className="flex flex-wrap items-baseline">
               <h3
                 className={`${FONT.cardTitle} ${WEIGHT.cardTitle} ${COLOR.cardTitle}`}

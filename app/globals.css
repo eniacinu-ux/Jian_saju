@@ -239,3 +239,47 @@ html.single-app-cursor-active *::after {
     min-width: 0;
   }
 }
+/* Align overview, relations, stars, strength, footer and luck independently. */
+@media (min-width: 1024px) {
+  .compatibility-aligned-grid {
+    grid-template-rows: repeat(8, auto);
+  }
+  .compatibility-aligned-grid > div {
+    grid-row: span 8;
+  }
+  .compatibility-aligned-grid > div > .compat-saju-card {
+    grid-row: span 7;
+  }
+  .compatibility-aligned-grid .compat-saju-card > .compat-person-overview,
+  .compatibility-aligned-grid .compat-person-overview-content {
+    display: grid;
+    grid-row: span 6;
+    grid-template-rows: subgrid;
+    row-gap: 0;
+    min-width: 0;
+    align-self: stretch;
+  }
+  .compatibility-aligned-grid .compat-person-overview-content > .saju-insights {
+    container-type: normal;
+    display: grid;
+    grid-row: span 4;
+    grid-template-rows: subgrid;
+    row-gap: 0;
+    align-self: stretch;
+  }
+  .compatibility-aligned-grid .saju-insights .insight-columns {
+    display: grid;
+    grid-row: span 3;
+    grid-template-rows: subgrid;
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 0;
+  }
+  .compatibility-aligned-grid .saju-insights .insight-section {
+    border-left: 0;
+    align-self: stretch;
+  }
+  .compatibility-aligned-grid .saju-insights .insight-section + .insight-section {
+    border-top: 1px solid #e9e3da;
+  }
+
+}
