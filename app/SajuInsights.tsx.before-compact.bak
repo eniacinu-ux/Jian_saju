@@ -1,0 +1,110 @@
+"use client";
+
+import { useState } from "react";
+import type { GanZhi } from "./lib/sajuCalculator";
+
+export interface InsightPillar {
+  label: string;
+  data?: GanZhi | null;
+  branchRelations?: string[];
+  shinsals?: string[];
+}
+interface Props {
+  items: InsightPillar[];
+  luckyStars: { label: string; value: string }[];
+  dayElement: string;
+}
+const colors: Record<string, string> = { 목: "#538fe3", 화: "#e66b63", 토: "#edcc59", 금: "#e9e9ec", 수: "#35383d" };
+const cycle = ["목", "화", "토", "금", "수"];
+const tabs = ["사주관계", "신살·길성", "신강·신약"];
+
+export function strengthSummary(items: InsightPillar[], dayElement: string) {
+  const index = cycle.indexOf(dayElement);
+  if (index < 0) return null;
+  const mother = cycle[(index + 4) % 5];
+  const rows = items.flatMap(item => {
+    if (!item.data) return [];
+    const branchWeight = item.label === "월주" ? 30 : 15;
+    const stemWeight = item.label === "시주" ? 5 : 10;
+    return [
+      { label: `${item.label} 지지`, element: item.data.branchElement, weight: branchWeight },
+      ...(item.label === "일주" ? [] : [{ label: `${item.label} 천간`, element: item.data.stemElement, weight: stemWeight }]),
+    ];
+  });
+  const total = rows.reduce((sum, row) => sum + row.weight, 0);
+  if (!total) return null;
+  const support = rows.filter(row => row.element === dayElement || row.element === mother);
+  const score = Math.round(support.reduce((sum, row) => sum + row.weight, 0) / total * 100);
+  return { score, label: score < 40 ? "신약" : score <= 60 ? "중화" : "신강", support, total };
+}
+
+export default function SajuInsights({ items, luckyStars, dayElement }: Props) {
+  const [selected, setSelected] = useState(0);
+  const [relationType, setRelationType] = useState<"stem" | "branch">("branch");
+  const strength = strengthSummary(items, dayElement);
+  const unknownHour = !items.find(item => item.label === "시주")?.data;
+  const relationships: { indices: number[]; name: string }[] = [];
+  if (relationType === "branch") {
+    const seen = new Set<string>();
+    items.forEach((item, i) => (item.branchRelations ?? []).forEach(text => {
+      const other = items.findIndex(target => text.startsWith(`${target.label} `));
+      const indices = other >= 0 ? [i, other].sort((a, b) => a - b) : items.flatMap((target, j) => target.branchRelations?.includes(text) ? [j] : []);
+      const name = other >= 0 ? text.slice(items[other].label.length + 1) : text;
+      const key = `${indices.join("-")}:${name}`;
+      if (indices.length < 2 || seen.has(key)) return;
+      seen.add(key);
+      relationships.push({ indices, name });
+    }));
+  } else {
+    items.forEach((left, i) => items.slice(i + 1).forEach((right, offset) => {
+      if (!left.data || !right.data) return;
+      const a = left.data.stemIndex, b = right.data.stemIndex;
+      const pair = [a, b].sort((x, y) => x - y).join("-");
+      const name = Math.abs(a - b) === 5 ? "천간합" : ["0-6", "1-7", "2-8", "3-9"].includes(pair) ? "천간충" : "";
+      if (name) relationships.push({ indices: [i, i + offset + 1], name });
+    }));
+  }
+
+  const badge = (item: InsightPillar, type: "stem" | "branch") => {
+    const data = item.data;
+    const element = type === "stem" ? data?.stemElement : data?.branchElement;
+    return <span className="mx-auto block w-20 rounded-xl px-3 py-2 text-center text-4xl font-bold" style={{ background: colors[element ?? ""] ?? "#f4f4f5", color: element === "수" ? "white" : "#202124" }}>{data?.[type] ?? "?"}</span>;
+  };
+
+  return <details className="mt-6 rounded-2xl border border-[#ead8c4] bg-white p-5" open>
+    <summary className="cursor-pointer text-2xl font-bold text-[#5f3a20]">상세 만세력</summary>
+    <div className="my-5 flex flex-wrap gap-3" aria-label="상세 만세력 항목">
+      {tabs.map((tab, i) => <button key={tab} type="button" aria-pressed={selected === i} onClick={() => setSelected(i)} className={`rounded-full border px-6 py-3 text-xl font-bold focus-visible:outline-2 focus-visible:outline-offset-4 ${selected === i ? "border-[#5f3a20] bg-[#5f3a20] text-white" : "border-[#ead8c4] text-[#5f3a20]"}`}>{tab}</button>)}
+    </div>
+    <section aria-label={tabs[selected]}>
+      <h4 className="mb-4 text-2xl font-bold">{tabs[selected]}</h4>
+      {selected === 0 ? <>
+        <div className="mb-5 flex gap-3">{(["branch", "stem"] as const).map(type => <button key={type} type="button" aria-pressed={relationType === type} onClick={() => setRelationType(type)} className={`rounded-lg border px-4 py-2 text-lg ${relationType === type ? "bg-amber-50 font-bold border-amber-700" : "border-zinc-200"}`}>{type === "stem" ? "천간" : "지지"}</button>)}</div>
+        <div className="overflow-x-auto"><div className="min-w-[600px]">
+          <div className="grid grid-cols-4 gap-3 text-center">{items.map(item => <div key={item.label}><p className="mb-3 text-lg">{item.label}</p>{badge(item, relationType)}</div>)}</div>
+          <svg role="img" aria-label="기둥 사이의 관계 연결선" viewBox={`0 0 800 ${Math.max(70, relationships.length * 48 + 30)}`} className="w-full">
+            {relationships.map((relation, r) => {
+              const y = 25 + r * 48;
+              const start = 100 + Math.min(...relation.indices) * 200;
+              const end = 100 + Math.max(...relation.indices) * 200;
+              return <g key={`${relation.indices}:${relation.name}`} fill="none" stroke="#97714d" strokeWidth="2"><path d={`M ${start} ${y - 14} V ${y} H ${end} V ${y - 14}`} />{relation.indices.slice(1, -1).map(i => <path key={i} d={`M ${100 + i * 200} ${y - 14} V ${y}`} />)}<text x={(start + end) / 2} y={y + 24} textAnchor="middle" fill="#5f3a20" stroke="none" fontSize="17">{relation.name}</text></g>;
+            })}
+          </svg>
+        </div></div>
+        {relationships.length ? <ul className="mt-3 flex flex-wrap gap-3 text-lg">{relationships.map((relation, i) => <li key={i} className="rounded-lg bg-[#fffaf3] px-3 py-2">{relation.indices.map(j => items[j].label).join(" · ")} — {relation.name}</li>)}</ul> : <p className="text-lg text-zinc-600">해당하는 {relationType === "stem" ? "천간 합·충" : "지지 관계"}가 없습니다.</p>}
+        <p className="mt-4 text-base text-zinc-500">지지 관계는 기존 앱의 판정 기준을 사용합니다. 합의 성립과 합화 여부는 별도로 해석해야 합니다.</p>
+      </> : selected === 1 ? <>
+        <div className="grid grid-cols-4 gap-3">{items.map(item => {
+          const stemHits = luckyStars.filter(star => star.value.split("·").includes(item.data?.stem ?? "")).map(star => `${star.label}귀인`);
+          const branchHits = luckyStars.filter(star => star.value.split("·").includes(item.data?.branch ?? "")).map(star => star.label === "금여록" ? star.label : `${star.label}귀인`);
+          return <div key={item.label} className="rounded-xl bg-[#fffaf3] p-3 text-center"><h5 className="mb-3 text-xl font-bold">{item.label}</h5>{badge(item, "stem")}<div className="my-4 min-h-12 text-lg text-[#5f3a20]">{stemHits.join(" · ") || (item.data ? "해당 없음" : "시간 미상")}</div>{badge(item, "branch")}<ul className="mt-4 space-y-2 text-lg">{item.data ? [...new Set([...(item.shinsals ?? []), ...branchHits])].map(star => <li key={star}>{star}</li>) : <li>시간 미상</li>}</ul></div>;
+        })}</div>
+        <p className="mt-4 text-base text-zinc-500">12신살은 일지를 기준으로 계산하며, 길성은 기존 귀인표의 대상 천간·지지가 실제 원국에 있을 때 표시합니다.</p>
+      </> : strength ? <>
+        <div className="mx-auto max-w-xl rounded-2xl bg-[#fffaf3] p-8 text-center"><p className="text-6xl font-bold">{strength.score}<span className="ml-2 text-xl">/ 100</span></p><p className="mt-3 text-base text-zinc-600">본기·위치 가중치 기반 간이 지표</p><p className="my-4 text-2xl font-bold">{strength.label}{unknownHour ? " (시주 제외 참고값)" : ""}</p><meter aria-label="일간을 돕는 오행의 가중 비율" min={0} max={100} low={40} high={60} value={strength.score} className="h-8 w-full" /><div className="mt-3 flex justify-between text-base text-zinc-600"><span>신약 0~39</span><span>중화 40~60</span><span>신강 61~100</span></div></div>
+        <details className="mt-5 rounded-xl border border-[#ead8c4] p-4"><summary className="cursor-pointer text-lg font-bold">계산 기준과 근거</summary><p className="mt-3 text-lg leading-relaxed">일간과 같은 오행(비겁) 및 일간을 생하는 오행(인성)의 가중 비율입니다. 월지 30, 나머지 지지 각 15, 년간·월간 각 10, 시간 5로 계산하며 일간 자체는 제외합니다. 시주 미상은 남은 가중치로 환산합니다. 지지는 본기 오행을 사용합니다. 조후·지장간·합화·종격을 반영하지 않은 간이 지표이며, 정밀 신강·신약 판정과 다를 수 있습니다.</p><p className="mt-3 text-lg">도움이 되는 자리: {strength.support.map(row => `${row.label} ${row.element}(${row.weight})`).join(" · ") || "없음"} / 전체 가중치 {strength.total}</p></details>
+      </> : <p>일간 정보가 없어 계산할 수 없습니다.</p>}
+      {unknownHour && selected !== 2 ? <p className="mt-4 text-base text-zinc-500">출생시간 미상: 시주에 관한 관계와 신살·길성은 제외했습니다.</p> : null}
+    </section>
+  </details>;
+}

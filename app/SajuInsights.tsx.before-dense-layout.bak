@@ -1,0 +1,106 @@
+"use client";
+
+import { useState, type ReactNode } from "react";
+import type { GanZhi } from "./lib/sajuCalculator";
+import { HONGYEOM_RULE_NOTE } from "./lib/shinsalRules";
+
+export interface InsightPillar {
+  label: string;
+  data?: GanZhi | null;
+  branchRelations?: string[];
+  shinsals?: string[];
+}
+interface Props {
+  items: InsightPillar[];
+  luckyStars: { label: string; value: string }[];
+  dayElement: string;
+  renderHanja: (data: GanZhi, type: "stem" | "branch") => ReactNode;
+}
+const cycle = ["목", "화", "토", "금", "수"];
+const tabs = ["사주관계", "신살·길성", "신강·신약"];
+
+export function strengthSummary(items: InsightPillar[], dayElement: string) {
+  const index = cycle.indexOf(dayElement);
+  if (index < 0) return null;
+  const mother = cycle[(index + 4) % 5];
+  const rows = items.flatMap(item => {
+    if (!item.data) return [];
+    const branchWeight = item.label === "월주" ? 30 : 15;
+    const stemWeight = item.label === "시주" ? 5 : 10;
+    return [
+      { label: `${item.label} 지지`, element: item.data.branchElement, weight: branchWeight },
+      ...(item.label === "일주" ? [] : [{ label: `${item.label} 천간`, element: item.data.stemElement, weight: stemWeight }]),
+    ];
+  });
+  const total = rows.reduce((sum, row) => sum + row.weight, 0);
+  if (!total) return null;
+  const support = rows.filter(row => row.element === dayElement || row.element === mother);
+  const score = Math.round(support.reduce((sum, row) => sum + row.weight, 0) / total * 100);
+  return { score, label: score < 40 ? "신약" : score <= 60 ? "중화" : "신강", support, total };
+}
+
+export default function SajuInsights({ items, luckyStars, dayElement, renderHanja }: Props) {
+  const [relationType, setRelationType] = useState<"stem" | "branch">("branch");
+  const strength = strengthSummary(items, dayElement);
+  const unknownHour = !items.find(item => item.label === "시주")?.data;
+  const relationships: { indices: number[]; name: string }[] = [];
+  if (relationType === "branch") {
+    const seen = new Set<string>();
+    items.forEach((item, i) => (item.branchRelations ?? []).forEach(text => {
+      const other = items.findIndex(target => text.startsWith(`${target.label} `));
+      const indices = other >= 0 ? [i, other].sort((a, b) => a - b) : items.flatMap((target, j) => target.branchRelations?.includes(text) ? [j] : []);
+      const name = other >= 0 ? text.slice(items[other].label.length + 1) : text;
+      const key = `${indices.join("-")}:${name}`;
+      if (indices.length < 2 || seen.has(key)) return;
+      seen.add(key);
+      relationships.push({ indices, name });
+    }));
+  } else {
+    items.forEach((left, i) => items.slice(i + 1).forEach((right, offset) => {
+      if (!left.data || !right.data) return;
+      const a = left.data.stemIndex, b = right.data.stemIndex;
+      const pair = [a, b].sort((x, y) => x - y).join("-");
+      const name = Math.abs(a - b) === 5 ? "천간합" : ["0-6", "1-7", "2-8", "3-9"].includes(pair) ? "천간충" : "";
+      if (name) relationships.push({ indices: [i, i + offset + 1], name });
+    }));
+  }
+
+  const badge = (item: InsightPillar, type: "stem" | "branch") =>
+    item.data ? renderHanja(item.data, type) : <span className="text-base text-zinc-400">시간 미상</span>;
+
+  return <div className="mt-4 border-t border-[#ead8c4] pt-3">
+    <div className="grid items-start gap-5 lg:grid-cols-[1.2fr_1.2fr_0.8fr]">
+      {tabs.map((title, selected) => <section key={title} className="min-w-0" aria-label={title}>
+        <h4 className="mb-3 text-lg font-bold text-[#5f3a20]">{title}</h4>
+      {selected === 0 ? <>
+        <div className="mb-3 flex gap-4">{(["branch", "stem"] as const).map(type => <button key={type} type="button" aria-pressed={relationType === type} onClick={() => setRelationType(type)} className={`border-b-2 px-1 py-1 text-base ${relationType === type ? "border-[#6b3f24] font-bold text-[#5f3a20]" : "border-transparent text-zinc-400"}`}>{type === "stem" ? "천간" : "지지"}</button>)}</div>
+        <div className="overflow-x-auto"><div className="w-full">
+          <div className="grid grid-cols-4 text-center">{items.map(item => <div key={item.label}><p className="mb-1 text-base text-zinc-500">{item.label}</p>{badge(item, relationType)}</div>)}</div>
+          {relationships.length ? <svg role="img" aria-label="기둥 사이의 관계 연결선" viewBox={`0 0 400 ${relationships.slice(0, 6).length * 44 + 20}`} className="w-full">
+            {relationships.slice(0, 6).map((relation, r) => {
+              const y = 18 + r * 44;
+              const start = 50 + Math.min(...relation.indices) * 100;
+              const end = 50 + Math.max(...relation.indices) * 100;
+              return <g key={`${relation.indices}:${relation.name}`} fill="none" stroke="#b9a38c" strokeWidth="1.5"><path d={`M ${start} ${y - 10} V ${y} H ${end} V ${y - 10}`} />{relation.indices.slice(1, -1).map(i => <path key={i} d={`M ${50 + i * 100} ${y - 10} V ${y}`} />)}<text x={(start + end) / 2} y={y + 22} textAnchor="middle" fill="#5f3a20" stroke="none" fontSize="14">{relation.name}</text></g>;
+            })}
+          </svg> : <p className="py-4 text-center text-base text-zinc-500">해당 관계 없음</p>}
+        </div></div>
+        {relationships.length > 6 ? <details className="mt-2 text-base text-zinc-500"><summary className="cursor-pointer">나머지 관계 {relationships.length - 6}개</summary><ul className="mt-2 space-y-1">{relationships.slice(6).map((relation, i) => <li key={i}>{relation.indices.map(j => items[j].label).join(" · ")} — {relation.name}</li>)}</ul></details> : null}
+      </> : selected === 1 ? <>
+        <div className="grid grid-cols-4 divide-x divide-[#ead8c4] text-center">{items.map(item => {
+          const stemHits = luckyStars.filter(star => star.value.split("·").includes(item.data?.stem ?? "")).map(star => `${star.label}귀인`);
+          const branchHits = luckyStars.filter(star => star.value.split("·").includes(item.data?.branch ?? "")).map(star => star.label === "금여록" ? star.label : `${star.label}귀인`);
+          const stars = [...new Set([...stemHits, ...(item.shinsals ?? []), ...branchHits])];
+          return <div key={item.label} className="px-2"><h5 className="mb-1 text-base text-zinc-500">{item.label}</h5><div className="flex flex-wrap items-center justify-center">{badge(item, "stem")}{item.data ? badge(item, "branch") : null}</div><ul className="mt-3 space-y-1 text-base text-[#5f3a20]">{item.data ? stars.length ? stars.map(star => <li key={star}>{star}</li>) : <li className="text-zinc-400">없음</li> : null}</ul></div>;
+        })}</div>
+        <details className="mt-3 text-sm text-zinc-400"><summary className="cursor-pointer">판정 기준</summary><p className="mt-2">도화·12신살: 일지 기준. 홍염은 일간으로 네 지지를 대조합니다.</p><p className="mt-1">{HONGYEOM_RULE_NOTE}</p><p className="mt-1">홍염은 학파에 따라 대응표가 다를 수 있습니다. 길성은 해당 글자가 원국에 있을 때 표시합니다.</p></details>
+      </> : strength ? <div className="max-w-xl">
+        <div className="flex flex-wrap items-baseline gap-2"><strong className="text-2xl text-[#5f3a20]">{strength.label}</strong><span className="text-lg text-zinc-500">{strength.score} / 100</span><span className="text-sm text-zinc-400">간이 지표{unknownHour ? " · 시주 제외" : ""}</span></div>
+        <meter aria-label="일간을 돕는 오행의 가중 비율" min={0} max={100} low={40} high={60} value={strength.score} className="mt-2 h-4 w-full" />
+        <details className="mt-2 text-sm text-zinc-500"><summary className="cursor-pointer">계산 기준</summary><p className="mt-2 leading-relaxed">일간을 돕는 비겁·인성의 가중 비율입니다. 월지 30, 나머지 지지 각 15, 년간·월간 각 10, 시간 5이며 일간 자체는 제외합니다. 시주 미상은 남은 가중치로 환산합니다. 신약 0~39, 중화 40~60, 신강 61~100. 지지 본기만 사용하며 조후·지장간·합화·종격을 반영하지 않아 정밀 판정과 다를 수 있습니다.</p><p className="mt-2">도움이 되는 자리: {strength.support.map(row => `${row.label} ${row.element}(${row.weight})`).join(" · ") || "없음"} / 전체 {strength.total}</p></details>
+      </div> : <p className="text-base text-zinc-500">일간 정보가 없습니다.</p>}
+      {unknownHour && selected !== 2 ? <p className="mt-3 text-sm text-zinc-400">출생시간 미상으로 시주는 제외했습니다.</p> : null}
+    </section>)}
+    </div>
+  </div>;
+}

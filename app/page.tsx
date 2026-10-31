@@ -1,4 +1,7 @@
 "use client";
+import SajuInsights from "./SajuInsights";
+import CrossSajuRelations from "./CrossSajuRelations";
+import { isHongyeom } from "./lib/shinsalRules";
 
 import KoreanLunarCalendar from "korean-lunar-calendar";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -31,11 +34,13 @@ function ScrollFade({ children, className = "" }: { children: ReactNode; classNa
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        setVisible(entry.isIntersecting);
+        if (!entry.isIntersecting) return;
+        setVisible(true);
+        observer.unobserve(node);
       },
       {
-        threshold: 0.12,
-        rootMargin: "-6% 0px -12% 0px",
+        threshold: 0,
+        rootMargin: "0px",
       },
     );
 
@@ -385,8 +390,8 @@ export default function Home() {
   const datingToastTimerRef = useRef<number | null>(null);
 
   const [peopleStorageOpen, setPeopleStorageOpen] = useState(false);
-  const [favoritePeopleOpen, setFavoritePeopleOpen] = useState(true);
-  const [recentPeopleOpen, setRecentPeopleOpen] = useState(true);
+  const [favoritePeopleOpen, setFavoritePeopleOpen] = useState(false);
+  const [recentPeopleOpen, setRecentPeopleOpen] = useState(false);
   const [recentPeopleSearch, setRecentPeopleSearch] = useState("");
   const [peopleBackupOpen, setPeopleBackupOpen] = useState(false);
   const [storageLoaded, setStorageLoaded] = useState(false);
@@ -2034,6 +2039,8 @@ export default function Home() {
       if (event.ctrlKey && event.altKey && key === "b") {
         event.preventDefault();
         setPeopleBackupOpen((prev) => !prev);
+        setFavoritePeopleOpen(false);
+        setRecentPeopleOpen(false);
         setPeopleStorageOpen(true);
       }
 
@@ -2260,13 +2267,18 @@ export default function Home() {
   const makeDatingMatchKey = (fixedPerson: any, candidatePerson: any) =>
     `${makePersonKey(fixedPerson)}>>${makePersonKey(candidatePerson)}`;
 
+  const normalizeDatingStars = (value: any) => {
+    const stars = Number(value);
+    return Number.isFinite(stars) ? Math.max(0, Math.min(3, Math.floor(stars))) : 0;
+  };
+
   const getDatingMatchMeta = (person: any): DatingMatchMeta => {
     if (!datingFixedPerson || !person) return { stars: 0, score: "" };
     const key = makeDatingMatchKey(datingFixedPerson, person);
     const saved = datingMatchMeta[key];
     return {
-      stars: Math.max(0, Math.min(3, Number(saved?.stars || 0))),
-      score: saved?.score == null ? "" : String(saved.score),
+      stars: normalizeDatingStars(saved?.stars),
+      score: saved?.score == null ? "" : String(saved.score).trim(),
     };
   };
 
@@ -2279,7 +2291,7 @@ export default function Home() {
     setDatingMatchMeta((prev) => ({
       ...prev,
       [key]: {
-        stars: Math.max(0, Math.min(3, Number(prev[key]?.stars || 0))),
+        stars: normalizeDatingStars(prev[key]?.stars),
         score: prev[key]?.score == null ? "" : String(prev[key].score),
         ...patch,
       },
@@ -2527,7 +2539,11 @@ export default function Home() {
       <div className="rounded-2xl border border-[#ead8c4] bg-[#fffaf3] p-4">
         <button
           type="button"
-          onClick={() => setPeopleStorageOpen((prev) => !prev)}
+          onClick={() => {
+            setFavoritePeopleOpen(false);
+            setRecentPeopleOpen(false);
+            setPeopleStorageOpen((prev) => !prev);
+          }}
           className="flex w-full items-center justify-between rounded-xl bg-white px-4 py-3 text-left text-[#6b3f24] shadow-sm transition hover:bg-[#f3e1cf]"
         >
           <span className={`${FONT.formLabel} font-bold`}>
@@ -4590,6 +4606,10 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
     const shinsalMap = new Map<string, string[]>();
     const baseBranch = getBaseBranchForShinsal(targetSaju);
     const baseRule = getTwelveShinsalBaseRule(baseBranch);
+    const yearBranch = normalizeBranch(
+      targetSaju?.year?.branch || String(targetSaju?.year?.ganji || "").slice(1, 2),
+    );
+    const yearDohwaRule = getTwelveShinsalBaseRule(yearBranch);
 
     activeItems.forEach((item) => shinsalMap.set(item.label, []));
 
@@ -4603,6 +4623,14 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
       const branch = getItemBranch(item);
       const stem = getItemStem(item);
       const twelveShinsalKey = baseRule?.byBranch?.[branch];
+      // Dohwa checks both the year and day bases; addShinsal deduplicates matches.
+      if (yearDohwaRule?.byBranch?.[branch] === "dosal") {
+        addShinsal(item.label, "도화살");
+      }
+
+      if (isHongyeom(getDayGanjiParts(targetSaju).stem, branch)) {
+        addShinsal(item.label, "홍염살");
+      }
 
       if (twelveShinsalKey) {
         addShinsal(item.label, SHINSAL_LABELS[twelveShinsalKey]);
@@ -5587,7 +5615,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
     if (!targetSaju) return null;
 
     return (
-      <div className="mt-4 rounded-2xl bg-[#ffffff] p-4 text-[#000000] shadow-sm">
+      <div className="compat-saju-card mt-4 rounded-2xl bg-[#ffffff] p-4 text-[#000000] shadow-sm">
         <ScrollFade>
           <div>
             <div className="flex flex-wrap items-baseline">
@@ -5600,6 +5628,21 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
             </div>
 
             {renderSajuOverview(targetSaju, items, cardKey)}
+            {mode === "compatibility" && (
+              <SajuInsights
+                key={cardKey}
+                items={items}
+                luckyStars={getGwiyinList(targetSaju)}
+                dayElement={targetSaju.day.stemElement}
+                renderHanja={(data, type) => renderHanjaButton({
+                  type,
+                  value: data[type],
+                  element: type === "stem" ? data.stemElement : data.branchElement,
+                  className: `text-3xl ${WEIGHT.pillarMainHanja} leading-none`,
+                  children: data[type],
+                })}
+              />
+            )}
           </div>
         </ScrollFade>
 
@@ -5976,7 +6019,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
     return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
   };
 
-  // 소개팅의 삼합/방합은 고정 인물의 선택 기둥(일지 또는 월지)을 기준점으로 삼는다.
+  // 소개팅의 삼합은 고정 인물의 선택 기둥(일지 또는 월지)을 기준점으로 삼는다.
   // 해당 기준점이 속한 3지지 그룹에서 나머지 두 글자를 상대방의 년/월/일/시
   // 네 기둥 안에서 모두 찾으면 성립한다.
   // 예: 고정 일지 亥 + 상대방 卯, 未 => 亥卯未 삼합.
@@ -6020,17 +6063,21 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
       BRANCH_RELATION_RULES.samhap,
     );
 
-  const isDatingFullBanghapMatch = (
-    fixedAnchorBranch: string,
+  // Banghap compares all four pillars on both sides, independent of direction.
+  const isDatingBanghapMatch = (
+    _fixedAnchorBranch: string,
     fixedSaju: any,
     candidateSaju: any,
-  ) =>
-    isDatingFullBranchGroupMatch(
-      fixedAnchorBranch,
-      fixedSaju,
-      candidateSaju,
-      BRANCH_RELATION_RULES.banghap,
+  ) => {
+    if (!fixedSaju || !candidateSaju) return false;
+    const fixedBranches = getAllDatingBranches(fixedSaju);
+    const candidateBranches = getAllDatingBranches(candidateSaju);
+    return fixedBranches.some((left: string) =>
+      candidateBranches.some((right: string) =>
+        isDatingBranchRelation(left, right, "방합"),
+      ),
     );
+  };
 
   const matchesDatingRelationFilter = (
     leftBranch: string,
@@ -6048,7 +6095,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
       }
 
       if (relation === "방합") {
-        return isDatingFullBanghapMatch(leftBranch, fixedSaju, candidateSaju);
+        return isDatingBanghapMatch(leftBranch, fixedSaju, candidateSaju);
       }
 
       return isDatingBranchRelation(leftBranch, rightBranch, relation);
@@ -6059,124 +6106,6 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
       : selectedRelations.some(matcher);
   };
 
-  const doesDatingCandidateMatchFilters = (person: any) => {
-    if (!datingFixedPerson) return true;
-
-    const sameGender =
-      String(person?.gender || "") === String(datingFixedPerson?.gender || "");
-    if (datingGenderMode === "exclude-same" && sameGender) return false;
-    if (datingGenderMode === "same-only" && !sameGender) return false;
-
-    const fixedSaju =
-      datingResult.left || calculateOneSaju(normalizeRecentPerson(datingFixedPerson));
-    const candidateSaju = calculateOneSaju(normalizeDatingPerson(person));
-
-    if (!fixedSaju || !candidateSaju) return false;
-
-    const fixedDayBranch = getDatingPillarBranch(fixedSaju, "day");
-    const candidateDayBranch = getDatingPillarBranch(candidateSaju, "day");
-    const fixedMonthBranch = getDatingPillarBranch(fixedSaju, "month");
-    const candidateMonthBranch = getDatingPillarBranch(candidateSaju, "month");
-
-    // 일지 관계와 월지 관계는 서로 독립된 관계 필터 블록이다.
-    // 둘 다 활성화되어 있으면 두 블록 중 하나라도 맞으면 통과(OR)한다.
-    // 단, 각 블록 내부에서 육합/삼합/방합을 여러 개 선택했을 때의
-    // OR/AND 규칙은 datingDayRelationJoin / datingMonthRelationJoin을 그대로 따른다.
-    const hasDayRelationFilter = datingDayRelations.length > 0;
-    const hasMonthRelationFilter = datingMonthRelations.length > 0;
-
-    const dayRelationMatched =
-      hasDayRelationFilter &&
-      matchesDatingRelationFilter(
-        fixedDayBranch,
-        candidateDayBranch,
-        fixedSaju,
-        candidateSaju,
-        datingDayRelations,
-        datingDayRelationJoin,
-      );
-
-    const monthRelationMatched =
-      hasMonthRelationFilter &&
-      matchesDatingRelationFilter(
-        fixedMonthBranch,
-        candidateMonthBranch,
-        fixedSaju,
-        candidateSaju,
-        datingMonthRelations,
-        datingMonthRelationJoin,
-      );
-
-    if (
-      (hasDayRelationFilter || hasMonthRelationFilter) &&
-      !dayRelationMatched &&
-      !monthRelationMatched
-    ) return false;
-
-    // 원진살 제외는 위 관계 OR 판정과 별개의 강제 제외 조건이다.
-    if (
-      datingExcludeDayWonjin &&
-      isDatingBranchRelation(fixedDayBranch, candidateDayBranch, "원진")
-    ) return false;
-
-    if (
-      datingExcludeMonthWonjin &&
-      isDatingBranchRelation(fixedMonthBranch, candidateMonthBranch, "원진")
-    ) return false;
-
-    if (datingStemHapMode === "include") {
-      const stemHap = isDatingStemHap(
-        getDatingDayStem(fixedSaju),
-        getDatingDayStem(candidateSaju),
-      );
-      if (!stemHap) return false;
-    }
-
-    if (
-      datingDayStems.length > 0 &&
-      !datingDayStems.includes(getDatingDayStem(candidateSaju))
-    ) return false;
-
-    if (
-      datingCheoneulMode === "include" &&
-      !isDatingCheoneulMatch(fixedSaju, candidateSaju)
-    ) return false;
-
-    const matchMeta = getDatingMatchMeta(person);
-    if (datingMinStars > 0 && matchMeta.stars < datingMinStars) return false;
-
-    const tenGodCounts = getDatingTenGodCounts(candidateSaju);
-
-    const minTenGodMatched = datingTenGodMinRules.every((rule) => {
-      const count = parseDatingFilterCount(rule.count);
-      if (count === null) return true;
-      return Number(tenGodCounts[rule.target] ?? 0) >= count;
-    });
-    if (!minTenGodMatched) return false;
-
-    const maxTenGodMatched = datingTenGodMaxRules.every((rule) => {
-      const count = parseDatingFilterCount(rule.count);
-      if (count === null) return true;
-      return Number(tenGodCounts[rule.target] ?? 0) <= count;
-    });
-    if (!maxTenGodMatched) return false;
-
-    const minElementMatched = datingElementMinRules.every((rule) => {
-      const count = parseDatingFilterCount(rule.count);
-      if (count === null) return true;
-      return getDatingElementCount(candidateSaju, rule.target) >= count;
-    });
-    if (!minElementMatched) return false;
-
-    const maxElementMatched = datingElementMaxRules.every((rule) => {
-      const count = parseDatingFilterCount(rule.count);
-      if (count === null) return true;
-      return getDatingElementCount(candidateSaju, rule.target) <= count;
-    });
-    if (!maxElementMatched) return false;
-
-    return true;
-  };
 
   const normalizedDatingFixedSearch = datingFixedSearch.trim().toLowerCase().replace(/\s/g, "");
   const showDatingFixedSearchResults = normalizedDatingFixedSearch.length > 0;
@@ -6303,12 +6232,21 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
       if (filters.genderMode === "exclude-same" && sameGender) return false;
       if (filters.genderMode === "same-only" && !sameGender) return false;
 
-      const fixedBirthYear = Number(String(datingFixedPerson?.birthDate || "").slice(0, 4));
-      const candidateBirthYear = Number(String(person?.birthDate || "").slice(0, 4));
-      const olderMax = filters.olderMaxAgeGap === "" ? null : Number(filters.olderMaxAgeGap);
-      const youngerMax = filters.youngerMaxAgeGap === "" ? null : Number(filters.youngerMaxAgeGap);
+      const readBirthYear = (person: any, saju: any) => {
+        const date = String(saju?.solarBirthDate || (person?.calendarType !== "lunar" ? person?.birthDate || "" : ""));
+        const match = /^(\d{4})-\d{2}-\d{2}$/.exec(date);
+        const year = match ? Number(match[1]) : NaN;
+        return year > 0 ? year : NaN;
+      };
+      const olderMax = filters.olderMaxAgeGap.trim() === "" ? null : Number(filters.olderMaxAgeGap);
+      const youngerMax = filters.youngerMaxAgeGap.trim() === "" ? null : Number(filters.youngerMaxAgeGap);
+      const hasAgeRestriction = (olderMax !== null && Number.isFinite(olderMax)) ||
+        (youngerMax !== null && Number.isFinite(youngerMax));
 
-      if (Number.isFinite(fixedBirthYear) && Number.isFinite(candidateBirthYear)) {
+      if (hasAgeRestriction) {
+        const fixedBirthYear = readBirthYear(datingFixedPerson, fixedSaju);
+        const candidateBirthYear = readBirthYear(person, datingSajuCache.get(makePersonKey(person)));
+        if (!Number.isFinite(fixedBirthYear) || !Number.isFinite(candidateBirthYear)) return false;
         if (candidateBirthYear < fixedBirthYear && olderMax !== null && Number.isFinite(olderMax)) {
           if (fixedBirthYear - candidateBirthYear > Math.max(0, olderMax)) return false;
         }
@@ -6337,9 +6275,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
       // 성별/별표 필터만 쓸 때는 만세력 데이터를 전혀 건드리지 않는다.
       if (!hasSajuFilter) return true;
 
-      const candidateSaju =
-        datingSajuCache.get(makePersonKey(person)) ||
-        calculateOneSaju(normalizeDatingPerson(person));
+      const candidateSaju = datingSajuCache.get(makePersonKey(person));
       if (!fixedSaju || !candidateSaju) return false;
 
       const fixedDayBranch = getDatingPillarBranch(fixedSaju, "day");
@@ -6615,25 +6551,27 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
     sortMode: datingSortMode,
   });
 
-  const restoreDatingCountRules = (rules: any) =>
-    (Array.isArray(rules) ? rules : []).map((rule: any) => ({
-      id: datingFilterRuleIdRef.current++,
-      target: String(rule?.target || ""),
-      count: String(rule?.count ?? ""),
-    }));
+  const restoreDatingCountRules = (rules: any, allowedTargets: string[]) =>
+    (Array.isArray(rules) ? rules : [])
+      .filter((rule: any) => allowedTargets.includes(String(rule?.target || "")))
+      .map((rule: any) => ({
+        id: datingFilterRuleIdRef.current++,
+        target: String(rule.target),
+        count: String(rule.count ?? ""),
+      }));
 
   const applyDatingFilterPreset = (preset: any) => {
     const filters = preset?.filters;
     if (!filters) return;
 
-    setDatingDayRelations(Array.isArray(filters.dayRelations) ? filters.dayRelations : []);
+    setDatingDayRelations(Array.isArray(filters.dayRelations) ? [...new Set<string>(filters.dayRelations.filter((value: any) => ["육합", "삼합", "방합"].includes(value)))] : []);
     setDatingDayRelationJoin(filters.dayRelationJoin === "and" ? "and" : "or");
     setDatingExcludeDayWonjin(Boolean(filters.excludeDayWonjin));
-    setDatingMonthRelations(Array.isArray(filters.monthRelations) ? filters.monthRelations : []);
+    setDatingMonthRelations(Array.isArray(filters.monthRelations) ? [...new Set<string>(filters.monthRelations.filter((value: any) => ["육합", "삼합", "방합"].includes(value)))] : []);
     setDatingMonthRelationJoin(filters.monthRelationJoin === "and" ? "and" : "or");
     setDatingExcludeMonthWonjin(Boolean(filters.excludeMonthWonjin));
     setDatingStemHapMode(filters.stemHapMode === "include" ? "include" : "off");
-    setDatingDayStems(Array.isArray(filters.dayStems) ? filters.dayStems : []);
+    setDatingDayStems(Array.isArray(filters.dayStems) ? [...new Set<string>(filters.dayStems.map((value: any) => normalizeStem(String(value))).filter((value: string) => DATING_STEM_FILTER_OPTIONS.includes(value)))] : []);
     setDatingCheoneulMode(filters.cheoneulMode === "include" ? "include" : "off");
     setDatingPillarDayMatch(Boolean(filters.pillarDayMatch));
     setDatingExcludeSameDayPillar(Boolean(filters.excludeSameDayPillar));
@@ -6645,10 +6583,10 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
     setDatingOlderMaxAgeGap(filters.olderMaxAgeGap == null ? "" : String(filters.olderMaxAgeGap));
     setDatingYoungerMaxAgeGap(filters.youngerMaxAgeGap == null ? "" : String(filters.youngerMaxAgeGap));
     setDatingMinStars([1, 2, 3].includes(Number(filters.minStars)) ? Number(filters.minStars) : 0);
-    setDatingTenGodMinRules(restoreDatingCountRules(filters.tenGodMinRules));
-    setDatingTenGodMaxRules(restoreDatingCountRules(filters.tenGodMaxRules));
-    setDatingElementMinRules(restoreDatingCountRules(filters.elementMinRules));
-    setDatingElementMaxRules(restoreDatingCountRules(filters.elementMaxRules));
+    setDatingTenGodMinRules(restoreDatingCountRules(filters.tenGodMinRules, DATING_TEN_GOD_FILTER_OPTIONS));
+    setDatingTenGodMaxRules(restoreDatingCountRules(filters.tenGodMaxRules, DATING_TEN_GOD_FILTER_OPTIONS));
+    setDatingElementMinRules(restoreDatingCountRules(filters.elementMinRules, DATING_ELEMENT_FILTER_OPTIONS));
+    setDatingElementMaxRules(restoreDatingCountRules(filters.elementMaxRules, DATING_ELEMENT_FILTER_OPTIONS));
     setDatingSortMode(
       filters.sortMode === "score-desc" || filters.sortMode === "stars-desc"
         ? filters.sortMode
@@ -6855,7 +6793,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
             const selected = selectedRelations.includes(relation);
             return (
               <button
-                key={`${scope}-${relation}`}
+                key={`${scope}-${relation === "방합" ? "방합(전체 기둥)" : relation}`}
                 type="button"
                 onClick={() => toggleDatingRelation(scope, relation)}
                 className={`rounded-lg border px-2.5 py-1.5 text-[1em] font-bold transition ${
@@ -6864,7 +6802,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                     : "border-[#ead8c4] bg-white text-[#6b3f24] hover:bg-[#fff7ed]"
                 }`}
               >
-                {relation}
+                {relation === "방합" ? "방합(전체 기둥)" : relation}
               </button>
             );
           })}
@@ -6960,7 +6898,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
         {datingFilterOpen && (
           <>
             <div className="mt-3 rounded-xl bg-white/80 px-3 py-2 text-[0.9em] font-bold text-zinc-500">
-              서로 다른 필터 카드는 AND로 적용됩니다. 일지·월지의 육합/삼합/방합은 각 카드에서 OR 또는 AND를 선택할 수 있습니다.
+              일지·월지 관계는 둘 중 하나만 맞아도 통과(OR)합니다. 각 관계 카드 안에서는 OR/AND를 선택할 수 있습니다. 나머지 필터와 원진 제외는 함께 적용됩니다. 방합은 두 사람의 년·월·일·시 전체에서 2자 이상을 찾습니다.
             </div>
 
             <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-pink-100 bg-white/80 p-2">
@@ -7126,7 +7064,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                     </div>
                   </label>
                   <div className="col-span-2 text-[0.8em] font-bold text-zinc-400">
-                    빈칸은 해당 방향 제한 없음 · 0은 같은 나이만 허용
+                    양력 환산 출생연도 기준 · 빈칸은 해당 방향 제한 없음 · 0은 해당 방향의 연상/연하 제외
                   </div>
                 </div>,
               )}
@@ -8465,6 +8403,18 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                       </div>
 
                       {renderSajuOverview(sajuResult, sajuItems, "main")}
+                      <SajuInsights
+                        items={sajuItems}
+                        luckyStars={getGwiyinList(sajuResult)}
+                        dayElement={sajuResult.day.stemElement}
+                        renderHanja={(data, type) => renderHanjaButton({
+                          type,
+                          value: data[type],
+                          element: type === "stem" ? data.stemElement : data.branchElement,
+                          className: `text-3xl ${WEIGHT.pillarMainHanja} leading-none`,
+                          children: data[type],
+                        })}
+                      />
                     </div>
                     </ScrollFade>
 
@@ -8567,7 +8517,26 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                 </div>
                 </ScrollFade>
 
-                <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+                {compatibilityResult.left && compatibilityResult.right && (
+                  <CrossSajuRelations
+                    left={buildSajuItems(compatibilityResult.left)}
+                    right={buildSajuItems(compatibilityResult.right)}
+                    leftName={compatibilityForm.left.name || "본인"}
+                    rightName={compatibilityForm.right.name || "상대"}
+                    rules={BRANCH_RELATION_RULES}
+                    stemHap={STEM_HAP_PAIRS}
+                    stemChung={STEM_CHUNG_PAIRS}
+                    renderHanja={(data, type) => renderHanjaButton({
+                      type,
+                      value: data[type],
+                      element: type === "stem" ? data.stemElement : data.branchElement,
+                      className: `text-3xl ${WEIGHT.pillarMainHanja} leading-none`,
+                      children: data[type],
+                    })}
+                  />
+                )}
+
+                <div className="compatibility-aligned-grid mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
                   <div>
                     <h3
                       className={`text-center ${FONT.cardTitle} ${WEIGHT.cardTitle} ${COLOR.cardTitle}`}
