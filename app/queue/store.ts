@@ -2,6 +2,7 @@
 import { useEffect, useSyncExternalStore } from "react";
 import { applyDelta, diffQueue, hasChanges, type Delta, type Snapshot } from "../queue-sync/protocol";
 import { cleanName, type Person, type Queue } from "./rules";
+import { receiveAlerts } from "./audio-alerts";
 export type { Person, Queue } from "./rules";
 const KEY = "saju-queue-v1";
 const STATE_KEY = "saju-queue-sync-v1";
@@ -38,6 +39,7 @@ export function readQueue(): Queue { return load().queue; }
 function receive(data: Snapshot, acknowledged?: string) {
   const latest = load();
   if (data.revision < latest.revision) return;
+  receiveAlerts(data.alerts ?? []);
   const pending = latest.pending.filter(d => d.operationId !== acknowledged);
   const aliases: Record<string, string> = {};
   const queue = pending.reduce((q, d) => applyDelta(q, d, aliases), data.queue);
@@ -46,6 +48,7 @@ function receive(data: Snapshot, acknowledged?: string) {
 }
 async function request(path: string, options: RequestInit = {}) {
   const response = await fetch(path, { ...options, cache: "no-store", signal: AbortSignal.timeout(12000), headers: { "Content-Type": "application/json", ...options.headers } });
+  if (response.status === 304) return null;
   const data = await response.json();
   if (!response.ok) throw new Error(response.status === 401 ? "연결 코드를 다시 입력해 주세요." : data.error || "연결을 확인해 주세요.");
   return data;
@@ -57,11 +60,15 @@ async function tick() {
     const local = load();
     const pending = local.pending[0];
     if (pending) receive(await request("/api/queue-sync", { method: "POST", body: JSON.stringify(pending) }), pending.operationId);
-    else receive(await request("/api/queue-sync"));
+    else {
+      const data = await request(`/api/queue-sync${local.revision >= 0 ? `?since=${local.revision}` : ""}`);
+      if (data) receive(data);
+      else setView({ error: "", syncStatus: load().pending.length ? "전송 대기" : "동기화됨" });
+    }
   } catch (e) { setView({ syncStatus: "연결 대기", error: e instanceof Error ? e.message : "연결을 확인해 주세요." }); }
-  finally { busy = false; schedule(state.pending.length && !state.error ? 100 : 3000); }
+  finally { busy = false; schedule(state.pending.length && !state.error ? 100 : 10000); }
 }
-function schedule(delay = 3000) { if (timer) clearTimeout(timer); timer = setTimeout(() => { void tick(); }, delay); }
+function schedule(delay = 10000) { if (timer) clearTimeout(timer); timer = setTimeout(() => { void tick(); }, delay); }
 function start() {
   if (started) return;
   started = true;

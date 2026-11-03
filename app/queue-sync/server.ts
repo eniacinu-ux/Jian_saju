@@ -24,6 +24,14 @@ export async function getDocument(): Promise<Document> {
   if (!rows[0]) throw new Error("동기화 저장소를 찾을 수 없습니다.");
   return { ...rows[0].document, revision: Number(rows[0].revision) } as Document;
 }
+export async function getSnapshotSince(revision: number): Promise<Snapshot | null> {
+  await setup();
+  // Avoid reading the JSON document at all when nothing has changed.
+  const rows = await db()`SELECT revision FROM saju_queue_sync WHERE room = ${room()}`;
+  if (rows[0] && Number(rows[0].revision) === revision) return null;
+  const data = await getDocument();
+  return { revision: data.revision, queue: data.queue, alerts: data.alerts ?? [] };
+}
 export async function commitDelta(delta: Delta): Promise<Document> {
   for (let attempt = 0; attempt < 8; attempt++) {
     const previous = await getDocument();
@@ -33,7 +41,9 @@ export async function commitDelta(delta: Delta): Promise<Document> {
     const aliases = { ...previous.aliases };
     const queue = applyDelta(previous.queue, delta, aliases);
     if (queue.people.length > 5000) throw new Error("대기열 보관 한도를 초과했습니다.");
-    const next: Document = { queue, aliases, revision: previous.revision + 1, receipts: [...previous.receipts.slice(-999), delta.operationId] };
+    const alerts = (previous.alerts ?? []).filter(a => a.createdAt > Date.now() - 120000);
+    if (delta.signal) alerts.push({ id: delta.operationId, kind: delta.signal, createdAt: Date.now() });
+    const next: Document = { queue, aliases, alerts: alerts.slice(-50), revision: previous.revision + 1, receipts: [...previous.receipts.slice(-999), delta.operationId] };
     const rows = await db()`WITH changed AS (UPDATE saju_queue_sync SET revision = ${next.revision}, document = ${JSON.stringify(next)}::jsonb, updated_at = now() WHERE room = ${room()} AND revision = ${previous.revision} AND NOT EXISTS (SELECT 1 FROM saju_queue_sync_ops WHERE room = ${room()} AND operation_id = ${delta.operationId}) RETURNING room) INSERT INTO saju_queue_sync_ops (room, operation_id) SELECT room, ${delta.operationId} FROM changed RETURNING operation_id`;
     if (rows.length) return next;
   }

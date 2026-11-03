@@ -1,8 +1,9 @@
 import { activePeople, cleanName, priority, type Person, type Queue } from "../queue/rules";
 export type SyncPerson = Person & { channelId?: string; note?: string; createdAt?: number };
 export type Change = { id: string; fields: Partial<Omit<SyncPerson, "id">>; matchName?: string; create?: boolean };
-export type Delta = { operationId: string; changes: Change[]; removedIds: string[]; order?: string[] };
-export type Snapshot = { revision: number; queue: Queue };
+export type Alert = { id: string; kind: "chat" | "payment"; createdAt: number };
+export type Delta = { operationId: string; changes: Change[]; removedIds: string[]; order?: string[]; signal?: Alert["kind"] };
+export type Snapshot = { revision: number; queue: Queue; alerts?: Alert[] };
 const fields = ["name", "paid", "freeOrder", "status", "channelId", "note", "createdAt"] as const;
 export function diffQueue(before: Queue, after: Queue, operationId: string): Delta {
   const old = new Map(before.people.map(p => [p.id, p as SyncPerson]));
@@ -63,6 +64,7 @@ export function applyDelta(queue: Queue, delta: Delta, identityAliases: Record<s
 export function validateDelta(value: unknown): Delta {
   if (!value || typeof value !== "object") throw new Error("잘못된 동기화 요청입니다.");
   const d = value as Delta;
+  if (d.signal !== undefined && d.signal !== "chat" && d.signal !== "payment") throw new Error("잘못된 알림입니다.");
   const id = (s: unknown) => typeof s === "string" && s.length > 0 && s.length <= 160;
   if (!id(d.operationId) || !Array.isArray(d.changes) || d.changes.length > 1000 || !Array.isArray(d.removedIds) || d.removedIds.length > 1000 || !d.removedIds.every(id) || (d.order !== undefined && (!Array.isArray(d.order) || d.order.length > 1000 || !d.order.every(id)))) throw new Error("잘못된 동기화 요청입니다.");
   for (const c of d.changes) {
