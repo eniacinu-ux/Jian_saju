@@ -29,7 +29,7 @@ export default function QueueDisplay({ compact = false }: { compact?: boolean })
     document.fonts.ready.then(measure);
     return () => { disposed = true; observer.disconnect(); };
   }, [text]);
-  const motion = { "--queue-distance": `${width + 48}px`, "--queue-duration": `${Math.max(12, (width + 48) / 45)}s` } as CSSProperties;
+  const motion = { "--queue-distance": `${width + 48}px`, "--queue-duration": `${Math.max(7, (width + 48) / 80)}s` } as CSSProperties;
   return <section className={compact ? `${styles.bottomDisplay} ${styles.queueTextDisplay}` : styles.display} aria-label="전광판" aria-live="polite">
     <div ref={viewport} className={styles.marqueeViewport} tabIndex={overflow ? 0 : undefined}>
       <div key={text} className={`${styles.marqueeTrack} ${overflow ? styles.marqueeMoving : ""}`} style={motion}>

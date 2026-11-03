@@ -17,7 +17,7 @@ export default function QueueManager({ embedded = false }: { embedded?: boolean 
     <form className={styles.simpleForm} onSubmit={event => { event.preventDefault(); if (!ready) return; if (update(q => register(q, name, paid, crypto.randomUUID()))) setName(""); }}>
       <label className={styles.simpleNameLabel} htmlFor="queue-name">이름</label>
       <input id="queue-name" aria-label="이름" value={name} onChange={e => setName(e.target.value)} placeholder="이름 입력" maxLength={60} required autoComplete="off" />
-      <div className={styles.simpleFormBottom}><div className={styles.feeOptions} role="group" aria-label="상담 구분"><button type="button" aria-pressed={!paid} onClick={() => setPaid(false)}>무료</button><button type="button" aria-pressed={paid} onClick={() => setPaid(true)}>유료</button></div><button className={styles.addGuest} disabled={!ready || !name.trim()}>추가</button></div>
+      <div className={styles.simpleFormBottom}><div className={styles.feeOptions} role="group" aria-label="상담 구분"><button type="button" aria-pressed={paid} onClick={() => setPaid(true)}>유료</button><button type="button" aria-pressed={!paid} onClick={() => setPaid(false)}>무료</button></div><button className={styles.addGuest} disabled={!ready || !name.trim()}>추가</button></div>
     </form>
     {error && <p role="alert" className={styles.error}>{error}</p>}
     <div className={styles.simpleCount}>대기 명단 <strong>{people.length}명</strong></div>
