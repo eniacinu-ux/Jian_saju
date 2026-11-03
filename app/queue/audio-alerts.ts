@@ -1,5 +1,5 @@
 "use client";
-import type { Alert } from "../queue-sync/protocol";
+export type Alert = { id: string; kind: "chat" | "payment"; createdAt: number };
 let enabledAt = 0;
 const seen = new Set<string>();
 export function enableAlerts() {

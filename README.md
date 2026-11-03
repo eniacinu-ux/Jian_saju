@@ -1,36 +1,24 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SAJU 웹앱 — 로컬 Dropbox TXT 버전
 
-## Getting Started
+기존 Next.js 사주 웹앱과 화면 디자인을 유지하면서, 상담 대기열과 채팅/입금 음성 호출을 **PC Dropbox 동기화 폴더의 TXT 3개**에서 직접 읽도록 변경한 버전입니다.
 
-First, run the development server:
+자세한 사용법: [LOCAL_TXT_SETUP.md](./LOCAL_TXT_SETUP.md)
+
+## 실행
 
 ```bash
+npm ci
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Vercel 배포는 기존 방식 그대로 유지합니다. 데스크톱 Chrome/Edge에서 `로컬 TXT` 설정을 열고 폴더를 선택해야 로컬 파일을 읽습니다. Vercel에 Dropbox 경로를 등록할 필요는 없습니다.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 확인
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run verify:local-txt
+npm run verify:filters
+npm run build
+```
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+소스 ZIP에는 `.env.local`, 실사용자 백업 JSON 등 개인 데이터가 포함되어 있지 않습니다. 현재 운영 중인 Vercel 환경변수는 기존 값을 유지하십시오.

@@ -1,4 +1,4 @@
-export type Person = { id: string; name: string; paid?: boolean; freeOrder?: boolean; status: "waiting" | "called" | "done" };
+export type Person = { id: string; name: string; paid?: boolean; freeOrder?: boolean; status: "waiting" | "called" | "done"; kindLabel?: string };
 export type Queue = { version: 1; people: Person[]; call: { id: string; personId: string; name: string } | null };
 
 export function cleanName(name: string) { return name.trim().replace(/^@+/, "").trim().normalize("NFC").replace(/-(?=[a-z0-9]*[a-z])(?=[a-z0-9]*\d)[a-z0-9]{2,12}$/i, ""); }
@@ -24,7 +24,7 @@ export function register(queue: Queue, raw: string, paid: boolean, id: string): 
 }
 export function setKind(queue: Queue, id: string, paid: boolean) {
   const person = queue.people.find(p => p.id === id && p.status !== "done");
-  return person ? putLast(queue, { ...person, paid, freeOrder: false }) : queue;
+  return person ? putLast(queue, { ...person, paid, freeOrder: false, kindLabel: undefined }) : queue;
 }
 export function setFreeOrder(queue: Queue, id: string, freeOrder: boolean) {
   const person = queue.people.find(p => p.id === id && p.status !== "done");
