@@ -2,21 +2,19 @@
 import { useState } from "react";
 import { useQueue } from "./store";
 import styles from "./queue.module.css";
-import { enableAlerts, disableAlerts } from "./audio-alerts";
+import { enableAlerts } from "./audio-alerts";
 
 export default function SyncSettings() {
   const { enabled, syncStatus, folderName, connect, reconnect, disconnect } = useQueue();
   const [busy, setBusy] = useState(false);
-  const [audio, setAudio] = useState(false);
   const [audioError, setAudioError] = useState("");
   async function invoke(task: () => Promise<unknown>) {
     setBusy(true);
     try { await task(); } finally { setBusy(false); }
   }
-  function toggleAudio() {
+  function playAudioConfirmation() {
     try {
-      if (audio) disableAlerts(); else enableAlerts();
-      setAudio(!audio);
+      enableAlerts();
       setAudioError("");
     } catch (error) { setAudioError(error instanceof Error ? error.message : "음성 알림을 켜지 못했습니다."); }
   }
@@ -30,8 +28,8 @@ export default function SyncSettings() {
       {folderName && <button type="button" disabled={busy} onClick={() => void invoke(reconnect)}>폴더 다시 연결·권한 허용</button>}
     </>}
     {enabled && <button type="button" disabled={busy} onClick={() => void invoke(disconnect)}>폴더 연결 해제</button>}
-    <button type="button" onClick={toggleAudio}>{audio ? "알림 소리 끄기" : "알림 소리 켜기"}</button>
+    <button type="button" onClick={playAudioConfirmation}>알림 소리 켜기</button>
     {audioError && <p role="alert">{audioError}</p>}
-    <p>방송 시작 시 ‘알림 소리 켜기’를 한 번 눌러 주세요. 재실행 시 기존 호출은 다시 재생하지 않습니다. Chrome 백그라운드 절전 상태에서는 확인이 지연될 수 있습니다.</p>
+    <p>음성 알림은 기본으로 켜져 있습니다. 브라우저에서 재생이 차단되면 알림 소리 켜기 버튼을 눌러 주세요. 재실행 시 기존 호출은 다시 재생하지 않습니다. Chrome 백그라운드 절전 상태에서는 확인이 지연될 수 있습니다.</p>
   </details>;
 }
