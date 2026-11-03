@@ -1,0 +1,1 @@
+import QueueDisplay from "../QueueDisplay"; export default function Page() { return <QueueDisplay />; }

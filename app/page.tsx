@@ -1,5 +1,6 @@
 "use client";
 import SajuInsights from "./SajuInsights";
+import QueueWindows from "./queue/QueueWindows";
 import CrossSajuRelations from "./CrossSajuRelations";
 import { isHongyeom } from "./lib/shinsalRules";
 
@@ -7239,6 +7240,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
 
   return (
     <>
+      <QueueWindows />
       {drawingBoardOpen && (
         <div className="fixed inset-0 z-[9997] bg-white">
           <div className="fixed left-1/2 top-4 z-[10000] flex -translate-x-1/2 items-center gap-3 rounded-2xl border border-zinc-300 bg-white/95 px-4 py-3 shadow-2xl">
@@ -9132,7 +9134,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
         <button
           type="button"
           onClick={() => setMemoOpen((prev) => !prev)}
-          className="fixed right-6 top-[240px] z-[10000] rounded-l-2xl rounded-r-md bg-[#6b3f24] px-4 py-4 text-2xl font-bold text-white shadow-2xl transition hover:bg-[#4a2f1c]"
+          className="fixed right-6 bottom-6 z-[10000] rounded-l-2xl rounded-r-md bg-[#6b3f24] px-4 py-4 text-2xl font-bold text-white shadow-2xl transition hover:bg-[#4a2f1c]"
         >
           {memoOpen ? "메모 닫기" : "메모 열기"}
         </button>
@@ -9142,7 +9144,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
         <button
           type="button"
           onClick={restoreMemoPosition}
-          className="fixed right-6 top-[320px] z-[10000] rounded-l-2xl rounded-r-md bg-[#6b3f24] px-4 py-4 text-2xl font-bold text-white shadow-2xl transition hover:bg-[#4a2f1c]"
+          className="fixed right-6 bottom-[104px] z-[10000] rounded-l-2xl rounded-r-md bg-[#6b3f24] px-4 py-4 text-2xl font-bold text-white shadow-2xl transition hover:bg-[#4a2f1c]"
           title="메모장이 화면 밖으로 나갔을 때 복구합니다. 단축키: Ctrl + Alt + M"
         >
           메모 위치복구

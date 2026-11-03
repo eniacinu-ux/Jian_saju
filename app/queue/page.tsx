@@ -1,0 +1,1 @@
+import QueueManager from "./QueueManager"; export default function Page() { return <QueueManager />; }

@@ -1,0 +1,10 @@
+.git
+.next
+node_modules
+.env*
+*.apk
+*.zip
+**/*.bak
+jian-saju-*.json
+*.tsbuildinfo
+**/.private/**
