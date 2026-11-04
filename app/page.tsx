@@ -9036,17 +9036,26 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
             setTimerFinished(false);
             setTimerBlink(false);
           }}
-          className={`fixed bottom-6 grid size-12 place-items-center rounded-xl text-white shadow-lg transition right-[136px] z-[61] ${
+          className={`fixed bottom-6 right-[136px] z-[61] grid h-16 w-[120px] place-items-center rounded-xl text-white shadow-lg transition ${
             timerFinished
               ? timerBlink
                 ? "bg-red-600"
                 : "bg-black"
               : "bg-black hover:bg-zinc-800"
           }`}
-          aria-label="타이머 열기"
+          aria-label={`타이머 열기 · 남은 시간 ${formatTimerTime(timerRemainingSeconds)}`}
           title={`타이머 열기 · ${formatTimerTime(timerRemainingSeconds)}`}
         >
-          <svg aria-hidden="true" className="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="13" r="8" /><path d="M10 2h4m-2 7v4l3 2" /></svg>
+          <span
+            aria-hidden="true"
+            className={`block whitespace-nowrap font-mono text-3xl font-bold leading-none tabular-nums ${
+              timerRemainingSeconds >= 3600
+                ? "tracking-[-3px]"
+                : "tracking-[-0.5px]"
+            }`}
+          >
+            {formatTimerTime(timerRemainingSeconds)}
+          </span>
         </button>
       )}
 
