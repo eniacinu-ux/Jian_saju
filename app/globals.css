@@ -160,7 +160,7 @@ html.single-app-cursor-active *::after {
 }
 /* Fit each person's card independently in compatibility mode. */
 .saju-insights .insight-section + .insight-section {
-  border-top: 1px solid #e9e3da;
+  border-top: 1px solid #c5b39f;
 }
 @container (min-width: 1000px) {
   .saju-insights .insight-columns {
@@ -168,7 +168,7 @@ html.single-app-cursor-active *::after {
   }
   .saju-insights .insight-section + .insight-section {
     border-top: 0;
-    border-left: 1px solid #e9e3da;
+    border-left: 1px solid #c5b39f;
   }
 }
 /* Cross-person relations: aligned columns, grouped labels, color-coded polarity. */
@@ -279,7 +279,7 @@ html.single-app-cursor-active *::after {
     align-self: stretch;
   }
   .compatibility-aligned-grid .saju-insights .insight-section + .insight-section {
-    border-top: 1px solid #e9e3da;
+    border-top: 1px solid #c5b39f;
   }
 
 }

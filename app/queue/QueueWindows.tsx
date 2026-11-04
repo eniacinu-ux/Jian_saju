@@ -35,8 +35,9 @@ export default function QueueWindows() {
       <div className={styles.dockBody}><QueueManager embedded /></div>
     </aside>}
     <button type="button" className={styles.openQueueDock} aria-expanded={open}
-      aria-controls={open ? "queue-dock" : undefined} onClick={() => setOpen(previous => !previous)}>
-      {open ? "대기 명단 닫기" : "대기 명단 열기"}
+      aria-controls={open ? "queue-dock" : undefined} onClick={() => setOpen(previous => !previous)}
+      aria-label={open ? "대기 명단 닫기" : "대기 명단 열기"} title={open ? "대기 명단 닫기" : "대기 명단 열기"}>
+      <svg aria-hidden="true" className="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01" /></svg>
     </button>
     <QueueDisplay compact />
   </>;

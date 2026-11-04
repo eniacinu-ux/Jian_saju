@@ -355,7 +355,7 @@ export default function Home() {
   };
 
   const datingFilterRuleIdRef = useRef(1);
-  const [datingFilterOpen, setDatingFilterOpen] = useState(true);
+  const [datingFilterOpen, setDatingFilterOpen] = useState(false);
   const [datingDayRelations, setDatingDayRelations] = useState<string[]>([]);
   const [datingDayRelationJoin, setDatingDayRelationJoin] =
     useState<DatingRelationJoin>("or");
@@ -364,6 +364,7 @@ export default function Home() {
   const [datingMonthRelationJoin, setDatingMonthRelationJoin] =
     useState<DatingRelationJoin>("or");
   const [datingExcludeMonthWonjin, setDatingExcludeMonthWonjin] = useState(false);
+  const [datingDayMonthJoin, setDatingDayMonthJoin] = useState<DatingRelationJoin>("or");
   const [datingStemHapMode, setDatingStemHapMode] =
     useState<DatingStemHapMode>("off");
   const [datingDayStems, setDatingDayStems] = useState<string[]>([]);
@@ -380,6 +381,8 @@ export default function Home() {
     useState<DatingSortMode>("default");
   const [datingTenGodMinRules, setDatingTenGodMinRules] = useState<DatingCountFilterRule[]>([]);
   const [datingTenGodMaxRules, setDatingTenGodMaxRules] = useState<DatingCountFilterRule[]>([]);
+  const [datingMissingTenGods, setDatingMissingTenGods] = useState<string[]>([]);
+  const [datingTenGodMajorities, setDatingTenGodMajorities] = useState<string[]>([]);
   const [datingElementMinRules, setDatingElementMinRules] = useState<DatingCountFilterRule[]>([]);
   const [datingElementMaxRules, setDatingElementMaxRules] = useState<DatingCountFilterRule[]>([]);
   const [datingAddMeta, setDatingAddMeta] = useState<Record<string, DatingAddMeta>>({});
@@ -5821,23 +5824,14 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
     );
   };
 
-  const DATING_TEN_GOD_FILTER_OPTIONS = [
-    "비견",
-    "겁재",
-    "식신",
-    "상관",
-    "편재",
-    "정재",
-    "편관",
-    "정관",
-    "편인",
-    "정인",
-    "비겁",
-    "식상",
-    "재성",
-    "관성",
-    "인성",
-  ];
+  const DATING_TEN_GOD_FILTER_OPTIONS = ["비겁", "식상", "재성", "관성", "인성"];
+  const DATING_TEN_GOD_GROUPS: Record<string, string> = {
+    비견: "비겁", 겁재: "비겁",
+    식신: "식상", 상관: "식상",
+    편재: "재성", 정재: "재성",
+    편관: "관성", 정관: "관성",
+    편인: "인성", 정인: "인성",
+  };
 
   const DATING_ELEMENT_FILTER_OPTIONS = ["목", "화", "토", "금", "수"];
   const DATING_STEM_FILTER_OPTIONS = ["갑", "을", "병", "정", "무", "기", "경", "신", "임", "계"];
@@ -5898,10 +5892,8 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
     }
 
     if (relation === "삼합") {
-      const pairKey = makeBranchPairKey(left, right);
-      return BRANCH_RELATION_RULES.samhapHalf.some(
-        (rule: any) =>
-          makeBranchPairKey(rule.branches[0], rule.branches[1]) === pairKey,
+      return BRANCH_RELATION_RULES.samhap.some(
+        (rule: { branches: string[] }) => rule.branches.includes(left) && rule.branches.includes(right),
       );
     }
 
@@ -6023,84 +6015,15 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
   // 소개팅의 삼합은 고정 인물의 선택 기둥(일지 또는 월지)을 기준점으로 삼는다.
   // 해당 기준점이 속한 3지지 그룹에서 나머지 두 글자를 상대방의 년/월/일/시
   // 네 기둥 안에서 모두 찾으면 성립한다.
-  // 예: 고정 일지 亥 + 상대방 卯, 未 => 亥卯未 삼합.
-  const isDatingFullBranchGroupMatch = (
-    fixedAnchorBranch: string,
-    _fixedSaju: any,
-    candidateSaju: any,
-    rules: any[],
-  ) => {
-    const anchor = normalizeBranch(fixedAnchorBranch);
-    if (!anchor || !candidateSaju) return false;
-
-    const candidateBranchSet = new Set(getAllDatingBranches(candidateSaju));
-
-    return rules.some((rule: any) => {
-      const group = (rule?.branches || [])
-        .map((branch: string) => normalizeBranch(branch))
-        .filter(Boolean);
-
-      if (group.length !== 3 || !group.includes(anchor)) return false;
-
-      const requiredFromCandidate = group.filter(
-        (branch: string) => branch !== anchor,
-      );
-
-      return requiredFromCandidate.every((branch: string) =>
-        candidateBranchSet.has(branch),
-      );
-    });
-  };
-
-  const isDatingFullSamhapMatch = (
-    fixedAnchorBranch: string,
-    fixedSaju: any,
-    candidateSaju: any,
-  ) =>
-    isDatingFullBranchGroupMatch(
-      fixedAnchorBranch,
-      fixedSaju,
-      candidateSaju,
-      BRANCH_RELATION_RULES.samhap,
-    );
-
-  // Banghap compares all four pillars on both sides, independent of direction.
-  const isDatingBanghapMatch = (
-    _fixedAnchorBranch: string,
-    fixedSaju: any,
-    candidateSaju: any,
-  ) => {
-    if (!fixedSaju || !candidateSaju) return false;
-    const fixedBranches = getAllDatingBranches(fixedSaju);
-    const candidateBranches = getAllDatingBranches(candidateSaju);
-    return fixedBranches.some((left: string) =>
-      candidateBranches.some((right: string) =>
-        isDatingBranchRelation(left, right, "방합"),
-      ),
-    );
-  };
-
   const matchesDatingRelationFilter = (
     leftBranch: string,
     rightBranch: string,
-    fixedSaju: any,
-    candidateSaju: any,
     selectedRelations: string[],
     relationJoin: DatingRelationJoin,
   ) => {
     if (selectedRelations.length === 0) return true;
 
-    const matcher = (relation: string) => {
-      if (relation === "삼합") {
-        return isDatingFullSamhapMatch(leftBranch, fixedSaju, candidateSaju);
-      }
-
-      if (relation === "방합") {
-        return isDatingBanghapMatch(leftBranch, fixedSaju, candidateSaju);
-      }
-
-      return isDatingBranchRelation(leftBranch, rightBranch, relation);
-    };
+    const matcher = (relation: string) => isDatingBranchRelation(leftBranch, rightBranch, relation);
 
     return relationJoin === "and"
       ? selectedRelations.every(matcher)
@@ -6176,6 +6099,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
       excludeDayWonjin: datingExcludeDayWonjin,
       monthRelations: datingMonthRelations,
       monthRelationJoin: datingMonthRelationJoin,
+      dayMonthJoin: datingDayMonthJoin,
       excludeMonthWonjin: datingExcludeMonthWonjin,
       stemHapMode: datingStemHapMode,
       dayStems: datingDayStems,
@@ -6188,6 +6112,8 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
       minStars: datingMinStars,
       tenGodMinRules: datingTenGodMinRules,
       tenGodMaxRules: datingTenGodMaxRules,
+      excludeMissingTenGods: datingMissingTenGods,
+      tenGodMajorities: datingTenGodMajorities,
       elementMinRules: datingElementMinRules,
       elementMaxRules: datingElementMaxRules,
       sortMode: datingSortMode,
@@ -6198,6 +6124,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
       datingExcludeDayWonjin,
       datingMonthRelations,
       datingMonthRelationJoin,
+      datingDayMonthJoin,
       datingExcludeMonthWonjin,
       datingStemHapMode,
       datingDayStems,
@@ -6210,6 +6137,8 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
       datingMinStars,
       datingTenGodMinRules,
       datingTenGodMaxRules,
+      datingMissingTenGods,
+      datingTenGodMajorities,
       datingElementMinRules,
       datingElementMaxRules,
       datingSortMode,
@@ -6270,6 +6199,8 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
         filters.pillarDayMatch ||
         filters.tenGodMinRules.length > 0 ||
         filters.tenGodMaxRules.length > 0 ||
+        filters.excludeMissingTenGods.length > 0 ||
+        filters.tenGodMajorities.length > 0 ||
         filters.elementMinRules.length > 0 ||
         filters.elementMaxRules.length > 0;
 
@@ -6284,8 +6215,6 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
       const fixedMonthBranch = getDatingPillarBranch(fixedSaju, "month");
       const candidateMonthBranch = getDatingPillarBranch(candidateSaju, "month");
 
-      // 일지 관계와 월지 관계는 서로 대체 조건으로 취급한다.
-      // 둘 다 선택된 경우 둘 중 하나라도 맞으면 통과(OR).
       // 각 블록 내부의 육합/삼합/방합 결합 방식은 기존 OR/AND 설정을 그대로 따른다.
       const hasDayRelationFilter = filters.dayRelations.length > 0;
       const hasMonthRelationFilter = filters.monthRelations.length > 0;
@@ -6294,8 +6223,6 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
         ? matchesDatingRelationFilter(
             fixedDayBranch,
             candidateDayBranch,
-            fixedSaju,
-            candidateSaju,
             filters.dayRelations,
             filters.dayRelationJoin,
           )
@@ -6305,15 +6232,16 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
         ? matchesDatingRelationFilter(
             fixedMonthBranch,
             candidateMonthBranch,
-            fixedSaju,
-            candidateSaju,
             filters.monthRelations,
             filters.monthRelationJoin,
           )
         : false;
 
       if (hasDayRelationFilter && hasMonthRelationFilter) {
-        if (!dayRelationMatched && !monthRelationMatched) return false;
+        const combinedMatch = filters.dayMonthJoin === "and"
+          ? dayRelationMatched && monthRelationMatched
+          : dayRelationMatched || monthRelationMatched;
+        if (!combinedMatch) return false;
       } else if (hasDayRelationFilter) {
         if (!dayRelationMatched) return false;
       } else if (hasMonthRelationFilter) {
@@ -6356,6 +6284,17 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
       }
 
       const tenGodCounts = getDatingTenGodCounts(candidateSaju);
+      const dayStemTenGod = candidateSaju.tenGods?.dayStem;
+      const dayStemGroup = DATING_TEN_GOD_GROUPS[dayStemTenGod === "일간" ? "비견" : dayStemTenGod];
+      if (filters.excludeMissingTenGods.some((group) => tenGodCounts[group] > (dayStemGroup === group ? 1 : 0))) return false;
+      const dayBranchGroup = DATING_TEN_GOD_GROUPS[candidateSaju.tenGods?.dayBranch];
+      const monthStemGroup = DATING_TEN_GOD_GROUPS[candidateSaju.tenGods?.monthStem];
+      const monthBranchGroup = DATING_TEN_GOD_GROUPS[candidateSaju.tenGods?.monthBranch];
+      if (filters.tenGodMajorities.some((group) => {
+        const hasMonthPillar = monthStemGroup === group && monthBranchGroup === group;
+        const weightedCount = tenGodCounts[group] + (dayBranchGroup === group ? 1 : 0);
+        return !hasMonthPillar && weightedCount < 3;
+      })) return false;
 
       if (!filters.tenGodMinRules.every((rule) => {
         const count = parseDatingFilterCount(rule.count);
@@ -6419,6 +6358,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
         excludeDayWonjin: datingExcludeDayWonjin,
         monthRelations: datingMonthRelations,
         monthRelationJoin: datingMonthRelationJoin,
+        dayMonthJoin: datingDayMonthJoin,
         excludeMonthWonjin: datingExcludeMonthWonjin,
         stemHapMode: datingStemHapMode,
         dayStems: datingDayStems,
@@ -6431,6 +6371,8 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
         minStars: datingMinStars,
         tenGodMinRules: datingTenGodMinRules.map(({ target, count }) => ({ target, count })),
         tenGodMaxRules: datingTenGodMaxRules.map(({ target, count }) => ({ target, count })),
+        excludeMissingTenGods: datingMissingTenGods,
+        tenGodMajorities: datingTenGodMajorities,
         elementMinRules: datingElementMinRules.map(({ target, count }) => ({ target, count })),
         elementMaxRules: datingElementMaxRules.map(({ target, count }) => ({ target, count })),
       }),
@@ -6440,6 +6382,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
       datingExcludeDayWonjin,
       datingMonthRelations,
       datingMonthRelationJoin,
+      datingDayMonthJoin,
       datingExcludeMonthWonjin,
       datingStemHapMode,
       datingDayStems,
@@ -6452,6 +6395,8 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
       datingMinStars,
       datingTenGodMinRules,
       datingTenGodMaxRules,
+      datingMissingTenGods,
+      datingTenGodMajorities,
       datingElementMinRules,
       datingElementMaxRules,
     ],
@@ -6501,8 +6446,11 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
     datingMinStars > 0 ||
     datingTenGodMinRules.length > 0 ||
     datingTenGodMaxRules.length > 0 ||
+    datingMissingTenGods.length > 0 ||
+    datingTenGodMajorities.length > 0 ||
     datingElementMinRules.length > 0 ||
     datingElementMaxRules.length > 0 ||
+    datingDayMonthJoin !== "or" ||
     datingSortMode !== "default";
 
   const clearDatingFilters = () => {
@@ -6511,6 +6459,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
     setDatingExcludeDayWonjin(false);
     setDatingMonthRelations([]);
     setDatingMonthRelationJoin("or");
+    setDatingDayMonthJoin("or");
     setDatingExcludeMonthWonjin(false);
     setDatingStemHapMode("off");
     setDatingDayStems([]);
@@ -6523,6 +6472,8 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
     setDatingMinStars(0);
     setDatingTenGodMinRules([]);
     setDatingTenGodMaxRules([]);
+    setDatingMissingTenGods([]);
+    setDatingTenGodMajorities([]);
     setDatingElementMinRules([]);
     setDatingElementMaxRules([]);
     setDatingSortMode("default");
@@ -6550,7 +6501,10 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
     elementMinRules: datingElementMinRules.map(({ target, count }) => ({ target, count })),
     elementMaxRules: datingElementMaxRules.map(({ target, count }) => ({ target, count })),
     sortMode: datingSortMode,
+    excludeMissingTenGods: datingMissingTenGods,
+    tenGodMajorities: datingTenGodMajorities,
   });
+
 
   const restoreDatingCountRules = (rules: any, allowedTargets: string[]) =>
     (Array.isArray(rules) ? rules : [])
@@ -6561,9 +6515,28 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
         count: String(rule.count ?? ""),
       }));
 
+  const normalizeDatingTenGodPreset = (filters: any) => {
+    const normalizeRules = (rules: any) =>
+      (Array.isArray(rules) ? rules : []).flatMap((rule: any) => {
+        const target = Object.prototype.hasOwnProperty.call(DATING_TEN_GOD_GROUPS, rule?.target) ? DATING_TEN_GOD_GROUPS[rule.target] : rule?.target;
+        return DATING_TEN_GOD_FILTER_OPTIONS.includes(target)
+          ? [{ target, count: String(rule.count ?? "") }]
+          : [];
+      });
+    return {
+      ...filters,
+      tenGodMinRules: normalizeRules(filters.tenGodMinRules),
+      tenGodMaxRules: normalizeRules(filters.tenGodMaxRules),
+      excludeMissingTenGods: (Array.isArray(filters.excludeMissingTenGods) ? filters.excludeMissingTenGods : [])
+        .filter((group: string) => DATING_TEN_GOD_FILTER_OPTIONS.includes(group)),
+      tenGodMajorities: (Array.isArray(filters.tenGodMajorities) ? filters.tenGodMajorities : [])
+        .filter((group: string) => DATING_TEN_GOD_FILTER_OPTIONS.includes(group)),
+    };
+  };
+
   const applyDatingFilterPreset = (preset: any) => {
-    const filters = preset?.filters;
-    if (!filters) return;
+    if (!preset?.filters) return;
+    const filters = normalizeDatingTenGodPreset(preset.filters);
 
     setDatingDayRelations(Array.isArray(filters.dayRelations) ? [...new Set<string>(filters.dayRelations.filter((value: any) => ["육합", "삼합", "방합"].includes(value)))] : []);
     setDatingDayRelationJoin(filters.dayRelationJoin === "and" ? "and" : "or");
@@ -6586,6 +6559,8 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
     setDatingMinStars([1, 2, 3].includes(Number(filters.minStars)) ? Number(filters.minStars) : 0);
     setDatingTenGodMinRules(restoreDatingCountRules(filters.tenGodMinRules, DATING_TEN_GOD_FILTER_OPTIONS));
     setDatingTenGodMaxRules(restoreDatingCountRules(filters.tenGodMaxRules, DATING_TEN_GOD_FILTER_OPTIONS));
+    setDatingMissingTenGods(filters.excludeMissingTenGods);
+    setDatingTenGodMajorities(filters.tenGodMajorities);
     setDatingElementMinRules(restoreDatingCountRules(filters.elementMinRules, DATING_ELEMENT_FILTER_OPTIONS));
     setDatingElementMaxRules(restoreDatingCountRules(filters.elementMaxRules, DATING_ELEMENT_FILTER_OPTIONS));
     setDatingSortMode(
@@ -6642,7 +6617,8 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
     // 프리셋을 불러온 뒤 사용자가 조건을 하나라도 직접 바꾸면 더 이상
     // 그 프리셋과 동일한 상태가 아니므로 선택 강조를 해제한다.
     const currentFilters = getDatingFilterPresetData();
-    if (JSON.stringify(currentFilters) !== JSON.stringify(selectedPreset.filters)) {
+    const { dayMonthJoin: _previousJoin, ...presetFilters } = selectedPreset.filters;
+    if (JSON.stringify(currentFilters) !== JSON.stringify(normalizeDatingTenGodPreset(presetFilters))) {
       setDatingSelectedPresetName("");
     }
   }, [datingFilterSnapshot, datingFilterPresets, datingSelectedPresetName]);
@@ -6794,7 +6770,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
             const selected = selectedRelations.includes(relation);
             return (
               <button
-                key={`${scope}-${relation === "방합" ? "방합(전체 기둥)" : relation}`}
+                key={`${scope}-${relation}`}
                 type="button"
                 onClick={() => toggleDatingRelation(scope, relation)}
                 className={`rounded-lg border px-2.5 py-1.5 text-[1em] font-bold transition ${
@@ -6803,7 +6779,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                     : "border-[#ead8c4] bg-white text-[#6b3f24] hover:bg-[#fff7ed]"
                 }`}
               >
-                {relation === "방합" ? "방합(전체 기둥)" : relation}
+                {relation}
               </button>
             );
           })}
@@ -6853,22 +6829,81 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
     </div>
   );
 
+  const getDatingCandidateRelations = (person: any) => {
+    const candidate = datingSajuCache.get(makePersonKey(person));
+    if (!candidate || !datingFixedSajuForFilter) return [];
+
+    return (["day", "month"] as const).flatMap((pillar) => {
+      const selected = pillar === "day" ? datingDayRelations : datingMonthRelations;
+      if (!selected.length) return [];
+      const left = getDatingPillarBranch(datingFixedSajuForFilter, pillar);
+      const right = getDatingPillarBranch(candidate, pillar);
+      return selected
+        .filter((relation) => isDatingBranchRelation(left, right, relation))
+        .map((relation) => (pillar === "day" ? "일지 " : "월지 ") + relation);
+    });
+  };
+
   const renderDatingFilterPanel = () => {
     if (!datingFixedPerson) return null;
 
+    const otherConditions = [
+      datingGenderMode !== "all" && "성별",
+      (datingOlderMaxAgeGap !== "" || datingYoungerMaxAgeGap !== "") && "나이 차이",
+      datingStemHapMode !== "off" && "일간합",
+      datingDayStems.length > 0 && "일간",
+      datingCheoneulMode !== "off" && "천을귀인",
+      datingPillarDayMatch && "일주 관계",
+      datingMinStars > 0 && "별표 " + datingMinStars + "개 이상",
+      (datingTenGodMinRules.length > 0 || datingTenGodMaxRules.length > 0) && "십성",
+      (datingElementMinRules.length > 0 || datingElementMaxRules.length > 0) && "오행",
+    ].filter(Boolean);
+    const activeConditions = [
+      datingDayRelations.length > 0 && "일지 " + datingDayRelations.join(datingDayRelationJoin === "and" ? " AND " : " OR "),
+      datingMonthRelations.length > 0 && "월지 " + datingMonthRelations.join(datingMonthRelationJoin === "and" ? " AND " : " OR "),
+      datingExcludeDayWonjin && "일지 원진 제외",
+      datingExcludeMonthWonjin && "월지 원진 제외",
+      ...datingMissingTenGods.map((group) => "무" + group + "만"),
+      ...datingTenGodMajorities.map((group) => group + "다자"),
+      ...otherConditions,
+    ].filter(Boolean);
+
     return (
       <div
-        className="mt-3 rounded-2xl border border-pink-200 bg-pink-50/50 p-3"
+        className="mt-3 rounded-xl border border-[#ead8c4] bg-[#fffaf3] p-3"
         style={{ fontSize: `${DATING_FILTER_FONT_SIZE}px` }}
       >
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <div className="text-[1.25em] font-bold text-pink-800">상대 필터</div>
-            <div className="mt-0.5 text-[1em] font-bold text-zinc-500">
-              결과 {filteredDatingCandidates.length}명 / 전체 {datingAvailableCandidates.length}명
-            </div>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <span className="font-bold text-[#6b3f24]">{datingFixedPerson.name || "이름없음"} 기준</span>
+            <span className="font-bold text-zinc-600">후보 {filteredDatingCandidates.length}명</span>
+            <label className="flex items-center gap-2 text-zinc-600">
+              프리셋
+              <select
+                value={datingSelectedPresetName}
+                onChange={(event) => {
+                  const preset = datingFilterPresets.find((item: any) => item.name === event.target.value);
+                  if (preset) loadDatingFilterPreset(preset);
+                }}
+                className="max-w-48 rounded-lg border border-[#ead8c4] bg-white px-2 py-1 font-bold text-[#6b3f24]"
+              >
+                <option value="" disabled>{datingFilterPresets.length ? "프리셋 선택" : "저장된 프리셋 없음"}</option>
+                {datingFilterPresets.map((preset: any) => <option key={preset.name} value={preset.name}>{preset.name}</option>)}
+              </select>
+            </label>
+            <label className="flex items-center gap-2 text-zinc-600">
+              일지·월지
+              <select
+                value={datingDayMonthJoin}
+                onChange={(event) => setDatingDayMonthJoin(event.target.value === "and" ? "and" : "or")}
+                className="rounded-lg border border-[#ead8c4] bg-white px-2 py-1"
+              >
+                <option value="or">OR</option>
+                <option value="and">AND</option>
+              </select>
+            </label>
           </div>
-          <div className="flex flex-wrap items-center justify-end gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <select
               value={datingSortMode}
               onChange={(event) => setDatingSortMode(event.target.value as DatingSortMode)}
@@ -6888,22 +6923,30 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
             </button>
             <button
               type="button"
+              aria-expanded={datingFilterOpen}
               onClick={() => setDatingFilterOpen((prev) => !prev)}
               className="rounded-lg border border-pink-200 bg-white px-3 py-2 text-[1em] font-bold text-pink-800 transition hover:bg-pink-50"
             >
-              {datingFilterOpen ? "접기 ▲" : "열기 ▼"}
+              {datingFilterOpen ? "필터 닫기" : "필터 수정"}
             </button>
           </div>
+        </div>
+
+        <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[0.9em] text-zinc-600" aria-label="적용 중인 조건">
+          {activeConditions.length ? activeConditions.map((condition) => (
+            <span key={String(condition)} className="rounded-md bg-white px-2 py-1">{condition}</span>
+          )) : <span>적용 중인 필터 없음</span>}
         </div>
 
         {datingFilterOpen && (
           <>
             <div className="mt-3 rounded-xl bg-white/80 px-3 py-2 text-[0.9em] font-bold text-zinc-500">
-              일지·월지 관계는 둘 중 하나만 맞아도 통과(OR)합니다. 각 관계 카드 안에서는 OR/AND를 선택할 수 있습니다. 나머지 필터와 원진 제외는 함께 적용됩니다. 방합은 두 사람의 년·월·일·시 전체에서 2자 이상을 찾습니다.
+              일지·월지 관계를 모두 선택하면 상단의 OR/AND 조합이 적용됩니다. 삼합은 일지끼리 또는 월지끼리 비교해 서로 다른 두 지지가 같은 삼합 그룹에 속하는지 확인합니다. 각 관계 카드 안에서는 OR/AND를 선택할 수 있습니다. 나머지 필터와 원진 제외는 함께 적용됩니다. 방합도 같은 위치의 두 지지를 비교합니다.
             </div>
 
-            <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-pink-100 bg-white/80 p-2">
-              <span className="shrink-0 text-[0.9em] font-bold text-pink-800">필터 프리셋</span>
+            <details className="mt-3 rounded-lg border border-[#ead8c4] bg-white p-2">
+              <summary className="cursor-pointer font-bold text-[#6b3f24]">프리셋 관리</summary>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
               <input
                 type="text"
                 value={datingPresetName}
@@ -6961,7 +7004,8 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                   })
                 )}
               </div>
-            </div>
+              </div>
+            </details>
 
             <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-3">
               {renderDatingRelationBlock(
@@ -7202,7 +7246,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                 setDatingTenGodMinRules,
                 DATING_TEN_GOD_FILTER_OPTIONS,
                 "이상",
-                "식신",
+                "식상",
               )}
 
               {renderDatingCountRuleBlock(
@@ -7211,7 +7255,51 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                 setDatingTenGodMaxRules,
                 DATING_TEN_GOD_FILTER_OPTIONS,
                 "이하",
-                "식신",
+                "식상",
+              )}
+
+              {renderSimpleDatingFilterCard(
+                "없는 십성만 보기",
+                <div className="flex flex-wrap gap-2">
+                  {DATING_TEN_GOD_FILTER_OPTIONS.map((group) => (
+                    <label key={group} className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-[#ead8c4] px-2 py-1 font-bold text-[#6b3f24]">
+                      <input
+                        type="checkbox"
+                        checked={datingMissingTenGods.includes(group)}
+                        onChange={(event) => {
+                          const checked = event.target.checked;
+                          setDatingMissingTenGods((prev) =>
+                            checked ? [...prev, group] : prev.filter((item) => item !== group),
+                          );
+                        }}
+                        className="accent-[#6b3f24]"
+                      />
+                      무{group}
+                    </label>
+                  ))}
+                </div>,
+              )}
+
+              {renderSimpleDatingFilterCard(
+                "십성 다자 (일지 2개로 계산, 월주 같은 그룹이면 인정)",
+                <div className="flex flex-wrap gap-2">
+                  {DATING_TEN_GOD_FILTER_OPTIONS.map((group) => (
+                    <label key={group} className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-[#ead8c4] px-2 py-1 font-bold text-[#6b3f24]">
+                      <input
+                        type="checkbox"
+                        checked={datingTenGodMajorities.includes(group)}
+                        onChange={(event) => {
+                          const checked = event.target.checked;
+                          setDatingTenGodMajorities((prev) =>
+                            checked ? [...prev, group] : prev.filter((item) => item !== group),
+                          );
+                        }}
+                        className="accent-[#6b3f24]"
+                      />
+                      {group}다자
+                    </label>
+                  ))}
+                </div>,
               )}
 
               {renderDatingCountRuleBlock(
@@ -7543,30 +7631,30 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                           소개팅 명단
                         </h3>
                         <div className="flex items-center gap-2">
-                          {datingFixedPerson && (
-                            <span className="whitespace-nowrap rounded-full bg-[#f7efe3] px-3 py-1.5 text-lg font-bold text-[#6b3f24]">
-                              {filteredDatingCandidates.length} / {datingAvailableCandidates.length}명
-                            </span>
-                          )}
                           <span className="whitespace-nowrap rounded-full bg-[#fffaf3] px-3 py-1.5 text-lg font-bold text-[#6b3f24]">
                             전체 {datingPeople.length}명
                           </span>
                           {datingPeople.length > 0 && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (confirm("소개팅 명단을 모두 삭제하시겠습니까?")) {
-                                  setDatingPeople([]);
-                                  setDatingMatchMeta({});
-                                  setDatingFixedPerson(null);
-                                  setDatingSelectedPerson(null);
-                                  setDatingResult({ left: null, right: null });
-                                }
-                              }}
-                              className="rounded-xl border border-red-200 bg-white px-3 py-1.5 text-lg font-bold text-red-700 transition hover:bg-red-50"
-                            >
-                              전체삭제
-                            </button>
+                            <details className="relative">
+                              <summary aria-label="명단 관리" title="명단 관리" className="cursor-pointer list-none rounded-lg px-2 text-xl font-bold text-[#6b3f24]">⋯</summary>
+                              <div className="absolute right-0 z-10 mt-1 whitespace-nowrap rounded-xl bg-white p-1 shadow-lg">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (confirm("소개팅 명단을 모두 삭제하시겠습니까?")) {
+                                      setDatingPeople([]);
+                                      setDatingMatchMeta({});
+                                      setDatingFixedPerson(null);
+                                      setDatingSelectedPerson(null);
+                                      setDatingResult({ left: null, right: null });
+                                    }
+                                  }}
+                                  className="rounded-xl border border-red-200 bg-white px-3 py-1.5 text-lg font-bold text-red-700 transition hover:bg-red-50"
+                                >
+                                  명단 전체 삭제
+                                </button>
+                              </div>
+                            </details>
                           )}
                         </div>
                       </div>
@@ -7587,58 +7675,41 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                               return (
                                 <div
                                   key={`dating-right-${makePersonKey(person)}`}
-                                  className={`flex items-center gap-2 rounded-xl border p-2 transition ${
+                                  className={`flex items-center gap-2 border-b border-[#eee6dc] transition ${
                                     selected
-                                      ? "border-[#6b3f24] bg-[#f7efe3] shadow-sm"
-                                      : "border-[#ead8c4] bg-white"
+                                      ? "bg-[#f7efe3]"
+                                      : "bg-white"
                                   }`}
                                 >
                                   <button
                                     type="button"
                                     onClick={() => selectDatingComparisonPerson(person)}
-                                    className="min-w-0 flex-1 overflow-x-auto rounded-lg px-3 py-2 text-left transition hover:bg-[#fff7ed]"
+                                    className="min-w-0 flex-1 rounded-lg px-3 py-2 text-left transition hover:bg-[#fff7ed]"
                                   >
-                                    <div className="flex min-w-max items-center gap-0.5 whitespace-nowrap font-bold">
-                                      <span className="text-2xl text-[#6b3f24]">
-                                        {person.name || "이름없음"}
+                                    <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                                      <span className="text-2xl font-bold text-[#6b3f24]">{person.name || "이름없음"}</span>
+                                      <span className="text-lg text-zinc-600">
+                                        {person.gender} · {getCalendarTypeLabel(person)} {person.birthDate} · {person.birthTimeUnknown ? "시간미상" : person.birthTime}
                                       </span>
-                                      <span className="text-lg text-zinc-400">·</span>
-                                      <span className="text-lg text-zinc-500">{person.gender}</span>
-                                      <span className="text-lg text-zinc-400">·</span>
-                                      <span className="text-lg text-zinc-500">{getCalendarTypeLabel(person)}</span>
-                                      <span className="text-lg text-zinc-400">·</span>
-                                      <span className="text-lg text-zinc-500">{person.birthDate}</span>
-                                      <span className="text-lg text-zinc-400">·</span>
-                                      <span className="text-lg text-zinc-500">
-                                        {person.birthTimeUnknown ? "시간미상" : person.birthTime}
+                                    </div>
+                                    <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-base text-zinc-600">
+                                      <span>{person.datingRegion || "지역 미입력"} · 장거리 {person.datingLongDistance || "미입력"}</span>
+                                      <span aria-label="별표와 궁합 점수">
+                                        {"★".repeat(getDatingMatchMeta(person).stars)}{"☆".repeat(3 - getDatingMatchMeta(person).stars)} · 궁합 {getDatingMatchMeta(person).score || "-"}점
                                       </span>
-                                      <span className="text-lg text-zinc-400">·</span>
-                                      <span className="text-lg text-pink-700">
-                                        {person.datingRegion || "지역 미입력"}
-                                      </span>
-                                      <span className="text-lg text-zinc-400">·</span>
-                                      <span className="text-lg text-pink-700">
-                                        장거리 {person.datingLongDistance || "미입력"}
-                                      </span>
-                                      <span className="text-lg text-zinc-400">·</span>
-                                      <span className="text-lg text-pink-700">
-                                        {(() => {
-                                          const meta = getDatingMatchMeta(person);
-                                          return `${"★".repeat(meta.stars)}${"☆".repeat(3 - meta.stars)}`;
-                                        })()}
-                                      </span>
-                                      <span className="text-lg text-zinc-400">·</span>
-                                      <span className="text-lg text-pink-700">
-                                        궁합 {getDatingMatchMeta(person).score || "-"}점
-                                      </span>
+                                      {getDatingCandidateRelations(person).map((relation) => (
+                                        <span key={relation} className="font-bold text-blue-700">{relation}</span>
+                                      ))}
                                     </div>
                                   </button>
                                   <button
                                     type="button"
                                     onClick={() => removeDatingPerson(person)}
-                                    className="rounded-lg px-3 py-2 text-xl font-bold text-red-700 transition hover:bg-red-50"
+                                    className="rounded-lg px-3 py-2 text-lg text-zinc-500 transition hover:bg-red-50 hover:text-red-700"
+                                    aria-label="후보 삭제"
+                                    title="후보 삭제"
                                   >
-                                    삭제
+                                    ×
                                   </button>
                                 </div>
                               );
@@ -7664,66 +7735,29 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                 )}
               </section>
 
-              {datingFixedPerson && datingAvailableCandidates.length > 0 && (
-                <section className="sticky top-24 z-[54] rounded-2xl border border-[#d7c4ad] bg-white/95 p-3 shadow-lg backdrop-blur">
-                  <div className="flex items-center gap-3">
-                    <div className="shrink-0 rounded-xl bg-pink-50 px-4 py-2">
-                      <div className="text-xl font-bold text-pink-800">상대 빠른 선택</div>
-                      <div className="mt-0.5 text-base font-bold text-zinc-500">
-                        {datingFixedPerson.name || "이름없음"} 기준 · {filteredDatingCandidates.length}명
-                      </div>
-                    </div>
-
-                    <div className="min-w-0 flex-1 overflow-x-auto">
-                      <div className="flex min-w-max items-center gap-2 pb-1">
-                        {filteredDatingCandidates.length === 0 && (
-                          <div className="rounded-xl bg-pink-50 px-4 py-3 text-lg font-bold text-pink-700">
-                            필터 조건에 맞는 상대 없음
-                          </div>
-                        )}
-                        {filteredDatingCandidates.map((person) => {
-                            const selected =
-                              datingSelectedPerson &&
-                              makePersonKey(datingSelectedPerson) === makePersonKey(person);
-
-                            return (
-                              <button
-                                key={`dating-quick-${makePersonKey(person)}`}
-                                type="button"
-                                onClick={() => selectDatingComparisonPerson(person)}
-                                className={`shrink-0 rounded-xl border px-4 py-2 text-left transition ${
-                                  selected
-                                    ? "border-[#6b3f24] bg-[#6b3f24] text-white shadow-md"
-                                    : "border-[#ead8c4] bg-white text-[#6b3f24] hover:bg-[#fff7ed]"
-                                }`}
-                              >
-                                <div className="text-xl font-bold">
-                                  {person.name || "이름없음"}
-                                </div>
-                                <div
-                                  className={`mt-0.5 text-sm font-bold ${
-                                    selected ? "text-[#f7efe3]" : "text-zinc-500"
-                                  }`}
-                                >
-                                  {person.birthDate} · {(() => {
-                                    const meta = getDatingMatchMeta(person);
-                                    return `${"★".repeat(meta.stars)}${meta.score ? ` ${meta.score}점` : ""}`;
-                                  })()}
-                                </div>
-                              </button>
-                            );
-                          })}
-                      </div>
-                    </div>
-
-                    {datingSelectedPerson && (
-                      <div className="shrink-0 rounded-xl bg-[#f7efe3] px-4 py-2 text-right">
-                        <div className="text-base font-bold text-zinc-500">현재 상대</div>
-                        <div className="text-xl font-bold text-[#6b3f24]">
-                          {datingSelectedPerson.name || "이름없음"}
-                        </div>
-                      </div>
-                    )}
+              {datingFixedPerson && filteredDatingCandidates.length > 0 && (
+                <section aria-label="상대 빠른 선택" className="sticky top-24 z-[54] flex items-center gap-3 rounded-xl border border-[#ead8c4] bg-white px-3 py-2">
+                  <span className="shrink-0 font-bold text-[#6b3f24]">상대 빠른 선택</span>
+                  <div className="flex min-w-0 flex-1 gap-2 overflow-x-auto py-1">
+                    {filteredDatingCandidates.map((person) => {
+                      const key = makePersonKey(person);
+                      const selected = datingSelectedPerson && makePersonKey(datingSelectedPerson) === key;
+                      return (
+                        <button
+                          key={key}
+                          type="button"
+                          aria-pressed={Boolean(selected)}
+                          onClick={() => selectDatingComparisonPerson(person)}
+                          className={`shrink-0 rounded-lg border px-3 py-2 text-2xl font-bold transition ${
+                            selected
+                              ? "border-[#6b3f24] bg-[#6b3f24] text-white"
+                              : "border-[#ead8c4] bg-white text-[#6b3f24] hover:bg-[#fff7ed]"
+                          }`}
+                        >
+                          {person.name || "이름없음"}
+                        </button>
+                      );
+                    })}
                   </div>
                 </section>
               )}
@@ -7745,10 +7779,29 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                     </button>
                   </div>
 
-                  {datingSelectedPerson && (
-                    <div className="mt-3 flex justify-end">
-                      <div className="w-full rounded-2xl border border-pink-200 bg-white p-3 shadow-sm lg:w-[calc(50%-0.5rem)]">
-                        <div className="flex flex-wrap items-center justify-center gap-4">
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    {datingResult.left && datingResult.right && (
+                      <div className="flex flex-wrap items-center gap-1.5" aria-label="두 사람의 지지 관계">
+                        {(["day", "month"] as const).map((pillar) => {
+                          const left = getDatingPillarBranch(datingResult.left, pillar);
+                          const right = getDatingPillarBranch(datingResult.right, pillar);
+                          const relations = ["육합", "삼합", "방합", "원진"]
+                            .filter((relation) => isDatingBranchRelation(left, right, relation));
+                          return (
+                            <span key={pillar} className="rounded-lg border border-[#ead8c4] bg-white px-2 py-1 text-lg font-bold text-[#6b3f24]">
+                              {pillar === "day" ? "일지" : "월지"} {left || "?"}–{right || "?"} ·{" "}
+                              {relations.length > 0 ? (
+                              <span className="text-blue-700">{relations.join(" · ")}</span>
+                            ) : left && right ? "해당 관계 없음" : "확인 불가"}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {datingSelectedPerson && (
+                      <div className="ml-auto rounded-xl border border-pink-200 bg-white px-3 py-1.5 shadow-sm">
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                           <div className="flex items-center gap-2">
                             <span className="text-lg font-bold text-[#6b3f24]">별표</span>
                             {[1, 2, 3].map((star) => {
@@ -7790,7 +7843,7 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                                 const clamped = Math.max(0, Math.min(100, Number(event.target.value)));
                                 updateDatingMatchMeta(datingSelectedPerson, { score: String(clamped) });
                               }}
-                              className="w-24 rounded-lg border border-[#ead8c4] px-3 py-2 text-center text-xl font-bold text-black"
+                              className="w-20 rounded-lg border border-[#ead8c4] px-2 py-1 text-center text-xl font-bold text-black"
                               placeholder="0~100"
                             />
                             <span className="text-lg font-bold text-zinc-500">점</span>
@@ -7800,10 +7853,10 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                           </div>
                         </div>
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
 
-                  <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+                  <div className="mt-2 grid grid-cols-1 gap-4 lg:grid-cols-2">
                     <div>
                       <h3 className={`text-center ${FONT.cardTitle} ${WEIGHT.cardTitle} ${COLOR.cardTitle}`}>
                         {datingFixedPerson ? `${datingFixedPerson.name || "이름 미입력"} · ${datingFixedPerson.gender || "성별 미입력"}` : "왼쪽 고정"}
@@ -8519,25 +8572,6 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                 </div>
                 </ScrollFade>
 
-                {compatibilityResult.left && compatibilityResult.right && (
-                  <CrossSajuRelations
-                    left={buildSajuItems(compatibilityResult.left)}
-                    right={buildSajuItems(compatibilityResult.right)}
-                    leftName={compatibilityForm.left.name || "본인"}
-                    rightName={compatibilityForm.right.name || "상대"}
-                    rules={BRANCH_RELATION_RULES}
-                    stemHap={STEM_HAP_PAIRS}
-                    stemChung={STEM_CHUNG_PAIRS}
-                    renderHanja={(data, type) => renderHanjaButton({
-                      type,
-                      value: data[type],
-                      element: type === "stem" ? data.stemElement : data.branchElement,
-                      className: `text-3xl ${WEIGHT.pillarMainHanja} leading-none`,
-                      children: data[type],
-                    })}
-                  />
-                )}
-
                 <div className="compatibility-aligned-grid mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
                   <div>
                     <h3
@@ -8565,6 +8599,25 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                     )}
                   </div>
                 </div>
+
+                {compatibilityResult.left && compatibilityResult.right && (
+                  <CrossSajuRelations
+                    left={buildSajuItems(compatibilityResult.left)}
+                    right={buildSajuItems(compatibilityResult.right)}
+                    leftName={compatibilityForm.left.name || "본인"}
+                    rightName={compatibilityForm.right.name || "상대"}
+                    rules={BRANCH_RELATION_RULES}
+                    stemHap={STEM_HAP_PAIRS}
+                    stemChung={STEM_CHUNG_PAIRS}
+                    renderHanja={(data, type) => renderHanjaButton({
+                      type,
+                      value: data[type],
+                      element: type === "stem" ? data.stemElement : data.branchElement,
+                      className: `text-3xl ${WEIGHT.pillarMainHanja} leading-none`,
+                      children: data[type],
+                    })}
+                  />
+                )}
               </section>
             )}
 
@@ -8656,25 +8709,82 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
                 일진달력
               </div>
 
-              <button
-                type="button"
-                onClick={() =>
-                  setCalendarDate(
-                    new Date(
-                      calendarDate.getFullYear(),
-                      calendarDate.getMonth() + 1,
-                      1,
-                    ),
-                  )
-                }
-                className="rounded-xl bg-zinc-100 px-4 py-2 text-2xl font-bold"
-              >
-                다음달
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setCalendarDate(
+                      new Date(
+                        calendarDate.getFullYear(),
+                        calendarDate.getMonth() + 1,
+                        1,
+                      ),
+                    )
+                  }
+                  className="rounded-xl bg-zinc-100 px-4 py-2 text-2xl font-bold"
+                >
+                  다음달
+                </button>
+                <button
+                  type="button"
+                  aria-label="일진 달력 닫기"
+                  title="일진 달력 닫기"
+                  onClick={() => {
+                    setSelectedCalendarDay(null);
+                    setShowDailyCalendar(false);
+                  }}
+                  className="rounded-xl bg-zinc-100 px-4 py-2 text-2xl font-bold hover:bg-zinc-200"
+                >
+                  ×
+                </button>
+              </div>
             </div>
 
             <div className="mb-5 rounded-2xl border border-[#eadfce] bg-[#fffdf8] p-4">
               <div className="flex flex-wrap items-center gap-3">
+                <form
+                  className="flex flex-wrap items-center gap-2"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    const input = event.currentTarget.elements.namedItem("jumpDate") as HTMLInputElement;
+                    const [year, monthNumber, dayNumber] = input.value.split("-").map(Number);
+                    const day = new Date(calendarDate);
+                    day.setFullYear(year, monthNumber - 1, dayNumber);
+                    if (year < 1 || day.getFullYear() !== year || day.getMonth() !== monthNumber - 1 || day.getDate() !== dayNumber) {
+                      input.setCustomValidity("올바른 날짜를 입력해주세요.");
+                      input.reportValidity();
+                      return;
+                    }
+                    day.setHours(0, 0, 0, 0);
+                    const month = new Date(day);
+                    month.setDate(1);
+                    setCalendarDate(month);
+                    setSelectedCalendarDay(day);
+                  }}
+                >
+                  <label className="flex flex-wrap items-center gap-2 text-xl font-bold text-[#6b3f24]">
+                    날짜로 이동
+                    <input
+                      type="text"
+                      name="jumpDate"
+                      inputMode="numeric"
+                      placeholder="YYYY-MM-DD"
+                      pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}"
+                      title="연도 4자리, 월과 일 각 2자리를 입력해주세요."
+                      required
+                      onChange={(event) => {
+                        const input = event.currentTarget;
+                        const digits = input.value.replace(/[^0-9]/g, "").slice(0, 8);
+                        input.value = [digits.slice(0, 4), digits.slice(4, 6), digits.slice(6, 8)].filter(Boolean).join("-");
+                        input.setCustomValidity("");
+                      }}
+                      className="rounded-xl border border-[#eadfce] bg-white px-3 py-2 text-xl text-zinc-800"
+                    />
+                  </label>
+                  <button type="submit" className="rounded-xl bg-[#6b3f24] px-4 py-2 text-xl font-bold text-white">
+                    이동
+                  </button>
+                </form>
                 <button
                   type="button"
                   onClick={() => setCalendarEventPickerOpen((open) => !open)}
@@ -8926,22 +9036,17 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
             setTimerFinished(false);
             setTimerBlink(false);
           }}
-          className={`fixed right-6 top-24 z-[60] rounded-l-2xl rounded-r-md px-4 py-4 text-2xl font-bold text-white shadow-2xl transition ${
+          className={`fixed bottom-6 grid size-12 place-items-center rounded-xl text-white shadow-lg transition right-[136px] z-[61] ${
             timerFinished
               ? timerBlink
                 ? "bg-red-600"
                 : "bg-black"
               : "bg-black hover:bg-zinc-800"
           }`}
+          aria-label="타이머 열기"
+          title={`타이머 열기 · ${formatTimerTime(timerRemainingSeconds)}`}
         >
-          <div>타이머 열기</div>
-          <div
-            className={`mt-2 text-4xl ${
-              timerRemainingSeconds <= 60 ? "text-red-400" : "text-white"
-            }`}
-          >
-            {formatTimerTime(timerRemainingSeconds)}
-          </div>
+          <svg aria-hidden="true" className="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="13" r="8" /><path d="M10 2h4m-2 7v4l3 2" /></svg>
         </button>
       )}
 
@@ -8949,10 +9054,11 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
         <button
           type="button"
           onClick={restoreTimerPosition}
-          className="fixed right-6 top-24 z-[61] rounded-l-2xl rounded-r-md bg-[#6b3f24] px-4 py-3 text-xl font-bold text-white shadow-2xl transition hover:bg-[#4a2f1c]"
-          title="단축키: Ctrl + Alt + T"
+          className="fixed bottom-6 grid size-12 place-items-center rounded-xl text-white shadow-lg transition right-[136px] z-[61] bg-[#6b3f24] hover:bg-[#4a2f1c]"
+          aria-label="타이머 위치복구"
+          title="타이머 위치복구 (Ctrl + Alt + T)"
         >
-          타이머 위치복구
+          <svg aria-hidden="true" className="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 10a9 9 0 1 1 2 8M3 4v6h6" /></svg>
         </button>
       )}
 
@@ -9124,9 +9230,11 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
         <button
           type="button"
           onClick={openDrawingBoard}
-          className="fixed bottom-6 left-6 z-[60] rounded-2xl bg-black px-5 py-4 text-2xl font-bold text-white shadow-2xl transition hover:bg-zinc-800"
+          className="fixed bottom-6 grid size-12 place-items-center rounded-xl text-white shadow-lg transition left-6 z-[60] bg-black hover:bg-zinc-800"
+          aria-label="그림판 열기"
+          title="그림판 열기"
         >
-          그림판 열기
+          <svg aria-hidden="true" className="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m4 16-1 5 5-1L21 7l-4-4zM14 6l4 4" /></svg>
         </button>
       )}
 
@@ -9134,9 +9242,12 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
         <button
           type="button"
           onClick={() => setMemoOpen((prev) => !prev)}
-          className="fixed right-6 top-[240px] z-[10000] rounded-l-2xl rounded-r-md bg-[#6b3f24] px-4 py-4 text-2xl font-bold text-white shadow-2xl transition hover:bg-[#4a2f1c]"
+          className="fixed bottom-6 grid size-12 place-items-center rounded-xl text-white shadow-lg transition right-20 z-[10000] bg-[#6b3f24] hover:bg-[#4a2f1c]"
+          aria-label={memoOpen ? "메모 닫기" : "메모 열기"}
+          title={memoOpen ? "메모 닫기" : "메모 열기"}
+          aria-expanded={memoOpen}
         >
-          {memoOpen ? "메모 닫기" : "메모 열기"}
+          <svg aria-hidden="true" className="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 3h10l4 4v14H5zM14 3v5h5M8 12h8m-8 4h8" /></svg>
         </button>
       )}
 
@@ -9144,10 +9255,11 @@ const ELEMENT_HANJA_STYLE = (color: string) => {
         <button
           type="button"
           onClick={restoreMemoPosition}
-          className="fixed right-6 top-[320px] z-[10000] rounded-l-2xl rounded-r-md bg-[#6b3f24] px-4 py-4 text-2xl font-bold text-white shadow-2xl transition hover:bg-[#4a2f1c]"
-          title="메모장이 화면 밖으로 나갔을 때 복구합니다. 단축키: Ctrl + Alt + M"
+          className="fixed bottom-6 grid size-12 place-items-center rounded-xl text-white shadow-lg transition right-[192px] z-[10000] bg-[#6b3f24] hover:bg-[#4a2f1c]"
+          aria-label="메모 위치복구"
+          title="메모 위치복구 (Ctrl + Alt + M)"
         >
-          메모 위치복구
+          <svg aria-hidden="true" className="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 10a9 9 0 1 1 2 8M3 4v6h6" /></svg>
         </button>
       )}
 
